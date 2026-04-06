@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="pl" class="">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="<?= htmlspecialchars($pageDescription ?? 'Genealog — Twoje drzewo rodzinne') ?>">
+    <title><?= htmlspecialchars(($pageTitle ?? 'Dashboard') . ' — Genealog') ?></title>
+
+    <!-- Tailwind CSS v4 CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/css/globals.css">
+
+    <!-- Alpine.js -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        border:     'hsl(var(--border))',
+                        input:      'hsl(var(--input))',
+                        ring:       'hsl(var(--ring))',
+                        background: 'hsl(var(--background))',
+                        foreground: 'hsl(var(--foreground))',
+                        primary: {
+                            DEFAULT:    'hsl(var(--primary))',
+                            foreground: 'hsl(var(--primary-foreground))',
+                        },
+                        muted: {
+                            DEFAULT:    'hsl(var(--muted))',
+                            foreground: 'hsl(var(--muted-foreground))',
+                        },
+                        card: {
+                            DEFAULT:    'hsl(var(--card))',
+                            foreground: 'hsl(var(--card-foreground))',
+                        },
+                    },
+                },
+            },
+        }
+    </script>
+</head>
+
+<!--
+  AppLayout — wireframe:
+
+  ┌──────────────────────────────────────────────────────────────────────┐
+  │ Header: [Logo Genealog]   [Drzewa] [Poszukiwania]   [Avatar ▾]      │
+  ├──────────────────────────────────────────────────────────────────────┤
+  │                                                                      │
+  │  [Flash messages — jeśli są]                                        │
+  │                                                                      │
+  │  ┌── main content (slot) ────────────────────────────────────────┐  │
+  │  │  Witaj, Jan!                                                   │  │
+  │  │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐        │  │
+  │  │  │ Moje drzewa  │  │ Ostatnio     │  │ Statystyki   │        │  │
+  │  │  │ [Nowe drzewo]│  │ aktywne      │  │              │        │  │
+  │  │  └──────────────┘  └──────────────┘  └──────────────┘        │  │
+  │  └────────────────────────────────────────────────────────────────┘  │
+  │                                                                      │
+  ├──────────────────────────────────────────────────────────────────────┤
+  │ Footer                                                               │
+  └──────────────────────────────────────────────────────────────────────┘
+-->
+<body class="min-h-dvh bg-[hsl(var(--background))] flex flex-col"
+      x-data="{ mobileMenuOpen: false, userMenuOpen: false }">
+
+    <!-- ================================================================
+         HEADER
+         ================================================================ -->
+    <header class="sticky top-0 z-50 w-full border-b border-[hsl(var(--border))]
+                   bg-[hsl(var(--background)/0.95)] backdrop-blur-sm">
+        <div class="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+
+            <!-- Logo -->
+            <a href="/dashboard"
+               class="flex items-center gap-2 font-bold text-lg tracking-tight
+                      focus-visible:outline-none focus-visible:ring-2
+                      focus-visible:ring-[hsl(var(--ring))] rounded-md px-1">
+                <svg class="h-7 w-7 text-[hsl(var(--primary))]"
+                     xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                     fill="none" stroke="currentColor" stroke-width="1.5"
+                     stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M12 22V12"/>
+                    <path d="M12 12C12 12 7 10 7 6a5 5 0 0 1 10 0c0 4-5 6-5 6z"/>
+                    <path d="M12 12c0 0-3 1.5-3 5"/>
+                    <path d="M12 12c0 0 3 1.5 3 5"/>
+                </svg>
+                <span>Genealog</span>
+            </a>
+
+            <!-- Nav desktop -->
+            <nav class="hidden md:flex items-center gap-1" aria-label="Główna nawigacja">
+                <?php
+                $navItems = [
+                    ['href' => '/dashboard',   'label' => 'Dashboard'],
+                    ['href' => '/trees',        'label' => 'Moje drzewa'],
+                    ['href' => '/search',       'label' => 'Poszukiwania'],
+                ];
+                $currentPath = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+
+                foreach ($navItems as $item):
+                    $isActive = str_starts_with($currentPath, $item['href']);
+                    $activeClass = $isActive
+                        ? 'bg-[hsl(var(--accent))] text-[hsl(var(--foreground))] font-medium'
+                        : 'text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--accent))] hover:text-[hsl(var(--foreground))]';
+                ?>
+                    <a href="<?= htmlspecialchars($item['href']) ?>"
+                       class="rounded-md px-3 py-2 text-sm transition-colors
+                              focus-visible:outline-none focus-visible:ring-2
+                              focus-visible:ring-[hsl(var(--ring))]
+                              <?= $activeClass ?>"
+                       <?= $isActive ? 'aria-current="page"' : '' ?>>
+                        <?= htmlspecialchars($item['label']) ?>
+                    </a>
+                <?php endforeach; ?>
+            </nav>
+
+            <!-- Prawa strona headera: Avatar + menu użytkownika -->
+            <div class="flex items-center gap-3">
+
+                <!-- Przycisk hamburger — mobile -->
+                <button
+                    type="button"
+                    class="md:hidden flex h-9 w-9 items-center justify-center rounded-md
+                           text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--accent))]
+                           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))]"
+                    @click="mobileMenuOpen = !mobileMenuOpen"
+                    :aria-expanded="mobileMenuOpen"
+                    aria-controls="mobile-menu"
+                    aria-label="Otwórz menu"
+                >
+                    <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg"
+                         fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                         stroke-width="2" aria-hidden="true">
+                        <line x1="3" y1="6"  x2="21" y2="6"/>
+                        <line x1="3" y1="12" x2="21" y2="12"/>
+                        <line x1="3" y1="18" x2="21" y2="18"/>
+                    </svg>
+                </button>
+
+                <!-- Menu użytkownika — desktop -->
+                <div class="relative hidden md:block" @click.outside="userMenuOpen = false">
+                    <button
+                        type="button"
+                        class="flex items-center gap-2 rounded-full
+                               focus-visible:outline-none focus-visible:ring-2
+                               focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-2"
+                        @click="userMenuOpen = !userMenuOpen"
+                        :aria-expanded="userMenuOpen"
+                        aria-haspopup="true"
+                        aria-label="Menu użytkownika: <?= htmlspecialchars($currentUser['name'] ?? 'Użytkownik') ?>"
+                    >
+                        <?php
+                        require_once __DIR__ . '/../atoms/avatar.php';
+                        render_avatar(
+                            $currentUser['name'] ?? 'Użytkownik',
+                            $currentUser['avatar'] ?? '',
+                            'md'
+                        );
+                        ?>
+                        <svg class="h-4 w-4 text-[hsl(var(--muted-foreground))]"
+                             xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                             fill="none" stroke="currentColor" stroke-width="2"
+                             aria-hidden="true">
+                            <polyline points="6 9 12 15 18 9"/>
+                        </svg>
+                    </button>
+
+                    <!-- Dropdown menu -->
+                    <div
+                        x-show="userMenuOpen"
+                        x-transition:enter="transition ease-out duration-150"
+                        x-transition:enter-start="opacity-0 scale-95"
+                        x-transition:enter-end="opacity-100 scale-100"
+                        x-transition:leave="transition ease-in duration-100"
+                        x-transition:leave-start="opacity-100 scale-100"
+                        x-transition:leave-end="opacity-0 scale-95"
+                        class="absolute right-0 mt-2 w-56 origin-top-right rounded-lg border
+                               border-[hsl(var(--border))] bg-[hsl(var(--popover))] p-1 shadow-lg
+                               focus:outline-none"
+                        role="menu"
+                        aria-orientation="vertical"
+                    >
+                        <!-- Nagłówek dropdown -->
+                        <div class="px-3 py-2 border-b border-[hsl(var(--border))] mb-1">
+                            <p class="text-sm font-medium text-[hsl(var(--foreground))] truncate">
+                                <?= htmlspecialchars($currentUser['name'] ?? 'Użytkownik') ?>
+                            </p>
+                            <p class="text-xs text-[hsl(var(--muted-foreground))] truncate">
+                                <?= htmlspecialchars($currentUser['email'] ?? '') ?>
+                            </p>
+                        </div>
+
+                        <a href="/profile" role="menuitem"
+                           class="flex items-center gap-2 rounded-md px-3 py-2 text-sm
+                                  text-[hsl(var(--foreground))] hover:bg-[hsl(var(--accent))]
+                                  focus-visible:outline-none focus-visible:bg-[hsl(var(--accent))]">
+                            <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg"
+                                 viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                 stroke-width="2" aria-hidden="true">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                                <circle cx="12" cy="7" r="4"/>
+                            </svg>
+                            Mój profil
+                        </a>
+                        <a href="/settings" role="menuitem"
+                           class="flex items-center gap-2 rounded-md px-3 py-2 text-sm
+                                  text-[hsl(var(--foreground))] hover:bg-[hsl(var(--accent))]
+                                  focus-visible:outline-none focus-visible:bg-[hsl(var(--accent))]">
+                            <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg"
+                                 viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                 stroke-width="2" aria-hidden="true">
+                                <circle cx="12" cy="12" r="3"/>
+                                <path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/>
+                            </svg>
+                            Ustawienia
+                        </a>
+
+                        <div class="border-t border-[hsl(var(--border))] my-1"></div>
+
+                        <form method="POST" action="/logout">
+                            <input type="hidden" name="csrf_token"
+                                   value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
+                            <button type="submit" role="menuitem"
+                                    class="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm
+                                           text-[hsl(var(--destructive))] hover:bg-[hsl(var(--destructive)/0.1)]
+                                           focus-visible:outline-none focus-visible:bg-[hsl(var(--destructive)/0.1)]">
+                                <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg"
+                                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                     stroke-width="2" aria-hidden="true">
+                                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                                    <polyline points="16 17 21 12 16 7"/>
+                                    <line x1="21" y1="12" x2="9" y2="12"/>
+                                </svg>
+                                Wyloguj się
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile menu -->
+        <div
+            id="mobile-menu"
+            x-show="mobileMenuOpen"
+            x-transition
+            class="md:hidden border-t border-[hsl(var(--border))] bg-[hsl(var(--background))] px-4 pb-4 pt-2"
+        >
+            <nav class="flex flex-col gap-1" aria-label="Mobile nawigacja">
+                <?php foreach ($navItems as $item):
+                    $isActive = str_starts_with($currentPath, $item['href']);
+                    $activeClass = $isActive
+                        ? 'bg-[hsl(var(--accent))] text-[hsl(var(--foreground))] font-medium'
+                        : 'text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--accent))]';
+                ?>
+                    <a href="<?= htmlspecialchars($item['href']) ?>"
+                       class="rounded-md px-3 py-2.5 text-sm transition-colors <?= $activeClass ?>"
+                       <?= $isActive ? 'aria-current="page"' : '' ?>>
+                        <?= htmlspecialchars($item['label']) ?>
+                    </a>
+                <?php endforeach; ?>
+
+                <div class="border-t border-[hsl(var(--border))] my-2"></div>
+
+                <div class="flex items-center gap-3 px-3 py-2">
+                    <?php render_avatar($currentUser['name'] ?? 'Użytkownik', '', 'sm'); ?>
+                    <div>
+                        <p class="text-sm font-medium"><?= htmlspecialchars($currentUser['name'] ?? 'Użytkownik') ?></p>
+                        <p class="text-xs text-[hsl(var(--muted-foreground))]"><?= htmlspecialchars($currentUser['email'] ?? '') ?></p>
+                    </div>
+                </div>
+
+                <a href="/profile" class="rounded-md px-3 py-2.5 text-sm text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--accent))]">
+                    Mój profil
+                </a>
+
+                <form method="POST" action="/logout" class="mt-1">
+                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
+                    <button type="submit"
+                            class="flex w-full rounded-md px-3 py-2.5 text-sm text-[hsl(var(--destructive))] hover:bg-[hsl(var(--destructive)/0.1)]">
+                        Wyloguj się
+                    </button>
+                </form>
+            </nav>
+        </div>
+    </header>
+
+    <!-- ================================================================
+         MAIN CONTENT
+         ================================================================ -->
+    <main class="flex-1">
+        <div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+
+            <!-- Flash messages -->
+            <?php
+            require_once __DIR__ . '/../molecules/flash-messages.php';
+            render_flash_messages();
+            ?>
+
+            <!-- Slot — zawartość strony -->
+            <?= $content ?? '' ?>
+
+        </div>
+    </main>
+
+    <!-- ================================================================
+         FOOTER
+         ================================================================ -->
+    <footer class="border-t border-[hsl(var(--border))] bg-[hsl(var(--muted))]">
+        <div class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+            <div class="flex flex-col items-center justify-between gap-4 sm:flex-row">
+                <p class="text-sm text-[hsl(var(--muted-foreground))]">
+                    &copy; <?= date('Y') ?> Genealog. Wszelkie prawa zastrzeżone.
+                </p>
+                <nav class="flex gap-4" aria-label="Linki pomocnicze">
+                    <a href="/privacy"
+                       class="text-sm text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]
+                              focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] rounded">
+                        Polityka prywatności
+                    </a>
+                    <a href="/terms"
+                       class="text-sm text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]
+                              focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] rounded">
+                        Regulamin
+                    </a>
+                </nav>
+            </div>
+        </div>
+    </footer>
+
+</body>
+</html>

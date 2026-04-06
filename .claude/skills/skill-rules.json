@@ -1,0 +1,138 @@
+{
+  "version": "1.0.0",
+  "skills": {
+    "serena-search": {
+      "type": "domain",
+      "enforcement": "suggest",
+      "priority": "high",
+      "promptTriggers": {
+        "keywords": [
+          "/serena",
+          "serena",
+          "find code",
+          "search code",
+          "locate code",
+          "search function",
+          "find function",
+          "locate function",
+          "search component",
+          "find component",
+          "locate component",
+          "fix table",
+          "update table",
+          "analyze structure",
+          "file structure",
+          "code structure",
+          "refactor function",
+          "rename function",
+          "semantic search",
+          "code navigation",
+          "symbol search",
+          "method search",
+          "class search",
+          "find usages",
+          "find references",
+          "show dependencies",
+          "code exploration",
+          "navigate code"
+        ],
+        "intentPatterns": [
+          "(serena|use serena|with serena)",
+          "(find|locate|search).*(code|function|component|class|method|symbol)",
+          "(fix|update|modify).*table",
+          "(show|display|get).*(structure|dependencies|references|usages)",
+          "(refactor|rename).*(function|method|component|class)",
+          "analyze.*(code|structure|file)",
+          "where is.*(defined|used|located)",
+          "search for.*(pattern|todo|console)"
+        ]
+      },
+      "message": {
+        "title": "Serena Search Available",
+        "body": "I can use Serena MCP for intelligent semantic code search:\n- 95% token savings vs reading full files\n- Find symbols (functions, classes, methods)\n- Analyze file structure\n- Find all usages/references\n- Search patterns across codebase\n- Refactor and rename symbols\n\nSerena will be automatically activated for genealog project."
+      }
+    },
+    "business-analysis": {
+      "type": "domain",
+      "enforcement": "suggest",
+      "priority": "high",
+      "promptTriggers": {
+        "keywords": [
+          "/ultra-biz",
+          "ultra-biz",
+          "analiza biznesowa",
+          "business analysis",
+          "monetyzacja",
+          "monetization",
+          "pricing",
+          "cennik",
+          "swot",
+          "model biznesowy",
+          "business model",
+          "go-to-market",
+          "gtm",
+          "strategia biznesowa",
+          "business strategy",
+          "freemium",
+          "revenue",
+          "przychody",
+          "competitive analysis",
+          "analiza konkurencji",
+          "value proposition",
+          "customer segments"
+        ],
+        "intentPatterns": [
+          "(analiz|audit).*(biznes|business|revenue|pricing|monetyz)",
+          "(strategi|plan).*(biznes|business|monetyz|pricing|gtm|market)",
+          "(jak|how).*(zarabiac|monetyz|pricing|wycenic|sprzedawac)",
+          "(model|plan).*(biznesowy|business|cenowy|pricing)",
+          "(porownaj|compare).*(konkurenc|compet)"
+        ]
+      },
+      "message": {
+        "title": "Business Analysis Skill Available",
+        "body": "Dostepny skill business-analysis z frameworkami:\n- SWOT Analysis + Porter's Five Forces\n- Business Model Canvas + Value Proposition Canvas\n- Pricing Strategy + Freemium Model\n- Go-to-Market Strategy\n- Competitive Analysis\n- Revenue Projections + Unit Economics\n\nUzyj /ultra-biz do pelnej analizy."
+      }
+    },
+    "security-audit": {
+      "type": "domain",
+      "enforcement": "suggest",
+      "priority": "high",
+      "promptTriggers": {
+        "keywords": [
+          "audit",
+          "audyt",
+          "security",
+          "bezpieczenstwo",
+          "owasp",
+          "rodo",
+          "gdpr",
+          "nis2",
+          "wcag",
+          "penetration",
+          "vulnerability",
+          "compliance",
+          "security review",
+          "threat model",
+          "stride",
+          "tenant isolation",
+          "idor",
+          "rbac bypass",
+          "/ultra-audit",
+          "ultra-audit"
+        ],
+        "intentPatterns": [
+          "(audit|audyt).*(security|bezpieczenstwo|kod|code|system)",
+          "(check|verify|test).*(owasp|rodo|gdpr|nis2|wcag|security)",
+          "(find|detect).*(vulnerability|vuln|luka|threat)",
+          "(compliance|zgodnosc).*(rodo|gdpr|nis2|wcag)",
+          "(penetration|pentest).*(test|testing)"
+        ]
+      },
+      "message": {
+        "title": "Security Audit Skill Available",
+        "body": "Dostepny skill security-audit z checklistami:\n- OWASP Top 10 (2021)\n- RODO/GDPR Art. 25+32\n- NIS2 Directive\n- WCAG 2.1 AA\n- STRIDE Threat Model\n- Multi-tenant SaaS patterns"
+      }
+    }
+  }
+}

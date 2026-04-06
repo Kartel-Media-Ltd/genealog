@@ -1,0 +1,297 @@
+/* =============================================================
+   Genealog — Global CSS
+   shadcn/ui design tokens portowane do PHP/HTML + Tailwind v4
+   ============================================================= */
+
+@import "tailwindcss";
+
+/* -------------------------------------------------------------
+   CSS Custom Properties — Light Mode (:root)
+   ------------------------------------------------------------- */
+:root {
+  /* --- Kolory tła i powierzchni --- */
+  --background:         0 0% 100%;          /* oklch: 1 0 0 */
+  --foreground:         222.2 84% 4.9%;     /* oklch: 0.2 0.02 260 */
+
+  --card:               0 0% 100%;
+  --card-foreground:    222.2 84% 4.9%;
+
+  --popover:            0 0% 100%;
+  --popover-foreground: 222.2 84% 4.9%;
+
+  /* --- Kolory główne (Brand) --- */
+  --primary:            221.2 83.2% 53.3%;  /* Niebieski */
+  --primary-foreground: 210 40% 98%;
+
+  /* --- Kolory drugorzędne --- */
+  --secondary:          210 40% 96.1%;
+  --secondary-foreground: 222.2 47.4% 11.2%;
+
+  /* --- Muted (wyciszone) --- */
+  --muted:              210 40% 96.1%;
+  --muted-foreground:   215.4 16.3% 46.9%;
+
+  /* --- Akcent --- */
+  --accent:             210 40% 96.1%;
+  --accent-foreground:  222.2 47.4% 11.2%;
+
+  /* --- Destruktywny (błędy) --- */
+  --destructive:        0 84.2% 60.2%;
+  --destructive-foreground: 210 40% 98%;
+
+  /* --- Sukces --- */
+  --success:            142 72% 29%;
+  --success-foreground: 0 0% 100%;
+
+  /* --- Ostrzeżenie --- */
+  --warning:            38 92% 50%;
+  --warning-foreground: 0 0% 10%;
+
+  /* --- Info --- */
+  --info:               217 91% 60%;
+  --info-foreground:    0 0% 100%;
+
+  /* --- Obramowania i inputy --- */
+  --border:             214.3 31.8% 91.4%;
+  --input:              214.3 31.8% 91.4%;
+  --ring:               221.2 83.2% 53.3%;
+
+  /* --- Promień zaokrąglenia --- */
+  --radius: 0.5rem;
+
+  /* --- Sidebar (opcjonalnie) --- */
+  --sidebar-background: 0 0% 98%;
+  --sidebar-foreground: 240 5.3% 26.1%;
+  --sidebar-primary:    240 5.9% 10%;
+  --sidebar-primary-foreground: 0 0% 98%;
+  --sidebar-accent:     240 4.8% 95.9%;
+  --sidebar-accent-foreground: 240 5.9% 10%;
+  --sidebar-border:     220 13% 91%;
+  --sidebar-ring:       217.2 91.2% 59.8%;
+}
+
+/* -------------------------------------------------------------
+   Dark Mode (.dark)
+   ------------------------------------------------------------- */
+.dark {
+  --background:         222.2 84% 4.9%;
+  --foreground:         210 40% 98%;
+
+  --card:               222.2 84% 4.9%;
+  --card-foreground:    210 40% 98%;
+
+  --popover:            222.2 84% 4.9%;
+  --popover-foreground: 210 40% 98%;
+
+  --primary:            217.2 91.2% 59.8%;
+  --primary-foreground: 222.2 47.4% 11.2%;
+
+  --secondary:          217.2 32.6% 17.5%;
+  --secondary-foreground: 210 40% 98%;
+
+  --muted:              217.2 32.6% 17.5%;
+  --muted-foreground:   215 20.2% 65.1%;
+
+  --accent:             217.2 32.6% 17.5%;
+  --accent-foreground:  210 40% 98%;
+
+  --destructive:        0 62.8% 30.6%;
+  --destructive-foreground: 210 40% 98%;
+
+  --success:            142 70% 45%;
+  --success-foreground: 0 0% 100%;
+
+  --warning:            38 92% 50%;
+  --warning-foreground: 0 0% 10%;
+
+  --info:               217 91% 70%;
+  --info-foreground:    222.2 84% 4.9%;
+
+  --border:             217.2 32.6% 17.5%;
+  --input:              217.2 32.6% 17.5%;
+  --ring:               224.3 76.3% 48%;
+
+  --sidebar-background: 240 5.9% 10%;
+  --sidebar-foreground: 240 4.8% 95.9%;
+  --sidebar-primary:    224.3 76.3% 48%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent:     240 3.7% 15.9%;
+  --sidebar-accent-foreground: 240 4.8% 95.9%;
+  --sidebar-border:     240 3.7% 15.9%;
+  --sidebar-ring:       217.2 91.2% 59.8%;
+}
+
+/* -------------------------------------------------------------
+   Base Styles
+   ------------------------------------------------------------- */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  border-color: hsl(var(--border));
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+    "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+  font-size: 1rem;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Fokus — zawsze widoczny (WCAG 2.2 Focus Not Obscured) */
+:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+}
+
+/* Usuń domyślny focus dla myszy, zostaw dla klawiatury */
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* Obrazki responsywne */
+img,
+video {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Nagłówki */
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+/* Linki */
+a {
+  color: hsl(var(--primary));
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+/* Przyciski — reset */
+button {
+  cursor: pointer;
+  font-family: inherit;
+}
+
+/* Inputy — reset */
+input,
+textarea,
+select {
+  font-family: inherit;
+  font-size: inherit;
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* -------------------------------------------------------------
+   Utility klasy — shadcn token helpers
+   ------------------------------------------------------------- */
+
+/* Ring / Focus ring */
+.ring-border {
+  --tw-ring-color: hsl(var(--border));
+}
+
+/* Text colors z tokenów */
+.text-muted-foreground { color: hsl(var(--muted-foreground)); }
+.text-card-foreground   { color: hsl(var(--card-foreground)); }
+
+/* Background z tokenów */
+.bg-card    { background-color: hsl(var(--card)); }
+.bg-muted   { background-color: hsl(var(--muted)); }
+.bg-popover { background-color: hsl(var(--popover)); }
+
+/* Border z tokenów */
+.border-input { border-color: hsl(var(--input)); }
+
+/* Radius helpers */
+.rounded-card { border-radius: var(--radius); }
+.rounded-sm   { border-radius: calc(var(--radius) - 4px); }
+.rounded-md   { border-radius: calc(var(--radius) - 2px); }
+.rounded-lg   { border-radius: var(--radius); }
+.rounded-xl   { border-radius: calc(var(--radius) + 4px); }
+
+/* -------------------------------------------------------------
+   Spinner animation
+   ------------------------------------------------------------- */
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+/* Pulse dla skeleton */
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.5; }
+}
+
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* -------------------------------------------------------------
+   Flash messages — slide-in animation
+   ------------------------------------------------------------- */
+@keyframes slide-in-from-top {
+  from {
+    opacity: 0;
+    transform: translateY(-0.5rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.flash-message {
+  animation: slide-in-from-top 0.2s ease-out;
+}
+
+/* -------------------------------------------------------------
+   Scrollbar styling (Webkit)
+   ------------------------------------------------------------- */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: hsl(var(--muted));
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted-foreground) / 0.3);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground) / 0.5);
+}

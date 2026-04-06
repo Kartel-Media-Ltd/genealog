@@ -1,0 +1,2 @@
+packages/ui:build:cd /Users/osflake/Sites/claude/genealog/packages/ui && npm run build
+packages/ui:tsc:cd /Users/osflake/Sites/claude/genealog/packages/ui && npx tsc --noEmit

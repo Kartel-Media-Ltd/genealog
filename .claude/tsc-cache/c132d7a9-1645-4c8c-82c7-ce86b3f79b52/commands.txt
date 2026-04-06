@@ -1,0 +1,1 @@
+packages/shared:tsc:cd /Users/osflake/Sites/claude/genealog/packages/shared && npx tsc --noEmit
