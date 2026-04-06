@@ -1,0 +1,141 @@
+<?php
+declare(strict_types=1);
+
+namespace App\Controllers;
+
+use App\Core\Request;
+use App\Core\Response;
+use App\Core\Session;
+use App\Repositories\TreeRepository;
+use App\Services\TreeService;
+
+class TreeController
+{
+    public function __construct(
+        private readonly Request         $request,
+        private readonly Response        $response,
+        private readonly TreeRepository  $treeRepo,
+        private readonly TreeService     $treeService,
+    ) {}
+
+    /** GET /trees */
+    public function index(): never
+    {
+        $userId = Session::get('user_id');
+        $trees  = $this->treeRepo->findByOwner($userId);
+
+        $this->response->view('pages/trees/index', [
+            'title'       => 'Moje drzewa',
+            'currentUser' => [
+                'name'   => Session::get('user_name', 'Użytkownik'),
+                'email'  => Session::get('user_email', ''),
+                'avatar' => '',
+            ],
+            'trees' => $trees,
+        ]);
+    }
+
+    /** GET /trees/new */
+    public function showCreate(): never
+    {
+        $this->response->view('pages/trees/create', [
+            'title'       => 'Nowe drzewo',
+            'currentUser' => [
+                'name'   => Session::get('user_name', 'Użytkownik'),
+                'email'  => Session::get('user_email', ''),
+                'avatar' => '',
+            ],
+        ]);
+    }
+
+    /** POST /trees */
+    public function processCreate(): never
+    {
+        $this->request->verifyCsrf();
+
+        $userId      = Session::get('user_id');
+        $name        = trim((string)$this->request->getParam('name', ''));
+        $description = trim((string)$this->request->getParam('description', ''));
+        $isPublic    = (bool)$this->request->getParam('is_public', false);
+
+        try {
+            $tree = $this->treeService->create($userId, $name, $description, $isPublic);
+            $this->response
+                ->withFlash('success', 'Drzewo "' . $tree->name . '" zostało utworzone.')
+                ->redirect('/trees/' . $tree->id);
+        } catch (\Exception $e) {
+            $this->response->withFlash('error', $e->getMessage())->redirect('/trees/new');
+        }
+    }
+
+    /** GET /trees/{id} */
+    public function show(): never
+    {
+        $treeId = $this->request->getRouteParam('id');
+        $userId = Session::get('user_id');
+
+        try {
+            $tree = $this->treeService->getForUser($treeId, $userId);
+        } catch (\Exception $e) {
+            $this->response->withFlash('error', $e->getMessage())->redirect('/trees');
+        }
+
+        $this->response->view('pages/trees/show', [
+            'title'       => $tree->name,
+            'currentUser' => [
+                'name'   => Session::get('user_name', 'Użytkownik'),
+                'email'  => Session::get('user_email', ''),
+                'avatar' => '',
+            ],
+            'tree'     => $tree,
+            'userRole' => $this->treeRepo->getUserRole($treeId, $userId),
+        ]);
+    }
+
+    /** GET /trees/{id}/edit */
+    public function showEdit(): never
+    {
+        $treeId = $this->request->getRouteParam('id');
+        $userId = Session::get('user_id');
+
+        if (!$this->treeRepo->isOwner($treeId, $userId)) {
+            $this->response->withFlash('error', 'Tylko właściciel może edytować drzewo.')->redirect('/trees');
+        }
+
+        $tree = $this->treeRepo->findById($treeId);
+        if ($tree === null) {
+            $this->response->withFlash('error', 'Drzewo nie istnieje.')->redirect('/trees');
+        }
+
+        $this->response->view('pages/trees/edit', [
+            'title'       => 'Edytuj: ' . $tree->name,
+            'currentUser' => [
+                'name'   => Session::get('user_name', 'Użytkownik'),
+                'email'  => Session::get('user_email', ''),
+                'avatar' => '',
+            ],
+            'tree' => $tree,
+        ]);
+    }
+
+    /** POST /trees/{id}/edit */
+    public function processEdit(): never
+    {
+        $this->request->verifyCsrf();
+
+        $treeId      = $this->request->getRouteParam('id');
+        $userId      = Session::get('user_id');
+        $name        = trim((string)$this->request->getParam('name', ''));
+        $description = trim((string)$this->request->getParam('description', ''));
+        $isPublic    = (bool)$this->request->getParam('is_public', false);
+
+        try {
+            $this->treeService->update($treeId, $userId, $name, $description, $isPublic);
+            $this->response
+                ->withFlash('success', 'Zmiany zostały zapisane.')
+                ->redirect('/trees/' . $treeId);
+        } catch (\Exception $e) {
+            $this->response->withFlash('error', $e->getMessage())->redirect("/trees/{$treeId}/edit");
+        }
+    }
+}

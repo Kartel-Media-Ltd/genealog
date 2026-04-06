@@ -40,30 +40,48 @@ $response = new Response();
 use App\Core\Database;
 use App\Controllers\AuthController;
 use App\Controllers\HomeController;
+use App\Controllers\TreeController;
 use App\Middleware\AuthMiddleware;
 use App\Services\AuthService;
+use App\Services\TreeService;
 use App\Repositories\UserRepository;
+use App\Repositories\TreeRepository;
 
 $db       = Database::getInstance();
 $userRepo = new UserRepository($db);
+$treeRepo = new TreeRepository($db);
 $authSvc  = new AuthService($userRepo, $db);
+$treeSvc  = new TreeService($treeRepo);
 $authMw   = new AuthMiddleware($response);
 
 // 8. Router
 $router = new Router();
 
 // Publiczne trasy
-$router->get('/',          fn() => $response->redirect('/login'));
-$router->get('/login',     [new AuthController($request, $response, $authSvc), 'showLogin']);
-$router->post('/login',    [new AuthController($request, $response, $authSvc), 'processLogin']);
-$router->get('/register',  [new AuthController($request, $response, $authSvc), 'showRegister']);
-$router->post('/register', [new AuthController($request, $response, $authSvc), 'processRegister']);
-$router->post('/logout',   [new AuthController($request, $response, $authSvc), 'logout']);
+$router->get('/',                  fn() => $response->redirect('/login'));
+$router->get('/login',             [new AuthController($request, $response, $authSvc), 'showLogin']);
+$router->post('/login',            [new AuthController($request, $response, $authSvc), 'processLogin']);
+$router->get('/register',          [new AuthController($request, $response, $authSvc), 'showRegister']);
+$router->post('/register',         [new AuthController($request, $response, $authSvc), 'processRegister']);
+$router->post('/logout',           [new AuthController($request, $response, $authSvc), 'logout']);
+$router->get('/forgot-password',   fn() => $response->view('pages/auth/forgot-password', ['title' => 'Resetuj hasło'], 'templates/AuthLayout'));
+$router->post('/forgot-password',  fn() => $response->withFlash('success', 'Jeśli konto istnieje, wyślemy link resetujący.')->redirect('/login'));
 
 // Chronione trasy
-$router->group('/dashboard', [[$authMw, 'handle']], function (Router $r) use ($request, $response, $db) {
-    $treeRepo = new \App\Repositories\TreeRepository($db);
+$mw = [[$authMw, 'handle']];
+
+$router->group('/dashboard', $mw, function (Router $r) use ($request, $response, $treeRepo) {
     $r->get('', [new HomeController($request, $response, $treeRepo), 'index']);
+});
+
+$router->group('/trees', $mw, function (Router $r) use ($request, $response, $treeRepo, $treeSvc) {
+    $ctrl = new TreeController($request, $response, $treeRepo, $treeSvc);
+    $r->get('',            [$ctrl, 'index']);
+    $r->get('/new',        [$ctrl, 'showCreate']);
+    $r->post('',           [$ctrl, 'processCreate']);
+    $r->get('/{id}',       [$ctrl, 'show']);
+    $r->get('/{id}/edit',  [$ctrl, 'showEdit']);
+    $r->post('/{id}/edit', [$ctrl, 'processEdit']);
 });
 
 // 9. Dispatch
