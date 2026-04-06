@@ -1,0 +1,38 @@
+<?php
+declare(strict_types=1);
+
+use Dotenv\Dotenv;
+
+$dotenv = Dotenv::createImmutable(dirname(__DIR__), '.env.local');
+$dotenv->load();
+$dotenv->required(['DATABASE_HOST', 'DATABASE_NAME', 'DATABASE_USER', 'DATABASE_PASSWORD'])->notEmpty();
+
+// Środowisko
+define('APP_ENV',   $_ENV['APP_ENV']   ?? 'development');
+define('APP_DEBUG', (bool)($_ENV['APP_DEBUG'] ?? (APP_ENV === 'development')));
+define('SITE_URL',  rtrim($_ENV['SITE_URL'] ?? 'http://localhost:8002', '/'));
+
+// Baza danych
+define('DB_HOST',    $_ENV['DATABASE_HOST']);
+define('DB_PORT',    $_ENV['DATABASE_PORT'] ?? '3306');
+define('DB_NAME',    $_ENV['DATABASE_NAME']);
+define('DB_USER',    $_ENV['DATABASE_USER']);
+define('DB_PASS',    $_ENV['DATABASE_PASSWORD']);
+define('DB_CHARSET', 'utf8mb4');
+
+// Sesja
+define('SESSION_NAME',     $_ENV['SESSION_NAME']     ?? 'genealog_session');
+define('SESSION_LIFETIME', (int)($_ENV['SESSION_LIFETIME'] ?? 7200));
+define('SESSION_ABSOLUTE', (int)($_ENV['SESSION_ABSOLUTE'] ?? 28800)); // 8h
+
+// Bezpieczeństwo
+define('BCRYPT_COST',         12);
+define('RATE_LIMIT_ATTEMPTS', 5);
+define('RATE_LIMIT_WINDOW',   900); // 15 min
+
+// Ścieżki
+define('ROOT_PATH',    dirname(__DIR__));
+define('SRC_PATH',     ROOT_PATH . '/src');
+define('STORAGE_PATH', ROOT_PATH . '/storage');
+define('VIEWS_PATH',   SRC_PATH . '/Views');
+define('UPLOAD_MAX_MB', (int)($_ENV['UPLOAD_MAX_MB'] ?? 10));

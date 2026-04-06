@@ -1,0 +1,10 @@
+vendor/
+.env.local
+.env.*.local
+storage/media/
+.history/
+.serena/
+*.log
+.DS_Store
+Thumbs.db
+/tests/.env.test
