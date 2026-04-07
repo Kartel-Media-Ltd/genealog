@@ -186,3 +186,30 @@ PHP mógłby renderować PNG z danych drzewa bez SVG (czysto programatycznie).
 | Watermark na wydruku | Opcjonalne | "Wygenerowano przez Genealog.pl" w stopce |
 | QR kod na wydruku | Opcjonalne | Link do drzewa online na wydruku papierowym |
 | Print settings modal | Post-MVP | Wybór widoku (ancestorów/potomków), liczba pokoleń, czcionka |
+
+---
+
+## Code Review — 2026-04-07
+
+Review przeprowadzony po wdrożeniu faz 1-5.
+
+**Wynik:** 3 blocking, 6 important, 8 nit, 7 suggestions.
+
+**Kluczowe ustalenia:**
+1. **Eksport PNG nie działa lub wygląda źle** z 3 powodów:
+   - Canvas taint przy `<foreignObject>` z `<img>` (Chrome/Safari SecurityError)
+   - CSS variables `hsl(var(--X))` przestają istnieć po `XMLSerializer` → ramki czarne/niewidoczne
+   - Race condition: inline `onclick` przed `defer` skryptem
+2. **Druk SVG (window.print)** działa OK
+3. **Niespójność architektoniczna**: `printView`/`printList` używają ręcznego `include` zamiast `Response::view()` (pomija walidację `realpath()`)
+4. **Duplikacja**: reguły `@media print` są w 2 miejscach (PrintLayout inline `<style>` + `globals.css`)
+5. **CSP**: `unsafe-inline` + `unsafe-eval` ze względu na Tailwind CDN
+
+**Co działa dobrze:**
+- Kontrola dostępu (TreeService::getForUser + requireTreeAccess)
+- XSS prevention (htmlspecialchars wszędzie)
+- Memory cleanup (URL.revokeObjectURL w obu ścieżkach)
+- Route ordering (`/print` przed `{pid}`)
+- Sortowanie listy osób
+
+Pełny raport: `dev/active/print-pdf/review-print-pdf.md`

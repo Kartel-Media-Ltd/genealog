@@ -40,6 +40,7 @@ $canEdit = in_array($userRole, ['owner', 'editor'], true);
     <div class="flex gap-2">
         <a href="/trees/<?= htmlspecialchars($tree->id) ?>/print"
            target="_blank"
+           rel="noopener noreferrer"
            class="inline-flex h-10 items-center gap-2 rounded-md border border-input px-4
                   text-sm font-medium text-foreground hover:bg-accent transition-colors
                   focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">

@@ -3,7 +3,7 @@
    shadcn/ui design tokens portowane do PHP/HTML + Tailwind v4
    ============================================================= */
 
-@import "tailwindcss";
+/* Play CDN loaded via <script src="https://cdn.tailwindcss.com"> — no @import needed */
 
 /* -------------------------------------------------------------
    CSS Custom Properties — Light Mode (:root)
@@ -294,4 +294,49 @@ select {
 
 ::-webkit-scrollbar-thumb:hover {
   background: hsl(var(--muted-foreground) / 0.5);
+}
+
+/* ================================================
+   Print styles — Genealog
+   Single source of truth for all @media print rules.
+   PrintLayout.php zostawia tylko @page (per-page size).
+   ================================================ */
+footer.no-screen { display: none; }
+
+@media print {
+  .no-print { display: none !important; }
+
+  body {
+    background: white !important;
+    color: black !important;
+    margin: 0;
+    padding: 0;
+  }
+
+  .print-full {
+    width: 100% !important;
+    height: auto !important;
+  }
+
+  #tree-canvas,
+  #tree-canvas svg {
+    width: 100% !important;
+    height: auto !important;
+  }
+
+  .print-table { width: 100%; border-collapse: collapse; }
+  .print-table th,
+  .print-table td { border: 1px solid #ccc; padding: 3px 6px; font-size: 10pt; }
+  .print-table thead {
+    background: #f0f0f0 !important;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+  .print-table tbody tr {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+  .print-table tr { page-break-inside: avoid; }
+
+  footer.no-screen { display: block !important; }
 }

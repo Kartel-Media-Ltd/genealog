@@ -7,10 +7,27 @@ declare(strict_types=1);
 /** @var array|null $personsTree */
 $mode        ??= 'list';
 $personsTree ??= null;
+
+/**
+ * Bezpieczne parsowanie daty (Y-m-d) — chroni przed DateMalformedStringException w PHP 8.3+.
+ * Zwraca obiekt DateTime lub null jeśli wartość nie jest poprawną datą.
+ */
+$parseDate = static function (?string $value): ?\DateTimeImmutable {
+    if ($value === null || $value === '' || $value === '0000-00-00') {
+        return null;
+    }
+    $value = substr($value, 0, 10);
+    $dt    = \DateTimeImmutable::createFromFormat('!Y-m-d', $value);
+    if ($dt === false) {
+        return null;
+    }
+    $errors = \DateTimeImmutable::getLastErrors();
+    if (is_array($errors) && (($errors['error_count'] ?? 0) > 0 || ($errors['warning_count'] ?? 0) > 0)) {
+        return null;
+    }
+    return $dt;
+};
 ?>
-<style>
-    @page { size: A4 portrait; margin: 15mm; }
-</style>
 
 <!-- Pasek narzędziowy (ukryty przy druku) -->
 <div class="no-print flex items-center gap-2 border-b border-gray-200 bg-gray-50 px-4 py-2">
@@ -72,10 +89,12 @@ $personsTree ??= null;
                             <?php if ($p->maidenName): ?>
                                 <span class="text-gray-500 text-xs">(z d. <?= htmlspecialchars($p->maidenName) ?>)</span>
                             <?php endif; ?>
-                            <?php if ($p->birthDate):
-                                $birth = new \DateTime(substr($p->birthDate, 0, 10));
-                                $end   = $p->deathDate ? new \DateTime(substr($p->deathDate, 0, 10)) : new \DateTime();
-                                $age   = (int)$birth->diff($end)->y;
+                            <?php
+                            $birthDt = $parseDate($p->birthDate);
+                            $deathDt = $parseDate($p->deathDate);
+                            if ($birthDt !== null):
+                                $endDt = $deathDt ?? new \DateTimeImmutable();
+                                $age   = (int)$birthDt->diff($endDt)->y;
                             ?>
                                 <span class="text-gray-400 text-xs">l.&nbsp;<?= $age ?></span>
                             <?php endif; ?>

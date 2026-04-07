@@ -318,7 +318,8 @@ class PersonController
         }
 
         $mode    = $this->request->getParam('mode', 'list');
-        $persons = $this->personRepo->findByTreeSortedByName($treeId);
+        // findByTree(..., 'last_name') sortuje po last_name, first_name (z whitelist)
+        $persons = $this->personRepo->findByTree($treeId, 'last_name');
 
         $personsTree = null;
         if ($mode === 'hierarchy') {
@@ -342,13 +343,15 @@ class PersonController
             unset($entry);
         }
 
-        $pageTitle = 'Lista osób — ' . $tree->name;
-
-        ob_start();
-        include VIEWS_PATH . '/pages/trees/persons-print.php';
-        $content = ob_get_clean();
-        include VIEWS_PATH . '/templates/PrintLayout.php';
-        exit;
+        $this->response->view('pages/trees/persons-print', [
+            'pageTitle'   => 'Lista osób — ' . $tree->name,
+            'pageSize'    => 'A4 portrait',
+            'tree'        => $tree,
+            'treeId'      => $treeId,
+            'persons'     => $persons,
+            'mode'        => $mode,
+            'personsTree' => $personsTree,
+        ], 'templates/PrintLayout');
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────────

@@ -21,8 +21,9 @@ class TreeController
     /** GET /trees */
     public function index(): never
     {
-        $userId = Session::get('user_id');
-        $trees  = $this->treeRepo->findByOwner($userId);
+        $userId      = Session::get('user_id');
+        $trees       = $this->treeRepo->findByOwner($userId);
+        $sharedTrees = $this->treeRepo->findByMember($userId);
 
         $this->response->view('pages/trees/index', [
             'title'       => 'Moje drzewa',
@@ -31,7 +32,8 @@ class TreeController
                 'email'  => Session::get('user_email', ''),
                 'avatar' => '',
             ],
-            'trees' => $trees,
+            'trees'       => $trees,
+            'sharedTrees' => $sharedTrees,
         ]);
     }
 
@@ -116,6 +118,27 @@ class TreeController
             ],
             'tree' => $tree,
         ]);
+    }
+
+    /** GET /trees/{id}/print */
+    public function printView(): never
+    {
+        $treeId = $this->request->getRouteParam('id');
+        $userId = Session::get('user_id');
+
+        try {
+            $tree = $this->treeService->getForUser($treeId, $userId);
+        } catch (\Throwable $e) {
+            error_log('printView access error (tree=' . $treeId . '): ' . $e->getMessage());
+            $this->response->withFlash('error', $e->getMessage())->redirect('/trees');
+        }
+
+        $this->response->view('pages/trees/print', [
+            'pageTitle' => 'Druk drzewa — ' . $tree->name,
+            'pageSize'  => 'A3 landscape',
+            'tree'      => $tree,
+            'treeId'    => $treeId,
+        ], 'templates/PrintLayout');
     }
 
     /** POST /trees/{id}/edit */

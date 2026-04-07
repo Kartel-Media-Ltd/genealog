@@ -153,3 +153,33 @@
 - Jeśli `tree-visualizer.js` auto-inicjalizuje się przez `DOMContentLoaded`, print.php nie wymaga dodatkowego kodu init.
 - PNG export działa najlepiej gdy SVG ma jawne `width` i `height` atrybuty lub `viewBox`. Sprawdź czy D3 je ustawia.
 - `XMLSerializer` może pominąć zewnętrzne zasoby (fonty, obrazy z `<image href="...">`). Dla MVP to akceptowalne — zdjęcia osób nie trafiają do PNG.
+
+---
+
+## Do poprawy po review
+
+### 🔴 Blocking — eksport PNG nie działa lub wygląda źle
+
+- [x] 🔴 [blocking] **public/js/print-helper.js** — `canvas.toDataURL()` opakowane w try/catch z fallback message
+- [x] 🔴 [blocking] **public/js/print-helper.js — `resolveCssVariables()`** — post-process SVG stringa, zastępuje `var(--X)` rzeczywistymi wartościami z `getComputedStyle(document.documentElement)`
+- [x] 🔴 [blocking] **src/views/pages/trees/print.php** — usunięto inline `onclick`; przycisk ma `id="btn-export-png"` `disabled` + `data-filename`; print-helper.js po `DOMContentLoaded` aktywuje przycisk i podpina listener
+
+### 🟠 Important
+
+- [x] 🟠 [important] **src/Controllers/TreeController.php** — `printView()` używa `Response::view('pages/trees/print', [...], 'templates/PrintLayout')`
+- [x] 🟠 [important] **src/Controllers/PersonController.php** — `printList()` analogicznie
+- [x] 🟠 [important] **src/Controllers/TreeController.php** — `catch (\Throwable $e)` + `error_log` + propagacja `$e->getMessage()`
+- [x] 🟠 [important] **public/css/globals.css + PrintLayout.php** — wszystkie reguły `@media print` w `globals.css` (single source); PrintLayout zawiera tylko `@page`
+- [x] 🟠 [important] **src/views/pages/trees/persons-print.php** — usunięto inline `@page`; `$pageSize = 'A4 portrait'` przekazywane do `PrintLayout` przez controller
+- [x] 🟠 [important] **show.php + persons/index.php** — dodano `rel="noopener noreferrer"` do linków `target="_blank"`
+
+### 🟡 Nit
+
+- [x] 🟡 [nit] **public/js/print-helper.js** — `getBoundingClientRect()` jako fallback dla `width='100%'`
+- [x] 🟡 [nit] **public/js/print-helper.js** — dodane `'use strict';`
+- [ ] 🟡 [nit] **public/js/print-helper.js** — `alert(...)` zostaje (toast wymaga większego refactoru w PrintLayout)
+- [x] 🟡 [nit] **src/views/pages/trees/persons-print.php** — `$parseDate()` helper z `DateTimeImmutable::createFromFormat('!Y-m-d', ...)` + `getLastErrors()` zamiast `new DateTime()` (PHP 8.3 safe)
+- [x] 🟡 [nit] **src/Repositories/PersonRepository.php** — usunięto `findByTreeSortedByName`; controller używa `findByTree($treeId, 'last_name')`
+- [x] 🟡 [nit] **src/views/pages/trees/print.php** — `flex h-screen flex-col` + `flex-1` zamiast `calc(100vh - 48px)`
+- [x] 🟡 [nit] **public/css/globals.css** — `print-color-adjust: exact` (bez prefiksu) dla Firefox 97+ + dla `tbody tr`
+- [x] 🟡 [nit] **src/Controllers/TreeController.php** — `error_log` w `catch` bloku

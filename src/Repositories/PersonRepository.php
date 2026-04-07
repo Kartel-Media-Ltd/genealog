@@ -108,14 +108,4 @@ class PersonRepository
         );
         return (int)($row['cnt'] ?? 0);
     }
-
-    /** @return Person[] sorted by last_name, first_name — for print list */
-    public function findByTreeSortedByName(string $treeId): array
-    {
-        $rows = $this->db->fetchAll(
-            'SELECT * FROM persons WHERE tree_id = ? ORDER BY last_name, first_name',
-            [$treeId]
-        );
-        return array_map(fn($r) => Person::fromArray($r), $rows);
-    }
 }
