@@ -198,13 +198,17 @@ $router->group('/api', $mw, function (Router $r) use ($request, $response, $tree
     $r->get('/trees/{id}/persons', [$apiCtrl, 'personsForTree']);
 });
 
-// Admin routes (AdminMiddleware) — /impersonate/exit MUSI być przed /users/{uid}
+// /admin/impersonate/exit MUSI być POZA grupą /admin (AdminMiddleware blokuje is_admin=false,
+// a podczas impersonacji is_admin jest false — wymagamy tylko AuthMiddleware).
+$exitImpersonateCtrl = new AdminController($request, $response, $adminRepo, $userRepo, $adminSvc);
+$router->post('/admin/impersonate/exit', [$exitImpersonateCtrl, 'exitImpersonate'], $mw);
+
+// Admin routes (AdminMiddleware)
 $adminMwArr = [[$adminMw, 'handle']];
 $router->group('/admin', $adminMwArr, function (Router $r) use ($request, $response, $adminRepo, $userRepo, $adminSvc) {
     $ctrl = new AdminController($request, $response, $adminRepo, $userRepo, $adminSvc);
     $r->get('',                             [$ctrl, 'dashboard']);
     $r->get('/users',                       [$ctrl, 'users']);
-    $r->post('/impersonate/exit',           [$ctrl, 'exitImpersonate']);
     $r->get('/users/{uid}',                 [$ctrl, 'userDetail']);
     $r->post('/users/{uid}/block',          [$ctrl, 'block']);
     $r->post('/users/{uid}/unblock',        [$ctrl, 'unblock']);

@@ -1,11 +1,9 @@
 <?php
 declare(strict_types=1);
-use App\Core\Csrf;
 // Variables: $users (array[]), $search (string), $page (int), $total (int), $limit (int)
 $totalPages = (int)ceil($total / $limit);
-$csrfToken  = Csrf::token();
 ?>
-<div x-data="{ search: <?= json_encode($search) ?> }">
+<div>
 
     <!-- Toolbar -->
     <div class="flex flex-col sm:flex-row gap-3 mb-6">
@@ -60,6 +58,11 @@ $csrfToken  = Csrf::token();
                                 </td>
                                 <td class="px-5 py-3">
                                     <div class="flex flex-wrap gap-1">
+                                        <?php if (isset($user['is_active']) && (int)$user['is_active'] === 0): ?>
+                                            <span class="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600">
+                                                Nieaktywny
+                                            </span>
+                                        <?php endif; ?>
                                         <?php if ($user['is_blocked']): ?>
                                             <span class="inline-flex items-center rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700">
                                                 Zablokowany
@@ -70,7 +73,7 @@ $csrfToken  = Csrf::token();
                                                 Admin
                                             </span>
                                         <?php endif; ?>
-                                        <?php if (!$user['is_blocked'] && !$user['is_admin']): ?>
+                                        <?php if (!$user['is_blocked'] && !$user['is_admin'] && (!isset($user['is_active']) || (int)$user['is_active'] === 1)): ?>
                                             <span class="inline-flex items-center rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">
                                                 Aktywny
                                             </span>

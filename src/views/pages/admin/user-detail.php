@@ -3,7 +3,6 @@ declare(strict_types=1);
 use App\Core\Csrf;
 use App\Core\Session;
 // Variables: $user (array), $trees (array[])
-$csrfToken  = Csrf::token();
 $currentAdminId = Session::get('user_id');
 $isCurrentAdmin = ($user['id'] === $currentAdminId);
 ?>
@@ -23,12 +22,15 @@ $isCurrentAdmin = ($user['id'] === $currentAdminId);
                     </h2>
                     <p class="text-sm text-slate-500"><?= htmlspecialchars($user['email']) ?></p>
                     <div class="flex flex-wrap gap-1 mt-1.5">
+                        <?php if (isset($user['is_active']) && (int)$user['is_active'] === 0): ?>
+                            <span class="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600">Nieaktywny</span>
+                        <?php endif; ?>
                         <?php if ($user['is_admin']): ?>
                             <span class="inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700">Admin</span>
                         <?php endif; ?>
                         <?php if ($user['is_blocked']): ?>
                             <span class="inline-flex items-center rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700">Zablokowany</span>
-                        <?php elseif (!$user['is_admin']): ?>
+                        <?php elseif (!$user['is_admin'] && (!isset($user['is_active']) || (int)$user['is_active'] === 1)): ?>
                             <span class="inline-flex items-center rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">Aktywny</span>
                         <?php endif; ?>
                     </div>
@@ -60,7 +62,7 @@ $isCurrentAdmin = ($user['id'] === $currentAdminId);
             <!-- Block / Unblock -->
             <?php if ($user['is_blocked']): ?>
                 <form method="POST" action="/admin/users/<?= htmlspecialchars($user['id']) ?>/unblock">
-                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
+                    <?= Csrf::hiddenInput() ?>
                     <button type="submit"
                             class="w-full rounded-md border border-green-300 bg-green-50 px-3 py-2 text-sm text-green-700 hover:bg-green-100 transition-colors">
                         Odblokuj konto
@@ -69,7 +71,7 @@ $isCurrentAdmin = ($user['id'] === $currentAdminId);
             <?php else: ?>
                 <form method="POST" action="/admin/users/<?= htmlspecialchars($user['id']) ?>/block"
                       x-data onsubmit="return confirm('Na pewno zablokować konto?')">
-                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
+                    <?= Csrf::hiddenInput() ?>
                     <button type="submit"
                             class="w-full rounded-md border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-700 hover:bg-red-100 transition-colors">
                         Zablokuj konto
@@ -81,7 +83,7 @@ $isCurrentAdmin = ($user['id'] === $currentAdminId);
             <?php if ($user['is_admin']): ?>
                 <form method="POST" action="/admin/users/<?= htmlspecialchars($user['id']) ?>/demote"
                       onsubmit="return confirm('Cofnąć uprawnienia admina?')">
-                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
+                    <?= Csrf::hiddenInput() ?>
                     <button type="submit"
                             class="w-full rounded-md border border-orange-300 bg-orange-50 px-3 py-2 text-sm text-orange-700 hover:bg-orange-100 transition-colors">
                         Cofnij uprawnienia admina
@@ -90,7 +92,7 @@ $isCurrentAdmin = ($user['id'] === $currentAdminId);
             <?php else: ?>
                 <form method="POST" action="/admin/users/<?= htmlspecialchars($user['id']) ?>/promote"
                       onsubmit="return confirm('Mianować użytkownika adminem?')">
-                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
+                    <?= Csrf::hiddenInput() ?>
                     <button type="submit"
                             class="w-full rounded-md border border-blue-300 bg-blue-50 px-3 py-2 text-sm text-blue-700 hover:bg-blue-100 transition-colors">
                         Mianuj administratorem
@@ -101,7 +103,7 @@ $isCurrentAdmin = ($user['id'] === $currentAdminId);
                 <?php if (!$user['is_blocked']): ?>
                     <form method="POST" action="/admin/users/<?= htmlspecialchars($user['id']) ?>/impersonate"
                           onsubmit="return confirm('Zalogować się jako ten użytkownik? Sesja zostanie przełączona.')">
-                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
+                        <?= Csrf::hiddenInput() ?>
                         <button type="submit"
                                 class="w-full rounded-md border border-purple-300 bg-purple-50 px-3 py-2 text-sm text-purple-700 hover:bg-purple-100 transition-colors">
                             Zaloguj jako ten użytkownik

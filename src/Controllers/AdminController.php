@@ -59,17 +59,18 @@ class AdminController
     /** GET /admin/users/{uid} */
     public function userDetail(): never
     {
-        $uid  = $this->request->getRouteParam('uid');
-        $user = $this->adminRepo->findUserById((string)$uid);
+        $uid  = (string)$this->request->getRouteParam('uid');
+        $user = $this->adminRepo->findUserById($uid);
 
         if ($user === null) {
             $this->response->withFlash('error', 'Użytkownik nie istnieje.')->redirect('/admin/users');
         }
 
-        $trees = $this->adminRepo->findUserTrees((string)$uid);
+        $trees = $this->adminRepo->findUserTrees($uid);
 
+        // Layout escapes $title, so don't pre-escape here (would cause double-escape)
         $this->response->view('pages/admin/user-detail', [
-            'title'       => 'Użytkownik: ' . htmlspecialchars($user['name']),
+            'title'       => 'Użytkownik: ' . $user['name'],
             'currentUser' => $this->currentUser(),
             'user'        => $user,
             'trees'       => $trees,
@@ -166,7 +167,7 @@ class AdminController
         }
     }
 
-    /** POST /admin/impersonate/exit */
+    /** POST /admin/impersonate/exit (POZA grupą /admin — wymaga tylko AuthMiddleware) */
     public function exitImpersonate(): never
     {
         $this->request->verifyCsrf();
@@ -181,21 +182,25 @@ class AdminController
         try {
             $admin = $this->adminService->exitImpersonate($adminId, $impersonatedId);
 
-            // Restore admin session
+            // Restore admin session — is_admin from DB, not hardcoded true
             Session::set('user_id',    $admin->id);
             Session::set('user_name',  $admin->name);
             Session::set('user_email', $admin->email);
-            Session::set('is_admin',   true);
+            Session::set('is_admin',   $admin->isAdmin);
             Session::delete('_admin_user_id');
             Session::delete('_admin_user_name');
             Session::delete('_admin_user_email');
 
-            // K1: Regenerate session ID after context switch
+            // Regenerate session ID after context switch
             Session::regenerate(true);
 
             $this->response->withFlash('success', 'Zakończyłeś impersonację.')->redirect('/admin');
-        } catch (\Exception $e) {
-            $this->response->withFlash('error', $e->getMessage())->redirect('/dashboard');
+        } catch (\Throwable $e) {
+            // Admin lost privileges during impersonation OR critical error → destroy session
+            Session::destroy();
+            $this->response->withFlash('error',
+                'Sesja administratora wygasła: ' . $e->getMessage() . ' Zaloguj się ponownie.'
+            )->redirect('/login');
         }
     }
 

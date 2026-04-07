@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="<?= htmlspecialchars($pageDescription ?? 'Genealog — Twoje drzewo rodzinne') ?>">
+    <link rel="icon" href="data:,">
     <title><?= htmlspecialchars(($pageTitle ?? 'Dashboard') . ' — Genealog') ?></title>
 
     <!-- Tailwind CSS v4 CDN -->
@@ -331,6 +332,38 @@
             </div>
         </div>
     </footer>
+
+    <!-- ================================================================
+         IMPERSONATION BANNER (visible only during admin impersonation)
+         ================================================================ -->
+    <?php if (\App\Core\Session::has('_admin_user_id')): ?>
+        <div class="fixed bottom-0 inset-x-0 z-50 bg-red-600 text-white shadow-lg">
+            <div class="mx-auto max-w-7xl px-4 py-3 sm:px-6 lg:px-8 flex items-center justify-between gap-4">
+                <div class="flex items-center gap-2 text-sm font-medium">
+                    <svg class="h-4 w-4 flex-shrink-0" xmlns="http://www.w3.org/2000/svg"
+                         viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                        <circle cx="9" cy="7" r="4"/>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>
+                    </svg>
+                    <span>
+                        Impersonujesz konto:
+                        <strong><?= htmlspecialchars(\App\Core\Session::get('user_name', 'Użytkownik') ?? 'Użytkownik') ?></strong>
+                        (<?= htmlspecialchars(\App\Core\Session::get('user_email', '') ?? '') ?>)
+                    </span>
+                </div>
+                <form method="POST" action="/admin/impersonate/exit" class="flex-shrink-0">
+                    <?= \App\Core\Csrf::hiddenInput() ?>
+                    <button type="submit"
+                            class="rounded-md bg-white/20 hover:bg-white/30 px-4 py-1.5 text-sm font-semibold transition-colors">
+                        Zakończ impersonację
+                    </button>
+                </form>
+            </div>
+        </div>
+        <!-- Spacer so page content isn't hidden behind the banner -->
+        <div class="h-14"></div>
+    <?php endif; ?>
 
 </body>
 </html>

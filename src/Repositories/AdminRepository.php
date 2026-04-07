@@ -23,27 +23,33 @@ class AdminRepository
     /** @return array[] */
     public function findAllUsers(string $search = '', int $limit = 50, int $offset = 0): array
     {
-        $like   = '%' . $search . '%';
-        $params = [$like, $like, $limit, $offset];
+        // Cast to int for safe interpolation (PDO native prepares reject LIMIT with bound string)
+        $lim = max(1, $limit);
+        $off = max(0, $offset);
+
+        // Escape LIKE wildcards (% and _) so search 'foo_bar' is literal, not pattern
+        $escaped = addcslashes($search, '%_\\');
+        $like    = '%' . $escaped . '%';
 
         return $this->db->fetchAll(
-            'SELECT u.id, u.name, u.email, u.is_admin, u.is_blocked, u.is_active, u.created_at,
+            "SELECT u.id, u.name, u.email, u.is_admin, u.is_blocked, u.is_active, u.created_at,
                     COUNT(t.id) AS trees_count
              FROM users u
              LEFT JOIN trees t ON t.owner_id = u.id
-             WHERE u.name LIKE ? OR u.email LIKE ?
+             WHERE u.name LIKE ? ESCAPE '\\\\' OR u.email LIKE ? ESCAPE '\\\\'
              GROUP BY u.id
              ORDER BY u.created_at DESC
-             LIMIT ? OFFSET ?',
-            $params
+             LIMIT {$lim} OFFSET {$off}",
+            [$like, $like]
         );
     }
 
     public function countUsers(string $search = ''): int
     {
-        $like = '%' . $search . '%';
-        $row  = $this->db->fetchOne(
-            'SELECT COUNT(*) AS cnt FROM users WHERE name LIKE ? OR email LIKE ?',
+        $escaped = addcslashes($search, '%_\\');
+        $like    = '%' . $escaped . '%';
+        $row     = $this->db->fetchOne(
+            "SELECT COUNT(*) AS cnt FROM users WHERE name LIKE ? ESCAPE '\\\\' OR email LIKE ? ESCAPE '\\\\'",
             [$like, $like]
         );
         return (int)($row['cnt'] ?? 0);
@@ -52,16 +58,18 @@ class AdminRepository
     /** @return array[] */
     public function findAllTrees(int $limit = 50, int $offset = 0): array
     {
+        $lim = max(1, $limit);
+        $off = max(0, $offset);
+
         return $this->db->fetchAll(
-            'SELECT t.*, u.name AS owner_name, u.email AS owner_email,
+            "SELECT t.*, u.name AS owner_name, u.email AS owner_email,
                     COUNT(p.id) AS persons_count
              FROM trees t
              JOIN users u ON u.id = t.owner_id
              LEFT JOIN persons p ON p.tree_id = t.id
              GROUP BY t.id
              ORDER BY t.updated_at DESC
-             LIMIT ? OFFSET ?',
-            [$limit, $offset]
+             LIMIT {$lim} OFFSET {$off}"
         );
     }
 
@@ -73,13 +81,15 @@ class AdminRepository
     /** @return array[] */
     public function findLogs(int $limit = 50, int $offset = 0): array
     {
+        $lim = max(1, $limit);
+        $off = max(0, $offset);
+
         return $this->db->fetchAll(
-            'SELECT al.*, u.name AS admin_name, u.email AS admin_email
+            "SELECT al.*, u.name AS admin_name, u.email AS admin_email
              FROM admin_logs al
              JOIN users u ON u.id = al.admin_id
              ORDER BY al.created_at DESC
-             LIMIT ? OFFSET ?',
-            [$limit, $offset]
+             LIMIT {$lim} OFFSET {$off}"
         );
     }
 

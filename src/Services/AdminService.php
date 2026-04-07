@@ -10,10 +10,40 @@ use App\Repositories\UserRepository;
 
 class AdminService
 {
+    /** UUID v4 format regex */
+    private const UUID_REGEX = '/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i';
+
     public function __construct(
         private readonly UserRepository  $userRepo,
         private readonly AdminRepository $adminRepo,
     ) {}
+
+    /**
+     * Verify caller is currently an active admin (DB read, not session).
+     * Used as guard at the start of every sensitive action.
+     */
+    private function assertCallerIsAdmin(string $adminId): User
+    {
+        $admin = $this->userRepo->findById($adminId);
+        if ($admin === null) {
+            throw new \RuntimeException('Konto administratora nie istnieje.');
+        }
+        if (!$admin->isAdmin) {
+            throw new \RuntimeException('Twoje uprawnienia administratora zostały cofnięte.');
+        }
+        if ($admin->isBlocked) {
+            throw new \RuntimeException('Twoje konto zostało zablokowane.');
+        }
+        return $admin;
+    }
+
+    /** Validate UUID v4 format to prevent garbage in admin_logs.target_id */
+    private function assertValidUuid(string $id, string $field = 'identyfikator'): void
+    {
+        if (!preg_match(self::UUID_REGEX, $id)) {
+            throw new \InvalidArgumentException("Nieprawidłowy {$field}.");
+        }
+    }
 
     /**
      * Start impersonating a user.
@@ -22,6 +52,10 @@ class AdminService
      */
     public function impersonate(string $adminId, string $targetUserId): User
     {
+        $this->assertValidUuid($adminId, 'identyfikator administratora');
+        $this->assertValidUuid($targetUserId, 'identyfikator użytkownika');
+        $this->assertCallerIsAdmin($adminId);
+
         if ($adminId === $targetUserId) {
             throw new \InvalidArgumentException('Nie można impersonować samego siebie.');
         }
@@ -46,13 +80,23 @@ class AdminService
     }
 
     /**
-     * End impersonation. Returns the admin User for session restore by caller.
+     * End impersonation. Re-verifies admin still has admin rights from DB.
+     * Returns the admin User for session restore by caller.
+     * Throws when admin lost privileges during impersonation — caller must destroy session.
      */
     public function exitImpersonate(string $adminId, string $impersonatedUserId): User
     {
+        $this->assertValidUuid($adminId, 'identyfikator administratora');
+
         $admin = $this->userRepo->findById($adminId);
         if ($admin === null) {
             throw new \RuntimeException('Konto admina nie istnieje.');
+        }
+        if (!$admin->isAdmin) {
+            throw new \RuntimeException('Uprawnienia administratora zostały cofnięte podczas impersonacji.');
+        }
+        if ($admin->isBlocked) {
+            throw new \RuntimeException('Konto administratora zostało zablokowane podczas impersonacji.');
         }
 
         $this->logAction($adminId, 'impersonate_end', 'user', $impersonatedUserId);
@@ -62,6 +106,10 @@ class AdminService
 
     public function block(string $adminId, string $targetUserId): void
     {
+        $this->assertValidUuid($adminId, 'identyfikator administratora');
+        $this->assertValidUuid($targetUserId, 'identyfikator użytkownika');
+        $this->assertCallerIsAdmin($adminId);
+
         if ($adminId === $targetUserId) {
             throw new \InvalidArgumentException('Nie można zablokować własnego konta.');
         }
@@ -73,6 +121,9 @@ class AdminService
         if ($target->isAdmin) {
             throw new \InvalidArgumentException('Nie można zablokować konta administratora.');
         }
+        if ($target->isBlocked) {
+            throw new \InvalidArgumentException('Konto jest już zablokowane.');
+        }
 
         $this->userRepo->setBlocked($targetUserId, true);
         $this->logAction($adminId, 'block', 'user', $targetUserId, [
@@ -82,9 +133,16 @@ class AdminService
 
     public function unblock(string $adminId, string $targetUserId): void
     {
+        $this->assertValidUuid($adminId, 'identyfikator administratora');
+        $this->assertValidUuid($targetUserId, 'identyfikator użytkownika');
+        $this->assertCallerIsAdmin($adminId);
+
         $target = $this->userRepo->findById($targetUserId);
         if ($target === null) {
             throw new \InvalidArgumentException('Użytkownik nie istnieje.');
+        }
+        if (!$target->isBlocked) {
+            throw new \InvalidArgumentException('Konto nie jest zablokowane.');
         }
 
         $this->userRepo->setBlocked($targetUserId, false);
@@ -95,6 +153,10 @@ class AdminService
 
     public function promote(string $adminId, string $targetUserId): void
     {
+        $this->assertValidUuid($adminId, 'identyfikator administratora');
+        $this->assertValidUuid($targetUserId, 'identyfikator użytkownika');
+        $this->assertCallerIsAdmin($adminId);
+
         if ($adminId === $targetUserId) {
             throw new \InvalidArgumentException('Jesteś już administratorem.');
         }
@@ -106,6 +168,9 @@ class AdminService
         if ($target->isAdmin) {
             throw new \InvalidArgumentException('Użytkownik jest już administratorem.');
         }
+        if ($target->isBlocked) {
+            throw new \InvalidArgumentException('Nie można promować zablokowanego konta. Najpierw odblokuj.');
+        }
 
         $this->userRepo->setAdmin($targetUserId, true);
         $this->logAction($adminId, 'promote', 'user', $targetUserId, [
@@ -115,6 +180,10 @@ class AdminService
 
     public function demote(string $adminId, string $targetUserId): void
     {
+        $this->assertValidUuid($adminId, 'identyfikator administratora');
+        $this->assertValidUuid($targetUserId, 'identyfikator użytkownika');
+        $this->assertCallerIsAdmin($adminId);
+
         if ($adminId === $targetUserId) {
             throw new \InvalidArgumentException('Nie można zdegradować własnego konta.');
         }
@@ -122,6 +191,9 @@ class AdminService
         $target = $this->userRepo->findById($targetUserId);
         if ($target === null) {
             throw new \InvalidArgumentException('Użytkownik nie istnieje.');
+        }
+        if (!$target->isAdmin) {
+            throw new \InvalidArgumentException('Użytkownik nie jest administratorem.');
         }
 
         $this->userRepo->setAdmin($targetUserId, false);

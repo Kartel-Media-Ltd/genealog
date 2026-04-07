@@ -43,3 +43,37 @@
 - [ ] Kliknij "Wyjdź" → sesja admina przywrócona, przekierowanie na `/admin`
 - [ ] Zablokuj konto testowe → przy logowaniu błąd "konto zablokowane"
 - [ ] Sprawdź `admin_logs` w DB — wpisy impersonate_start, impersonate_end, block
+
+---
+
+## Do poprawy po review
+
+### 🔴 Blocking — panel niefunkcjonalny
+
+- [x] 🔴 [blocking] **src/views/pages/admin/users.php + user-detail.php** — `Csrf::token()` nie istnieje; zastąpione przez `Csrf::hiddenInput()` (eliminuje też field name mismatch)
+- [x] 🔴 [blocking] **src/Middleware/AdminMiddleware.php + public/index.php** — `/admin/impersonate/exit` wyciągnięte poza grupę `/admin` (używa tylko AuthMiddleware)
+- [x] 🔴 [blocking] **src/views/pages/admin/user-detail.php** — wszystkie formularze używają `Csrf::hiddenInput()` (renderuje `_csrf_token`)
+- [x] 🔴 [blocking] **src/Repositories/AdminRepository.php** — LIMIT z `(int)$limit` interpolacją; LIKE z `addcslashes` + `ESCAPE`
+- [x] 🔴 [blocking] **src/Services/AdminService.php** — `assertCallerIsAdmin()` weryfikuje `is_admin` z DB przed każdą wrażliwą akcją (privilege escalation guard)
+
+### 🟠 Important
+
+- [x] 🟠 [important] **src/Services/AdminService.php** — `exitImpersonate` weryfikuje admin nadal ma `isAdmin && !isBlocked`; przy braku → wyjątek + destroy session w controllerze + redirect na /login
+- [x] 🟠 [important] **src/Controllers/AdminController.php** — `Session::set('is_admin', $admin->isAdmin)` z DB
+- [x] 🟠 [important] **src/Repositories/AdminRepository.php** — LIKE z `addcslashes($search, '%_\\')` + `ESCAPE '\\'`
+- [x] 🟠 [important] **src/Controllers/AdminController.php** — usunięty `htmlspecialchars` z title (layout sam eskejpuje)
+- [x] 🟠 [important] **src/Services/AdminService.php promote** — rzuca wyjątek gdy `$target->isBlocked === true`
+- [x] 🟠 [important] **src/Services/AdminService.php** — `assertValidUuid()` weryfikuje format UUID v4 przed każdą akcją
+- [x] 🟠 [important] **src/Services/AdminService.php** — idempotency guards (`block` rzuca gdy już zablokowany; `unblock` gdy nie zablokowany; `demote` gdy nie admin)
+- [x] 🟠 [important] **src/views/pages/admin/users.php + user-detail.php** — dodany badge „Nieaktywny" dla `is_active = 0`
+- [x] 🟠 [important] **src/views/templates/AppLayout.php** — banner impersonacji używa `Csrf::hiddenInput()` (był `csrf_token` zamiast `_csrf_token`)
+
+### 🟡 Nit
+
+- [ ] 🟡 [nit] **migrations/004_admin.sql** — `meta TEXT` powinno być `JSON` (nie zmieniać po deploy)
+- [ ] 🟡 [nit] **migrations/004_admin.sql** — brak indeksu `(target_type, target_id)` w `admin_logs`
+- [ ] 🟡 [nit] **src/views/templates/AdminLayout.php:61** — logika klasy aktywnej dla `/admin` niejasna; `$currentPath === '/admin'`
+- [ ] 🟡 [nit] **src/views/pages/admin/users.php:8** — `x-data="{ search: ... }"` deklaracja nieużywana
+- [ ] 🟡 [nit] **src/views/pages/admin/logs.php:67-71** — `array_map` może rzucić błąd przy zagnieżdżonych tablicach; defensive cast
+- [ ] 🟡 [nit] **src/Services/AdminService.php:145-151** — `generateUuid()` duplikat z AuthService; wyciągnąć do `App\Core\Uuid`
+- [ ] 🟡 [nit] **src/Middleware/AdminMiddleware.php:14** — sygnatura `: bool` ale praktycznie zawsze `redirect` lub `true`

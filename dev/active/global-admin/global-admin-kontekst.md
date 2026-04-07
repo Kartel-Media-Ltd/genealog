@@ -35,3 +35,30 @@ PHP 8.2+ / PDO / MariaDB (Docker) / Tailwind CDN / Alpine.js / shadcn/ui tokens
 ## Zależności
 
 Brak nowych paczek Composer.
+
+---
+
+## Code Review — 2026-04-07
+
+Review przeprowadzony po wdrożeniu faz 1-4.
+
+**Wynik:** 5 blocking, 9 important, 7 nit, 7 suggestions.
+
+**Status: panel niefunkcjonalny do czasu fix blockerów.**
+
+**Najważniejsze ustalenia:**
+1. **`Csrf::token()` nie istnieje** — fatal error na `/admin/users` i `/admin/users/{uid}`. Powinno być `Csrf::getToken()`.
+2. **`AdminMiddleware` blokuje exit-impersonacji** — endpoint `/admin/impersonate/exit` w grupie `/admin` chronionej AdminMiddleware, który wymaga `is_admin=true`. Podczas impersonacji `is_admin=false`, więc user nie wyjdzie z impersonacji. Wymaga refaktoringu routingu.
+3. **CSRF field name mismatch** — formularze w `user-detail.php` używają `name="csrf_token"`, ale `Request::verifyCsrf()` szuka `_csrf_token`. Każde naciśnięcie akcji → 403.
+4. **`LIMIT ?` z natywnymi prepares** — PDO przesyła jako string, MySQL odrzuca. `findAllUsers/findAllTrees/findLogs` rzucą `PDOException`. Fix: interpolacja `(int)$limit`.
+5. **Brak weryfikacji `is_admin` z DB** — privilege escalation: zdegradowany admin zachowuje uprawnienia w sesji aż do wylogowania. Plan wymóg #1 nie został spełniony.
+
+**Co działa dobrze:**
+- Spójna warstwa Repository/Service/Controller
+- Self-action guards (admin nie zablokuje siebie)
+- Session::regenerate(true) na start I exit impersonacji
+- Audit log wszystkich wrażliwych akcji z metadanymi
+- ON DELETE RESTRICT na admin_logs.admin_id
+- Banner impersonacji w AppLayout
+
+Pełny raport: `dev/active/global-admin/review-global-admin.md`
