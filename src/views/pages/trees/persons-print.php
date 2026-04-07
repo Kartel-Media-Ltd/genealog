@@ -1,5 +1,6 @@
 <?php
 declare(strict_types=1);
+use App\Core\DateHelper;
 /** @var \App\Models\Tree $tree */
 /** @var \App\Models\Person[] $persons */
 /** @var string $treeId */
@@ -7,26 +8,6 @@ declare(strict_types=1);
 /** @var array|null $personsTree */
 $mode        ??= 'list';
 $personsTree ??= null;
-
-/**
- * Bezpieczne parsowanie daty (Y-m-d) — chroni przed DateMalformedStringException w PHP 8.3+.
- * Zwraca obiekt DateTime lub null jeśli wartość nie jest poprawną datą.
- */
-$parseDate = static function (?string $value): ?\DateTimeImmutable {
-    if ($value === null || $value === '' || $value === '0000-00-00') {
-        return null;
-    }
-    $value = substr($value, 0, 10);
-    $dt    = \DateTimeImmutable::createFromFormat('!Y-m-d', $value);
-    if ($dt === false) {
-        return null;
-    }
-    $errors = \DateTimeImmutable::getLastErrors();
-    if (is_array($errors) && (($errors['error_count'] ?? 0) > 0 || ($errors['warning_count'] ?? 0) > 0)) {
-        return null;
-    }
-    return $dt;
-};
 ?>
 
 <!-- Pasek narzędziowy (ukryty przy druku) -->
@@ -36,7 +17,8 @@ $parseDate = static function (?string $value): ?\DateTimeImmutable {
     </span>
     <div class="ml-auto flex gap-2">
         <button
-            onclick="window.print()"
+            type="button"
+            id="btn-print"
             class="inline-flex items-center gap-1.5 rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
             <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24"
                  fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
@@ -89,13 +71,8 @@ $parseDate = static function (?string $value): ?\DateTimeImmutable {
                             <?php if ($p->maidenName): ?>
                                 <span class="text-gray-500 text-xs">(z d. <?= htmlspecialchars($p->maidenName) ?>)</span>
                             <?php endif; ?>
-                            <?php
-                            $birthDt = $parseDate($p->birthDate);
-                            $deathDt = $parseDate($p->deathDate);
-                            if ($birthDt !== null):
-                                $endDt = $deathDt ?? new \DateTimeImmutable();
-                                $age   = (int)$birthDt->diff($endDt)->y;
-                            ?>
+                            <?php $age = DateHelper::ageInYears($p->birthDate, $p->deathDate); ?>
+                            <?php if ($age !== null): ?>
                                 <span class="text-gray-400 text-xs">l.&nbsp;<?= $age ?></span>
                             <?php endif; ?>
                         </td>
@@ -144,3 +121,5 @@ $parseDate = static function (?string $value): ?\DateTimeImmutable {
         &bull; Wydrukowano: <?= date('d.m.Y H:i') ?>
     </footer>
 </div>
+
+<script src="/js/print-helper.js" defer></script>

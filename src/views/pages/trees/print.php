@@ -12,7 +12,7 @@ declare(strict_types=1);
         <div class="ml-auto flex gap-2">
             <button
                 type="button"
-                onclick="window.print()"
+                id="btn-print"
                 class="inline-flex items-center gap-1.5 rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
                 <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24"
                      fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">

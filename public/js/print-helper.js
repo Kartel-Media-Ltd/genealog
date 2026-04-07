@@ -5,16 +5,26 @@
 'use strict';
 
 /**
- * Rozwiązuje wszystkie odwołania `var(--X)` w stringu SVG na rzeczywiste wartości
- * z `:root`. Bez tego SVG odłączony od arkusza stylów (rasterizacja przez Image)
+ * Rozwiązuje wszystkie odwołania `var(--X)` i `var(--X, fallback)` w stringu SVG
+ * na rzeczywiste wartości z `:root`.
+ *
+ * Bez tego SVG odłączony od arkusza stylów (rasterizacja przez Image)
  * traci kolory CSS custom properties — kolory linii/ramki stają się czarne.
+ *
+ * Uwaga: zwracane wartości są SUROWĄ wartością property (np. "240 5.9% 90%")
+ * a nie pełnym `hsl(...)`. Działa poprawnie tylko gdy `var(--X)` jest opakowane
+ * w `hsl(...)` w SVG (np. `stroke="hsl(var(--border))"`). Gołe `color: var(--X)`
+ * po podstawieniu da invalid CSS — w obecnym tree-visualizer.js wszystkie
+ * odwołania są w `hsl(...)`, więc OK.
  *
  * @param {string} svgString
  * @returns {string}
  */
 function resolveCssVariables(svgString) {
     var rootStyle = getComputedStyle(document.documentElement);
-    return svgString.replace(/var\(--([a-z0-9-]+)\)/gi, function (_match, name) {
+    // CSS custom properties są case-sensitive — bez flagi `i`.
+    // Drugi non-capturing group obsługuje opcjonalny fallback `var(--X, ...)`.
+    return svgString.replace(/var\(--([\w-]+)(?:\s*,\s*[^)]*)?\)/g, function (_match, name) {
         var value = rootStyle.getPropertyValue('--' + name).trim();
         return value || '0 0% 50%'; // szary fallback dla nieznanych zmiennych
     });
@@ -81,10 +91,14 @@ function exportSvgAsPng(svgElement, filename) {
             return;
         }
 
+        // Defensive: niektóre starsze przeglądarki (Firefox) wymagały
+        // appendChild przed click() dla programatycznych downloadów.
         var link = document.createElement('a');
         link.download = filename || 'drzewo.png';
         link.href = dataUrl;
+        document.body.appendChild(link);
         link.click();
+        document.body.removeChild(link);
     };
 
     img.onerror = function () {
@@ -96,19 +110,25 @@ function exportSvgAsPng(svgElement, filename) {
 }
 
 /**
- * Init: wire up "Pobierz PNG" button after DOM is ready.
+ * Init: wire up "Drukuj" + "Pobierz PNG" przyciski po DOM ready.
  * Eliminuje race condition (inline onclick mógł zostać kliknięty przed
- * załadowaniem skryptu z `defer`).
+ * załadowaniem skryptu z `defer`) i unika `unsafe-inline` w CSP.
  */
 document.addEventListener('DOMContentLoaded', function () {
-    var btn = document.getElementById('btn-export-png');
-    if (!btn) {
-        return;
+    var pngBtn = document.getElementById('btn-export-png');
+    if (pngBtn) {
+        pngBtn.disabled = false;
+        pngBtn.addEventListener('click', function () {
+            var svg = document.querySelector('#tree-canvas svg');
+            var filename = pngBtn.getAttribute('data-filename') || 'drzewo.png';
+            exportSvgAsPng(svg, filename);
+        });
     }
-    btn.disabled = false;
-    btn.addEventListener('click', function () {
-        var svg = document.querySelector('#tree-canvas svg');
-        var filename = btn.getAttribute('data-filename') || 'drzewo.png';
-        exportSvgAsPng(svg, filename);
-    });
+
+    var printBtn = document.getElementById('btn-print');
+    if (printBtn) {
+        printBtn.addEventListener('click', function () {
+            window.print();
+        });
+    }
 });

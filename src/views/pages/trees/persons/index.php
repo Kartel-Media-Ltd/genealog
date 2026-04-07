@@ -1,5 +1,6 @@
 <?php
 declare(strict_types=1);
+use App\Core\DateHelper;
 
 /** @var \App\Models\Tree $tree */
 /** @var \App\Models\Person[] $persons */
@@ -241,11 +242,7 @@ unset($entry);
                                     </div>
                                     <a href="/trees/<?= htmlspecialchars($tree->id) ?>/persons/<?= htmlspecialchars($person->id) ?>"
                                        class="font-medium text-foreground hover:underline">
-                                        <?php if (!$person->isLiving): ?><span class="text-muted-foreground mr-0.5" title="osoba nieżyjąca" aria-label="zmarła">†</span><?php endif; ?><?= htmlspecialchars($person->fullName()) ?><?php if ($person->birthDate):
-                                            $birth = new \DateTime(substr($person->birthDate, 0, 10));
-                                            $end   = $person->deathDate ? new \DateTime(substr($person->deathDate, 0, 10)) : new \DateTime();
-                                            $age   = (int)$birth->diff($end)->y;
-                                        ?> <span class="text-muted-foreground font-normal text-xs">l.&nbsp;<?= $age ?></span><?php endif; ?><?php if ($person->maidenName): ?> <span class="text-muted-foreground font-normal">(z d. <?= htmlspecialchars($person->maidenName) ?>)</span><?php endif; ?>
+                                        <?php if (!$person->isLiving): ?><span class="text-muted-foreground mr-0.5" title="osoba nieżyjąca" aria-label="zmarła">†</span><?php endif; ?><?= htmlspecialchars($person->fullName()) ?><?php $age = DateHelper::ageInYears($person->birthDate, $person->deathDate); if ($age !== null): ?> <span class="text-muted-foreground font-normal text-xs">l.&nbsp;<?= $age ?></span><?php endif; ?><?php if ($person->maidenName): ?> <span class="text-muted-foreground font-normal">(z d. <?= htmlspecialchars($person->maidenName) ?>)</span><?php endif; ?>
                                     </a>
                                 </div>
                             </td>

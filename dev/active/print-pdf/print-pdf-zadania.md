@@ -183,3 +183,22 @@
 - [x] 🟡 [nit] **src/views/pages/trees/print.php** — `flex h-screen flex-col` + `flex-1` zamiast `calc(100vh - 48px)`
 - [x] 🟡 [nit] **public/css/globals.css** — `print-color-adjust: exact` (bez prefiksu) dla Firefox 97+ + dla `tbody tr`
 - [x] 🟡 [nit] **src/Controllers/TreeController.php** — `error_log` w `catch` bloku
+
+---
+
+## Do poprawy po review #2
+
+### 🟠 Important
+
+- [x] 🟠 [important] **public/js/print-helper.js** — regex zmieniony na `/var\(--([\w-]+)(?:\s*,\s*[^)]*)?\)/g` (bez `i`, z obsługą `var(--X, fallback)`)
+- [x] 🟠 [important] **public/js/print-helper.js** — obsługa `var(--X, fallback)` przez non-capturing group w regexie
+- [x] 🟠 [important] **src/Controllers/PersonController.php** — `printList` używa `$treeRepo->findForUser()` (jak `printView`); dead `if ($tree === null)` + niespójny styl wyeliminowane
+- [x] 🟠 [important] **src/views/templates/PrintLayout.php** — `$allowedPageSizes` whitelist w PrintLayout (4 dozwolone wartości); fallback na `A3 landscape` przy nieprawidłowej wartości
+
+### 🟡 Nit (review #2)
+
+- [x] 🟡 [nit] **public/js/print-helper.js** — komentarz wyjaśniający że fallback `'0 0% 50%'` jest valid tylko w `hsl(...)` kontekście
+- [x] 🟡 [nit] **src/Core/DateHelper.php (NOWY)** — wyciągnięto `parseDate` + `ageInYears` do `App\Core\DateHelper`; usunięto closure z widoku
+- [x] 🟡 [nit] **src/views/pages/trees/persons/index.php** — refaktor `new \DateTime` na `DateHelper::ageInYears()` (PHP 8.3 safe)
+- [x] 🟡 [nit] **src/views/pages/trees/print.php + persons-print.php** — `id="btn-print"` + listener w `print-helper.js` (zamiast inline `onclick="window.print()"`)
+- [x] 🟡 [nit] **public/js/print-helper.js** — `link.click()` opakowane w `appendChild` + `removeChild` (defensive dla starszych Firefox)

@@ -3,9 +3,16 @@ declare(strict_types=1);
 /** @var string|null $pageTitle */
 /** @var string|null $pageSize    e.g. 'A3 landscape' or 'A4 portrait' */
 /** @var string $content */
-$pageSize  = $pageSize  ?? 'A3 landscape';
-$pageTitle = $pageTitle ?? 'Druk — Genealog';
-$pageMargin = ($pageSize === 'A4 portrait') ? '15mm' : '10mm';
+
+// Whitelist dozwolonych rozmiarów strony — chroni przed CSS injection
+// gdyby kiedyś $pageSize trafił z user input zamiast hardcoded controllera.
+$allowedPageSizes = ['A3 landscape', 'A3 portrait', 'A4 landscape', 'A4 portrait'];
+$pageSize = (isset($pageSize) && in_array($pageSize, $allowedPageSizes, true))
+    ? $pageSize
+    : 'A3 landscape';
+
+$pageTitle  = $pageTitle ?? 'Druk — Genealog';
+$pageMargin = ($pageSize === 'A4 portrait' || $pageSize === 'A3 portrait') ? '15mm' : '10mm';
 ?>
 <!DOCTYPE html>
 <html lang="pl">
@@ -17,9 +24,9 @@ $pageMargin = ($pageSize === 'A4 portrait') ? '15mm' : '10mm';
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="/css/globals.css">
     <style>
-        /* Per-page size — pozostałe reguły @media print są w globals.css */
+        /* Per-page size — wartość z whitelist, pozostałe reguły @media print w globals.css */
         @page {
-            size: <?= htmlspecialchars($pageSize) ?>;
+            size: <?= $pageSize ?>;
             margin: <?= $pageMargin ?>;
         }
     </style>

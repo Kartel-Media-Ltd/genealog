@@ -310,11 +310,12 @@ class PersonController
         $treeId = $this->request->getRouteParam('id');
         $userId = Session::get('user_id');
 
-        $this->requireTreeAccess($treeId, $userId);
-
-        $tree = $this->treeRepo->findById($treeId);
+        // Konsystentnie z TreeController::printView — pojedyncze sprawdzenie
+        // dostępu przez findForUser (zwraca null gdy brak access lub drzewo nie istnieje).
+        $tree = $this->treeRepo->findForUser($treeId, $userId);
         if ($tree === null) {
-            $this->response->withFlash('error', 'Drzewo nie istnieje.')->redirect('/trees');
+            error_log('printList access denied (tree=' . $treeId . ', user=' . $userId . ')');
+            $this->response->withFlash('error', 'Brak dostępu do drzewa.')->redirect('/trees');
         }
 
         $mode    = $this->request->getParam('mode', 'list');

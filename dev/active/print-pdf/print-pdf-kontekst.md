@@ -213,3 +213,21 @@ Review przeprowadzony po wdrożeniu faz 1-5.
 - Sortowanie listy osób
 
 Pełny raport: `dev/active/print-pdf/review-print-pdf.md`
+
+---
+
+## Code Review #2 — 2026-04-07 (po poprawkach)
+
+Drugi review po wdrożeniu poprawek z pierwszego (commit `c1472d5`).
+
+**Wynik:** 0 blocking, 4 important, 5 nit, 5 suggestions. **Wszystkie poprawki z #1 zaadresowane (12/14 w pełni, 2/14 częściowo).**
+
+**Nowe ustalenia (drobne):**
+1. **`resolveCssVariables` regex** — flaga `gi` myląca (CSS variables są case-sensitive); brak wsparcia `var(--X, fallback)`
+2. **Niespójność error handling** — `printView` (try/catch + error_log) vs `printList` (requireTreeAccess + findById dead-code)
+3. **`htmlspecialchars` w `<style>`** — nie blokuje `;}`, dziś nieszkodliwe (hardcoded), ale potrzeba whitelist na przyszłość
+4. **`$parseDate` jako closure w widoku** — anti-pattern, powinno być w `Person` lub `DateHelper`
+
+**Brak regresji blokujących.** Kod gotowy do merge.
+
+Pełny raport: `dev/active/print-pdf/review-print-pdf-v2.md`
