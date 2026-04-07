@@ -6,6 +6,56 @@ Feature umożliwia użytkownikom przeszukiwanie zewnętrznych rejestrów genealo
 
 ---
 
+## Status dostępności API (zweryfikowano 2026-04-07)
+
+| Rejestr | Koszt | Status dostępu | Strategia MVP |
+|---------|-------|---------------|---------------|
+| **Geneteka (PTG)** | DARMOWE | Brak oficjalnego API; brak publicznego CSV dump | Scraper HTTP **lub** kontakt z PTG o dump |
+| **FamilySearch** | DARMOWE (z zastrzeżeniami) | Sandbox: instant; Produkcja: wymaga **certyfikacji jako legal entity** | MVP: tylko Sandbox; Produkcja po certyfikacji |
+| **Szukaj w Archiwach** | DARMOWE | **Brak publicznego REST API** — to portal HTML, nie API | Scraper HTTP lub kontakt z NAC |
+
+### Szczegóły kosztów
+
+**FamilySearch API** ([źródło](https://developers.familysearch.org/main/docs/getting-started)):
+- API jest **darmowe** dla osób fizycznych i organizacji
+- Sandbox/Integration (`https://api-integ.familysearch.org`) — dostępny od razu po rejestracji deweloperskiej, zawiera tylko **test data**
+- Produkcja (`https://api.familysearch.org`) — wymaga **certyfikacji** w "Compatible Solution Program":
+  - Tylko **legal, registered business or non-profit organization** może być zweryfikowane
+  - Proces wymaga code review przez FamilySearch
+  - Po zatwierdzeniu app key dostaje access do produkcji
+- **`grant_type=client_credentials` NIE jest standardowo dostępny** — wymaga special permission od `devsupport@familysearch.org`. Standardowy flow to **Authorization Code (3-legged OAuth)** z user consent
+- **Brak informacji o cenach lub limitach** — wszystkie endpoints są darmowe, ale są rate limity (nieudokumentowane publicznie)
+
+**Szukaj w Archiwach** ([źródło](https://www.szukajwarchiwach.gov.pl/)):
+- Portal **darmowy do przeglądania** — 3.5M skanów dokumentów archiwalnych
+- **NIE MA publicznego REST API** — pierwotny plan błędnie zakładał istnienie API
+- Pierwotnie planowany endpoint `https://www.szukajwarchiwach.gov.pl/api/szukaj` **nie istnieje**
+- Możliwe alternatywy:
+  1. **Kontakt z NAC** (Narodowe Archiwum Cyfrowe): `szukajwarchiwach@nac.gov.pl` — niepewny wynik
+  2. **Scraper HTTP** — legalny dla osobistego użytku, ale wymaga ostrożności (rate limit, User-Agent, robots.txt)
+  3. **Pominięcie w MVP** — najbezpieczniejsze; dodać po kontakcie z NAC
+
+**Geneteka (PTG)** ([źródło](https://geneteka.genealodzy.pl/)):
+- Bezpłatny dostęp do bazy 47M+ wpisów z 4500+ parafii
+- **Brak oficjalnego CSV dump** publicznie udostępnianego — pierwotny plan błędnie zakładał istnienie dumpów na stronie
+- Społecznościowy projekt finansowany z donate'ów
+- Możliwe alternatywy:
+  1. **Kontakt z PTG** o oficjalny dump (zarząd@genealodzy.pl)
+  2. **Scraper HTTP** — z poszanowaniem rate limitu (1 req/s) i User-Agent identyfikującym
+  3. **Geneszukacz** ([geneszukacz.genealodzy.pl](https://geneszukacz.genealodzy.pl)) — alternatywna wyszukiwarka PTG
+
+### Decyzja MVP: tylko FamilySearch Sandbox + scraper Geneteka
+
+Dla MVP rekomenduje się:
+1. **FamilySearch Sandbox** — działa od razu, dane testowe wystarczają do prototypu UI/UX
+2. **Geneteka scraper** (Python lub PHP) — z rate limitem 1 req/s i jasnym User-Agent
+3. **Szukaj w Archiwach: pominąć** do czasu ustalenia z NAC możliwości API
+4. **FamilySearch Production**: faza 2, po certyfikacji jako legal entity
+
+> **WAŻNE:** Ten plan został pierwotnie napisany na bazie nieaktualnych założeń. Po weryfikacji 2026-04-07 wynika, że Szukaj w Archiwach nie ma API, a FamilySearch wymaga certyfikacji do produkcji. Implementację należy podzielić na etapy z respektem dla tych ograniczeń.
+
+---
+
 ## Nowe endpointy
 
 | Metoda | Ścieżka | Akcja | Opis |
@@ -284,7 +334,9 @@ class SearchRepository
 
 ### src/Services/Registries/GenetykaService.php
 
-Wyszukiwanie w lokalnej tabeli `geneteka_records` — import z CSV dump PTG.
+> **⚠️ ZMIANA STRATEGII (2026-04-07):** Brak publicznego CSV dump Geneteki — patrz sekcja "Status dostępności API". Implementacja powinna być oparta o **scraper HTTP** zamiast importu lokalnego. Pseudokod poniżej zachowany dla przypadku gdyby PTG udostępniło dump na prośbę.
+
+Wyszukiwanie w lokalnej tabeli `geneteka_records` — historycznie planowane jako import z CSV dump PTG.
 
 ```php
 <?php
@@ -361,6 +413,13 @@ class GenetykaService implements RegistryInterface
 ### src/Services/Registries/FamilySearchService.php
 
 REST API + OAuth2 — oficjalne API FamilySearch.
+
+> **⚠️ UWAGA (2026-04-07):** Pseudokod poniżej używa `grant_type=client_credentials`, który **NIE jest standardowo dostępny** w FamilySearch API (wymaga special permission od dev support). Dla MVP rekomendowany jest **Authorization Code grant (3-legged OAuth)** z user consent + refresh token storage. Implementacja wymaga dodatkowo:
+> - Endpoint callback `/auth/familysearch/callback`
+> - Tabela `familysearch_tokens` (per user) z `access_token`, `refresh_token`, `expires_at`
+> - UI flow: "Zaloguj się przez FamilySearch" przed pierwszym wyszukiwaniem
+>
+> Pseudokod poniżej zachowany dla przypadku gdyby developer support włączył client_credentials.
 
 ```php
 <?php
@@ -467,7 +526,11 @@ class FamilySearchService implements RegistryInterface
 
 ### src/Services/Registries/ArchivesService.php
 
-REST API Archiwów Państwowych (szukajwarchiwach.gov.pl).
+> **⚠️ NIEAKTUALNE (2026-04-07):** `https://www.szukajwarchiwach.gov.pl/api` **nie istnieje**. Portal Szukaj w Archiwach nie udostępnia publicznego REST API. Patrz sekcja "Status dostępności API" na górze dokumentu i Faza 3 w `registries-zadania.md`.
+>
+> Pseudokod poniżej zachowany jako referencja architektoniczna na wypadek gdyby NAC udostępnił API w przyszłości.
+
+REST API Archiwów Państwowych (szukajwarchiwach.gov.pl) — **NIE DZIAŁA, brak API**.
 
 ```php
 <?php
@@ -661,12 +724,13 @@ function searchResults(jobId, initialStatus) {
 
 ---
 
-### migrations/005_registries.sql
+### migrations/006_registries.sql
 
 ```sql
--- Migration 005: Rejestry zewnętrzne — tabela geneteka_records
+-- Migration 006: Rejestry zewnętrzne — tabela geneteka_records (lokalna kopia indeksów PTG)
+-- Uwaga: numer 005 zajęty przez 005_invitations_indexes.sql
 -- Uruchomić: source .env.local && docker exec -i mariadb_docker mariadb \
---   -u $DATABASE_USER -p$DATABASE_PASSWORD $DATABASE_NAME < migrations/005_registries.sql
+--   -u $DATABASE_USER -p$DATABASE_PASSWORD $DATABASE_NAME < migrations/006_registries.sql
 
 CREATE TABLE IF NOT EXISTS geneteka_records (
   id             INT AUTO_INCREMENT PRIMARY KEY,
@@ -725,7 +789,7 @@ FamilySearch API i Szukaj w Archiwach to proste HTTP GET z curl — czas odpowie
 ## FamilySearch OAuth2 — szczegóły rejestracji
 
 1. Rejestracja aplikacji: https://www.familysearch.org/developers/
-2. Typ: "Server-side Web App" lub "Client Credentials" (dla serwera)
+2. Typ: "Server-side Web App" (Authorization Code flow). Uwaga: "Client Credentials" wymaga special permission od `devsupport@familysearch.org`
 3. Sandbox URL: `https://api-integ.familysearch.org` (testy)
 4. Produkcja: `https://api.familysearch.org`
 5. Zmienne w `.env.local`:
@@ -737,11 +801,12 @@ FamilySearch API i Szukaj w Archiwach to proste HTTP GET z curl — czas odpowie
 
 ## Szukaj w Archiwach — szczegóły
 
-- Portal API: https://www.szukajwarchiwach.gov.pl/api
-- Klucz bezpłatny — rejestracja na portalu
-- Zmienne w `.env.local`:
-   - `ARCHIVES_API_KEY=...`
-- Rate limit po stronie API: sprawdzić dokumentację (zwykle 1000 req/dzień dla darmowego klucza)
+> **⚠️ NIEAKTUALNE (2026-04-07):** Endpoint `/api` na szukajwarchiwach.gov.pl **nie istnieje**. Portal nie udostępnia publicznego REST API. Patrz Faza 3 w `registries-zadania.md` — pomijamy w MVP.
+
+- ~~Portal API: https://www.szukajwarchiwach.gov.pl/api~~ ❌ **nie istnieje**
+- Portal HTML: https://www.szukajwarchiwach.gov.pl/ (3.5M skanów, darmowe przeglądanie)
+- Kontakt: `szukajwarchiwach@nac.gov.pl` — zapytaj o programatyczny dostęp
+- Alternatywa: scraper HTTP, ale ryzyko blokady IP — sprawdź `robots.txt` przed implementacją
 
 ---
 
@@ -767,5 +832,5 @@ src/
         └── registry-result.php     ← NOWY (karta wyniku)
 
 migrations/
-└── 005_registries.sql               ← NOWY
+└── 006_registries.sql               ← NOWY (005 zajęty przez invitations_indexes)
 ```

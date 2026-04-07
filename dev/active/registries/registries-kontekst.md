@@ -8,7 +8,11 @@ Dokument rejestruje kluczowe decyzje podjęte przy projektowaniu feature Rejestr
 
 ## Decyzja 1: Geneteka przez CSV dump, nie scraper
 
-### Wybrana opcja
+> **⚠️ NIEAKTUALNE (2026-04-07):** Weryfikacja wykazała, że PTG **nie udostępnia publicznego CSV dump** Geneteki. Decyzja została **odwrócona** — rekomendowana strategia to scraper HTTP z rate limitem (lub kontakt z zarządem PTG o uzyskanie dump'a). Patrz sekcja "Weryfikacja API kluczy" na końcu dokumentu.
+>
+> Treść poniżej zachowana jako historia decyzji.
+
+### Pierwotnie wybrana opcja (NIEAKTUALNA)
 
 Import lokalny z CSV dump udostępnianego przez PTG (Polskie Towarzystwo Genealogiczne).
 
@@ -201,8 +205,48 @@ Cache z TTL 30 dni eliminuje redundantne wywołania API dla identycznych zapyta�
 
 ## Otwarte pytania
 
-1. **FamilySearch Sandbox → Produkcja**: ile czasu trwa zatwierdzenie aplikacji przez FamilySearch? (zwykle 1-3 tygodnie)
-2. **Geneteka CSV format**: jakie kolumny ma aktualny dump? Sprawdzić przed implementacją importera.
-3. **Szukaj w Archiwach rate limits**: ile zapytań dziennie na darmowy klucz?
-4. **Czy Geneteka CSV jest dostępna bez rejestracji?** Sprawdzić https://geneteka.genealodzy.pl/index.php?op=Export
-5. **Lokalizacja storage**: gdzie przechowywać pobrany CSV Geneteki? Sugestia: `storage/imports/geneteka/` (poza `public/`)
+1. **FamilySearch Sandbox → Produkcja**: certyfikacja w Compatible Solution Program — wymaga legal entity (działalność lub NGO). Czas zatwierdzenia: nieznany, prawdopodobnie tygodnie/miesiące.
+2. **FamilySearch `client_credentials`**: NIE jest standardowo dostępny. Trzeba zdecydować: Authorization Code (3-legged OAuth) vs special permission od dev support.
+3. **PTG dump**: czy zarząd PTG udostępni CSV dump Geneteki na prośbę? (`zarzad@genealodzy.pl`)
+4. **NAC API**: czy Narodowe Archiwum Cyfrowe ma jakikolwiek programatyczny dostęp do `szukajwarchiwach.gov.pl`? (`szukajwarchiwach@nac.gov.pl`)
+5. **Lokalizacja cache**: gdzie przechowywać scrapowane wyniki? `registry_cache` (już zaplanowane) z TTL 30 dni.
+
+---
+
+## Weryfikacja API kluczy — 2026-04-07
+
+Zweryfikowano stan dostępności API dla 3 rejestrów. **Pierwotny plan zawierał błędne założenia.**
+
+### FamilySearch — DARMOWE z zastrzeżeniami
+
+- ✅ API jest darmowe ([źródło](https://developers.familysearch.org/main/docs/getting-started))
+- ✅ Sandbox/Integration dostępny od razu po rejestracji (test data)
+- ⚠️ Produkcja wymaga **certyfikacji** w Compatible Solution Program
+- ⚠️ Tylko **legal, registered business or non-profit organization** może być zweryfikowane
+- ⚠️ `grant_type=client_credentials` **nie jest standardowo dostępny** — wymaga special permission od `devsupport@familysearch.org`. Standardowy flow to **Authorization Code (3-legged OAuth)** z user consent
+- ❓ Brak publicznej dokumentacji rate limitów
+
+### Szukaj w Archiwach — DARMOWE, ALE BRAK API
+
+- ✅ Portal darmowy (3.5M skanów dokumentów)
+- ❌ **NIE MA publicznego REST API** — tylko interfejs HTML do przeglądania
+- ❌ Pierwotnie planowany endpoint `/api/szukaj` **nie istnieje**
+- 🔧 Alternatywy: kontakt z NAC, scraper HTTP, lub pominięcie w MVP
+- 📧 Kontakt: `szukajwarchiwach@nac.gov.pl`
+
+### Geneteka (PTG) — DARMOWE, ALE BRAK CSV DUMP
+
+- ✅ Bezpłatny dostęp do bazy 47M+ wpisów
+- ❌ **Brak oficjalnego CSV dump** publicznie udostępnianego (pierwotny plan błędny)
+- 🔧 Alternatywy: scraper HTTP (rate limit 1 req/s), kontakt z PTG o dump
+- 📧 Kontakt: `zarzad@genealodzy.pl`
+
+### Wnioski dla MVP
+
+| Rejestr | Strategia MVP | Faza |
+|---------|---------------|------|
+| **FamilySearch** | Sandbox + Authorization Code grant | Faza 4 (z user consent flow) |
+| **Geneteka** | Scraper HTTP (User-Agent + 1 req/s) | Faza 2 (zamiast importu CSV) |
+| **Szukaj w Archiwach** | **POMINIĘTE** — czekać na odpowiedź NAC | Faza 3 → odłożona |
+
+**Korekta architektury:** zamiast 3 rejestrów w MVP — implementujemy 2 (FamilySearch Sandbox + Geneteka scraper), Szukaj w Archiwach po kontakcie z NAC.
