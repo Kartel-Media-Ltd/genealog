@@ -29,11 +29,24 @@ $treeId    = $tree?->id ?? '';
 </nav>
 
 <!-- Page header -->
-<div class="mb-8">
-    <h1 class="text-2xl font-semibold tracking-tight">Import / eksport GEDCOM</h1>
-    <p class="mt-1 text-sm text-muted-foreground">
-        Standard GEDCOM 5.5.1 — kompatybilny z Ancestry, MyHeritage, FamilySearch i Gramps.
-    </p>
+<div class="mb-8 flex items-center justify-between gap-4">
+    <div>
+        <h1 class="text-2xl font-semibold tracking-tight">Import / eksport GEDCOM</h1>
+        <p class="mt-1 text-sm text-muted-foreground">
+            Standard GEDCOM 5.5.1 — kompatybilny z Ancestry, MyHeritage, FamilySearch i Gramps.
+        </p>
+    </div>
+    <a href="/trees/<?= htmlspecialchars((string)$treeId) ?>"
+       class="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-md border border-input px-3
+              text-sm font-medium text-foreground hover:bg-accent transition-colors
+              focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+             fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <line x1="19" y1="12" x2="5" y2="12"/>
+            <polyline points="12 19 5 12 12 5"/>
+        </svg>
+        Wróć do drzewa
+    </a>
 </div>
 
 <div class="grid gap-6 lg:grid-cols-2">

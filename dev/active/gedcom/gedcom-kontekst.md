@@ -275,3 +275,20 @@ Przyszłość: dodaj kolumnę `relationship_type ENUM('biological','adoptive','s
 | Transakcja | Cały import w jednej | Atomowość — brak częściowych importów |
 | Plik tymczasowy | `sys_get_temp_dir()` | Poza public/, usuwany w finally |
 | Eksport rodzeństwa | Nie eksportujemy FAM dla rodzeństwa | FAM = para małżeńska, nie dowolna rodzina |
+
+---
+
+## Code Review — 2026-04-07
+
+Review przeprowadzony po wdrożeniu faz 1-4 + poprawkach post-review (commit 583d8e6).
+
+**Wynik:** 1 blocking, 3 important, 5 nit, 4 suggestions. Brak krytycznych luk bezpieczeństwa.
+
+**Kluczowe wnioski:**
+- Eksport buforuje cały output w RAM — problem dla duzych drzew (>5k osób); do naprawienia przed produkcją
+- Relacja `spouse` może się duplikować przy reimporcie z update strategy — edge case, rzadki
+- Parser dat nie obsługuje pełnego formatu `BET DD MON YYYY AND DD MON YYYY`
+- `str_split()` w `chunkString()` tnie UTF-8 na bajtach — do zamiany na `mb_str_split()`
+- Błąd eksportu (GedcomController:159) może ujawniać wiadomość wyjątku PDO — analogiczne fix jak w imporcie
+
+Pełny raport: `dev/active/gedcom/review-gedcom.md`

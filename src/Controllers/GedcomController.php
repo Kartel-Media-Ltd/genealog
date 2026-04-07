@@ -151,12 +151,14 @@ class GedcomController
 
             header('Content-Type: text/plain; charset=UTF-8');
             header('Content-Disposition: attachment; filename="' . $filename . '"');
+            header('Content-Length: ' . strlen($output));
             header('Cache-Control: no-store, no-cache, must-revalidate');
             header('Pragma: no-cache');
             echo $output;
             exit;
         } catch (\Throwable $e) {
-            $this->response->withFlash('error', 'Błąd eksportu: ' . $e->getMessage())
+            error_log('GEDCOM export error (tree=' . $treeId . '): ' . $e->getMessage());
+            $this->response->withFlash('error', 'Nie udało się wyeksportować drzewa. Spróbuj ponownie.')
                 ->redirect('/trees/' . $treeId . '/gedcom');
         }
     }

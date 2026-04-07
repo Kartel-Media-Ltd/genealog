@@ -345,12 +345,13 @@ class GedcomService
             $husbId = $husbXref ? ($xrefMap[$husbXref] ?? null) : null;
             $wifeId = $wifeXref ? ($xrefMap[$wifeXref] ?? null) : null;
 
-            // Spouse relationship
+            // Spouse relationship — check both directions to avoid duplicates on re-import
             if ($husbId && $wifeId) {
                 $aId = ($husbId < $wifeId) ? $husbId : $wifeId;
                 $bId = ($husbId < $wifeId) ? $wifeId : $husbId;
 
-                if (!$this->relationshipRepo->exists($aId, $bId, 'spouse', $treeId)) {
+                if (!$this->relationshipRepo->exists($aId, $bId, 'spouse', $treeId)
+                    && !$this->relationshipRepo->exists($bId, $aId, 'spouse', $treeId)) {
                     $startDate = null;
                     if (!empty($tags['MARR'])) {
                         $marrSub   = $tags['MARR'][0]['sub'] ?? [];
@@ -618,9 +619,9 @@ class GedcomService
         // Remove approximation prefixes
         $date = preg_replace('/^(ABT|CAL|EST|BEF|AFT|FROM|TO)\s+/', '', $date);
 
-        // BET YYYY AND YYYY — take first year
-        if (preg_match('/^BET\s+(\d{4})\s+AND\s+(\d{4})$/i', $date, $m)) {
-            return $m[1] . '-01-01';
+        // BET ... AND ... — strip " AND ..." and parse first date
+        if (preg_match('/^BET\s+(.+?)\s+AND\s+.+$/i', $date, $m)) {
+            return $this->parseGedcomDate($m[1]);
         }
 
         // DD MON YYYY
@@ -652,9 +653,6 @@ class GedcomService
             return '';
         }
         $parts = explode('-', $date);
-        if (count($parts) < 1) {
-            return '';
-        }
 
         $year  = $parts[0] ?? '';
         $month = isset($parts[1]) ? (int)$parts[1] : 0;
@@ -692,13 +690,14 @@ class GedcomService
         return $raw;
     }
 
-    /** Split string into chunks of max $len characters */
+    /** Split string into chunks of max $len characters (UTF-8 safe) */
     private function chunkString(string $str, int $len): array
     {
         if ($str === '') {
             return [''];
         }
-        return str_split($str, $len) ?: [$str];
+        $chars  = mb_str_split($str, $len, 'UTF-8');
+        return $chars ?: [$str];
     }
 
     private function generateUuid(): string

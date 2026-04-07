@@ -136,3 +136,14 @@
 - Ograniczenie pamięci PHP: dla dużych plików (>10k osób) rozważ streaming parsera zamiast ładowania całości do RAM
 - Timeout: dla dużych importów rozważ `set_time_limit(300)` lub przeniesienie do tła (job queue w `search_jobs`)
 - Logowanie: każdy import loguj do tabeli `audit_log` (opcjonalnie) z user_id, tree_id, timestamp, wynikiem
+
+---
+
+## Do poprawy po review
+
+- [x] 🔴 [blocking] **GedcomController.php:152** — Eksport buforuje cały plik w RAM; dodać `Content-Length` + rozważyć streaming dla dużych plików
+- [x] 🟠 [important] **GedcomService.php:350** — Relacja `spouse` duplikuje się przy reimporcie gdy UUID zmienią kolejność; sprawdzać oba kierunki w `exists()` dla spouse
+- [x] 🟠 [important] **GedcomController.php:159** — Błąd eksportu ujawnia wiadomość wyjątku PDO; zalogować + generyczny komunikat (analogicznie jak w imporcie)
+- [x] 🟠 [important] **GedcomService.php:617** — `parseGedcomDate()` nie obsługuje `BET DD MON YYYY AND DD MON YYYY`; rozszerzyć regex
+- [x] 🟡 [nit] **GedcomService.php:697** — `str_split()` tnie UTF-8 na bajtach; zmienić na `mb_str_split()`
+- [x] 🟡 [nit] **GedcomService.php:655** — `if (count($parts) < 1)` zawsze false; usunąć martwy warunek
