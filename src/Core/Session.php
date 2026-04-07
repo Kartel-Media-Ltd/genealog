@@ -60,13 +60,13 @@ class Session
 
     public static function flash(string $type, string $message): void
     {
-        $_SESSION['_flash'][$type] = $message;
+        $_SESSION['flash'] = ['type' => $type, 'message' => $message];
     }
 
     public static function getFlash(): array
     {
-        $flash = $_SESSION['_flash'] ?? [];
-        unset($_SESSION['_flash']);
+        $flash = $_SESSION['flash'] ?? [];
+        unset($_SESSION['flash']);
         return $flash;
     }
 

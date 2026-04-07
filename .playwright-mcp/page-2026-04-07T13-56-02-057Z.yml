@@ -1,0 +1,146 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - generic [ref=e3]:
+      - link "Genealog" [ref=e4] [cursor=pointer]:
+        - /url: /dashboard
+        - img [ref=e5]
+        - generic [ref=e9]: Genealog
+      - navigation "Główna nawigacja" [ref=e10]:
+        - link "Dashboard" [ref=e11] [cursor=pointer]:
+          - /url: /dashboard
+        - link "Moje drzewa" [ref=e12] [cursor=pointer]:
+          - /url: /trees
+        - link "Poszukiwania" [ref=e13] [cursor=pointer]:
+          - /url: /search
+      - 'button "Menu użytkownika: Arkadiusz Śnieżek" [ref=e16] [cursor=pointer]':
+        - img "Arkadiusz Śnieżek" [ref=e17]:
+          - generic [ref=e18]: AŚ
+        - img [ref=e19]
+  - main [ref=e21]:
+    - generic [ref=e22]:
+      - navigation "Nawigacja" [ref=e23]:
+        - link "Moje drzewa" [ref=e24] [cursor=pointer]:
+          - /url: /trees
+        - img [ref=e25]
+        - generic [ref=e27]: Rodzina Śnieżków
+      - generic [ref=e28]:
+        - generic [ref=e29]:
+          - generic [ref=e30]:
+            - heading "Rodzina Śnieżków" [level=1] [ref=e31]
+            - generic [ref=e32]: Prywatne
+          - paragraph [ref=e33]: 16 osób · Zaktualizowano 7 Apr 2026
+        - generic [ref=e34]:
+          - link "Drukuj drzewo" [ref=e35] [cursor=pointer]:
+            - /url: /trees/4630f0ab-d50d-4d72-ac6e-edfde9257ecf/print
+            - img [ref=e36]
+            - text: Drukuj drzewo
+          - link "Dodaj osobę" [ref=e40] [cursor=pointer]:
+            - /url: /trees/4630f0ab-d50d-4d72-ac6e-edfde9257ecf/persons/new
+            - img [ref=e41]
+            - text: Dodaj osobę
+          - link "Ustawienia" [ref=e42] [cursor=pointer]:
+            - /url: /trees/4630f0ab-d50d-4d72-ac6e-edfde9257ecf/edit
+      - generic [ref=e43]:
+        - generic [ref=e44]:
+          - heading "Wizualizacja drzewa" [level=2] [ref=e45]
+          - generic [ref=e46]:
+            - button "Powiększ" [ref=e47] [cursor=pointer]:
+              - img [ref=e48]
+            - button "Pomniejsz" [ref=e51] [cursor=pointer]:
+              - img [ref=e52]
+        - generic "Wizualizacja drzewa genealogicznego" [ref=e55]:
+          - img [ref=e56]:
+            - generic [ref=e89]:
+              - generic [ref=e91]:
+                - generic [ref=e92]: HB
+                - generic [ref=e93]:
+                  - generic [ref=e94]: Helena
+                  - generic [ref=e95]: Biały
+              - generic [ref=e97]:
+                - generic [ref=e98]: JC
+                - generic [ref=e99]:
+                  - generic [ref=e100]: Józefa
+                  - generic [ref=e101]: Czech
+              - generic [ref=e103]:
+                - generic [ref=e104]: JK
+                - generic [ref=e105]:
+                  - generic [ref=e106]: Jadwiga
+                  - generic [ref=e107]: Korzec
+              - generic [ref=e109]:
+                - generic [ref=e110]: DK
+                - generic [ref=e111]:
+                  - generic [ref=e112]: Dominika
+                  - generic [ref=e113]: Kułaj
+                  - text: ur. 1984
+              - generic [ref=e115]:
+                - generic [ref=e116]: KN
+                - generic [ref=e117]:
+                  - generic [ref=e118]: Krzysztof
+                  - generic [ref=e119]: Nogaj
+              - generic [ref=e121]:
+                - generic [ref=e122]: MN
+                - generic [ref=e123]:
+                  - generic [ref=e124]: Marta
+                  - generic [ref=e125]: Nogaj
+              - generic [ref=e127]:
+                - generic [ref=e128]: AP
+                - generic [ref=e129]:
+                  - generic [ref=e130]: Agnieszka
+                  - generic [ref=e131]: Piotrowska
+                  - text: ur. 1976
+              - generic [ref=e133]:
+                - generic [ref=e134]: BP
+                - generic [ref=e135]:
+                  - generic [ref=e136]: Bogdan
+                  - generic [ref=e137]: Piotrowski
+              - generic [ref=e139]:
+                - generic [ref=e140]: AR
+                - generic [ref=e141]:
+                  - generic [ref=e142]: Angelika
+                  - generic [ref=e143]: Rosłoniec
+                  - text: ur. 1992
+              - generic [ref=e146]:
+                - generic [ref=e147]: Arkadiusz
+                - generic [ref=e148]: Śnieżek
+                - text: ur. 1986
+              - generic [ref=e150]:
+                - generic [ref=e151]: JŚ
+                - generic [ref=e152]:
+                  - generic [ref=e153]: Józef
+                  - generic [ref=e154]: Śnieżek
+              - generic [ref=e156]:
+                - generic [ref=e157]: KŚ
+                - generic [ref=e158]:
+                  - generic [ref=e159]: Kaziemierz
+                  - generic [ref=e160]: Śnieżek
+              - generic [ref=e162]:
+                - generic [ref=e163]: MŚ
+                - generic [ref=e164]:
+                  - generic [ref=e165]: Mieczysław
+                  - generic [ref=e166]: Śnieżek
+              - generic [ref=e168]:
+                - generic [ref=e169]: TŚ
+                - generic [ref=e170]:
+                  - generic [ref=e171]: Tomasz
+                  - generic [ref=e172]: Śnieżek
+                  - text: ur. 2018
+              - generic [ref=e174]:
+                - generic [ref=e175]: UŚ
+                - generic [ref=e176]:
+                  - generic [ref=e177]: Urszula
+                  - generic [ref=e178]: Śnieżek
+                  - text: ur. 1955
+              - generic [ref=e180]:
+                - generic [ref=e181]: WŚ
+                - generic [ref=e182]:
+                  - generic [ref=e183]: Władysław
+                  - generic [ref=e184]: Śnieżek
+                  - text: ur. 1949
+  - contentinfo [ref=e185]:
+    - generic [ref=e187]:
+      - paragraph [ref=e188]: © 2026 Genealog. Wszelkie prawa zastrzeżone.
+      - navigation "Linki pomocnicze" [ref=e189]:
+        - link "Polityka prywatności" [ref=e190] [cursor=pointer]:
+          - /url: /privacy
+        - link "Regulamin" [ref=e191] [cursor=pointer]:
+          - /url: /terms

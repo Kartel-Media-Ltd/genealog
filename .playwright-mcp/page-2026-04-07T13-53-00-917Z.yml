@@ -1,0 +1,54 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - generic [ref=e3]:
+      - link "Genealog" [ref=e4] [cursor=pointer]:
+        - /url: /dashboard
+        - img [ref=e5]
+        - generic [ref=e9]: Genealog
+      - navigation "Główna nawigacja" [ref=e10]:
+        - link "Dashboard" [ref=e11] [cursor=pointer]:
+          - /url: /dashboard
+        - link "Moje drzewa" [ref=e12] [cursor=pointer]:
+          - /url: /trees
+        - link "Poszukiwania" [ref=e13] [cursor=pointer]:
+          - /url: /search
+      - 'button "Menu użytkownika: Arkadiusz Śnieżek" [ref=e16] [cursor=pointer]':
+        - img "Arkadiusz Śnieżek" [ref=e17]:
+          - generic [ref=e18]: AŚ
+        - img [ref=e19]
+  - main [ref=e21]:
+    - generic [ref=e22]:
+      - generic [ref=e23]:
+        - generic [ref=e24]:
+          - heading "Moje drzewa" [level=1] [ref=e25]
+          - paragraph [ref=e26]: Wszystkie Twoje drzewa genealogiczne
+        - link "Nowe drzewo" [ref=e27] [cursor=pointer]:
+          - /url: /trees/new
+          - img [ref=e28]
+          - text: Nowe drzewo
+      - list [ref=e29]:
+        - listitem [ref=e30]:
+          - article [ref=e31]:
+            - generic [ref=e32]:
+              - generic [ref=e33]:
+                - img [ref=e35]
+                - generic [ref=e39]:
+                  - heading "Rodzina Śnieżków" [level=2] [ref=e40]:
+                    - link "Rodzina Śnieżków" [ref=e41] [cursor=pointer]:
+                      - /url: /trees/4630f0ab-d50d-4d72-ac6e-edfde9257ecf
+                  - paragraph [ref=e42]: 15 osób
+              - generic [ref=e43]: Prywatne
+            - paragraph [ref=e44]: "Zaktualizowano: 7 Apr 2026"
+            - generic [ref=e45]:
+              - link "Otwórz" [ref=e46] [cursor=pointer]:
+                - /url: /trees/4630f0ab-d50d-4d72-ac6e-edfde9257ecf
+              - link "Edytuj" [ref=e47] [cursor=pointer]:
+                - /url: /trees/4630f0ab-d50d-4d72-ac6e-edfde9257ecf/edit
+  - contentinfo [ref=e48]:
+    - generic [ref=e50]:
+      - paragraph [ref=e51]: © 2026 Genealog. Wszelkie prawa zastrzeżone.
+      - navigation "Linki pomocnicze" [ref=e52]:
+        - link "Polityka prywatności" [ref=e53] [cursor=pointer]:
+          - /url: /privacy
+        - link "Regulamin" [ref=e54] [cursor=pointer]:
+          - /url: /terms

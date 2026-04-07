@@ -1,0 +1,91 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - generic [ref=e3]:
+      - link "Genealog" [ref=e4] [cursor=pointer]:
+        - /url: /dashboard
+        - img [ref=e5]
+        - generic [ref=e9]: Genealog
+      - navigation "Główna nawigacja" [ref=e10]:
+        - link "Dashboard" [ref=e11] [cursor=pointer]:
+          - /url: /dashboard
+        - link "Moje drzewa" [ref=e12] [cursor=pointer]:
+          - /url: /trees
+        - link "Poszukiwania" [ref=e13] [cursor=pointer]:
+          - /url: /search
+      - 'button "Menu użytkownika: Arkadiusz Śnieżek" [ref=e16] [cursor=pointer]':
+        - img "Arkadiusz Śnieżek" [ref=e17]:
+          - generic [ref=e18]: AŚ
+        - img [ref=e19]
+  - main [ref=e21]:
+    - generic [ref=e23]:
+      - navigation "Nawigacja" [ref=e24]:
+        - link "Angelika Rosłoniec" [ref=e25] [cursor=pointer]:
+          - /url: /trees/4630f0ab-d50d-4d72-ac6e-edfde9257ecf/persons/5e288413-8655-4835-95ed-bba7dda260f4
+        - img [ref=e26]
+        - generic [ref=e28]: Nowa relacja
+      - generic [ref=e29]:
+        - generic [ref=e30]:
+          - heading "Dodaj relację rodzinną" [level=1] [ref=e31]
+          - paragraph [ref=e32]:
+            - text: "Definiujesz relację z perspektywy:"
+            - strong [ref=e33]: Angelika Rosłoniec
+        - generic [ref=e34]:
+          - generic [ref=e35]:
+            - generic [ref=e36]: Typ relacji *
+            - combobox "Typ relacji" [ref=e37]:
+              - option "— wybierz —" [selected]
+              - option "Rodzic (tej osoby)"
+              - option "Dziecko (tej osoby)"
+              - option "Małżonek/Małżonka"
+              - option "Partner/Partnerka"
+              - option "Rodzeństwo"
+            - paragraph [ref=e38]: Relacja odwrotna zostanie dodana automatycznie (np. rodzic↔dziecko).
+          - generic [ref=e39]:
+            - generic [ref=e40]: Osoba *
+            - combobox "Osoba" [ref=e41]:
+              - option "— wybierz osobę —" [selected]
+              - option "Helena Biały"
+              - option "Józefa Czech"
+              - option "Jadwiga Korzec"
+              - option "Dominika Kułaj (ur. 1984)"
+              - option "Krzysztof Nogaj"
+              - option "Marta Nogaj"
+              - option "Agnieszka Piotrowska (ur. 1976)"
+              - option "Bogdan Piotrowski"
+              - option "Arkadiusz Śnieżek (ur. 1986)"
+              - option "Edward Śnieżek"
+              - option "Józef Śnieżek"
+              - option "Józef Śnieżek"
+              - option "Kaziemierz Śnieżek"
+              - option "Ludwika Śnieżek"
+              - option "Mieczysław Śnieżek"
+              - option "Stanisława Śnieżek"
+              - option "Tomasz Śnieżek (ur. 2018)"
+              - option "Urszula Śnieżek (ur. 1955)"
+              - option "Władysław Śnieżek"
+              - option "Władysław Śnieżek (ur. 1949)"
+          - generic [ref=e42]:
+            - link "Anuluj" [ref=e43] [cursor=pointer]:
+              - /url: /trees/4630f0ab-d50d-4d72-ac6e-edfde9257ecf/persons/5e288413-8655-4835-95ed-bba7dda260f4
+            - button "Dodaj relację" [ref=e44] [cursor=pointer]
+      - generic [ref=e45]:
+        - generic [ref=e46]:
+          - img [ref=e47]
+          - heading "Inne sugerowane relacje" [level=2] [ref=e49]
+          - generic [ref=e50]: Na podstawie istniejących powiązań
+        - generic [ref=e51]:
+          - generic [ref=e53] [cursor=pointer]:
+            - checkbox "TŚ Tomasz Śnieżek — dziecko (rodzic rodzeństwa Arkadiusz Śnieżek)" [checked] [ref=e54]
+            - generic [ref=e55]: TŚ
+            - generic [ref=e56]: Tomasz Śnieżek — dziecko (rodzic rodzeństwa Arkadiusz Śnieżek)
+          - button "Dodaj zaznaczone" [ref=e58] [cursor=pointer]:
+            - img [ref=e59]
+            - text: Dodaj zaznaczone
+  - contentinfo [ref=e61]:
+    - generic [ref=e63]:
+      - paragraph [ref=e64]: © 2026 Genealog. Wszelkie prawa zastrzeżone.
+      - navigation "Linki pomocnicze" [ref=e65]:
+        - link "Polityka prywatności" [ref=e66] [cursor=pointer]:
+          - /url: /privacy
+        - link "Regulamin" [ref=e67] [cursor=pointer]:
+          - /url: /terms
