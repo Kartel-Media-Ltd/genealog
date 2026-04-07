@@ -122,7 +122,8 @@ class GedcomController
             $this->response->withFlash('success', $msg)
                 ->redirect('/trees/' . $treeId . '/persons');
         } catch (\Throwable $e) {
-            $this->response->withFlash('error', 'Błąd importu: ' . $e->getMessage())
+            error_log('GEDCOM import error (tree=' . $treeId . '): ' . $e->getMessage());
+            $this->response->withFlash('error', 'Nie udało się zaimportować pliku GEDCOM. Sprawdź czy plik jest prawidłowy i spróbuj ponownie.')
                 ->redirect('/trees/' . $treeId . '/gedcom');
         }
     }

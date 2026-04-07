@@ -149,31 +149,30 @@ class GedcomService
                 $currentRecord['tags'][$tag]   = $currentRecord['tags'][$tag] ?? [];
                 $currentRecord['tags'][$tag][] = ['value' => $value, 'sub' => []];
             } elseif ($level === 2 && $currentTag !== null) {
-                $currentSubTag = $tag;
                 $idx = count($currentRecord['tags'][$currentTag]) - 1;
-                $currentRecord['tags'][$currentTag][$idx]['sub'][$tag]   =
-                    $currentRecord['tags'][$currentTag][$idx]['sub'][$tag] ?? [];
-                $currentRecord['tags'][$currentTag][$idx]['sub'][$tag][] = $value;
-            } elseif ($level === 3 && $currentTag !== null && $currentSubTag !== null) {
-                // Level 3 — e.g. continuation of NOTE
-                // Append to last sub-value (CONT/CONC)
+
+                // CONT/CONC — append to parent level-1 value (don't treat as sub-tag)
                 if (in_array($tag, ['CONT', 'CONC'], true)) {
-                    $idx1 = count($currentRecord['tags'][$currentTag]) - 1;
-                    if (isset($currentRecord['tags'][$currentTag][$idx1]['sub'][$currentSubTag])) {
-                        $subIdx = count($currentRecord['tags'][$currentTag][$idx1]['sub'][$currentSubTag]) - 1;
-                        $sep    = ($tag === 'CONT') ? "\n" : '';
-                        $currentRecord['tags'][$currentTag][$idx1]['sub'][$currentSubTag][$subIdx] .= $sep . $value;
+                    $sep = ($tag === 'CONT') ? "\n" : '';
+                    $currentRecord['tags'][$currentTag][$idx]['value'] .= $sep . $value;
+                    $currentSubTag = null;
+                } else {
+                    $currentSubTag = $tag;
+                    $currentRecord['tags'][$currentTag][$idx]['sub'][$tag]   =
+                        $currentRecord['tags'][$currentTag][$idx]['sub'][$tag] ?? [];
+                    $currentRecord['tags'][$currentTag][$idx]['sub'][$tag][] = $value;
+                }
+            } elseif ($level === 3 && $currentTag !== null && $currentSubTag !== null) {
+                // Level 3 CONT/CONC — append to last sub-value
+                if (in_array($tag, ['CONT', 'CONC'], true)) {
+                    $idx1   = count($currentRecord['tags'][$currentTag]) - 1;
+                    $subArr = &$currentRecord['tags'][$currentTag][$idx1]['sub'][$currentSubTag];
+                    if (isset($subArr)) {
+                        $subIdx   = count($subArr) - 1;
+                        $sep      = ($tag === 'CONT') ? "\n" : '';
+                        $subArr[$subIdx] .= $sep . $value;
                     }
                 }
-            }
-
-            // Handle CONT/CONC at level 2 for NOTE etc.
-            if ($level === 2 && in_array($tag, ['CONT', 'CONC'], true) && $currentTag !== null) {
-                $idx = count($currentRecord['tags'][$currentTag]) - 1;
-                $sep = ($tag === 'CONT') ? "\n" : '';
-                $currentRecord['tags'][$currentTag][$idx]['value'] .= $sep . $value;
-                // Reset currentSubTag so we don't misinterpret
-                $currentSubTag = null;
             }
         }
 
@@ -442,11 +441,27 @@ class GedcomService
             }
         }
 
+        // Build gender lookup for proper HUSB/WIFE assignment
+        $genderById = [];
+        foreach ($persons as $p) {
+            $genderById[$p->id] = $p->gender ?? 'unknown';
+        }
+
         foreach ($spouseRels as $spouseRel) {
+            // Assign HUSB/WIFE by gender: male → husb, female → wife, unknown → a/b order
+            $aId    = $spouseRel->person_a_id;
+            $bId    = $spouseRel->person_b_id;
+            $aGender = $genderById[$aId] ?? 'unknown';
+            $bGender = $genderById[$bId] ?? 'unknown';
+
+            if ($aGender === 'female' && $bGender !== 'female') {
+                [$aId, $bId] = [$bId, $aId]; // swap so male is husb
+            }
+
             $family = [
-                'husb'     => $spouseRel->person_a_id,
-                'wife'     => $spouseRel->person_b_id,
-                'children' => [],
+                'husb'       => $aId,
+                'wife'       => $bId,
+                'children'   => [],
                 'start_date' => $spouseRel->start_date ?? null,
             ];
 
@@ -688,13 +703,9 @@ class GedcomService
 
     private function generateUuid(): string
     {
-        return sprintf(
-            '%04x%04x-%04x-%04x-%04x-%04x%04x%04x',
-            mt_rand(0, 0xffff), mt_rand(0, 0xffff),
-            mt_rand(0, 0xffff),
-            mt_rand(0, 0x0fff) | 0x4000,
-            mt_rand(0, 0x3fff) | 0x8000,
-            mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff)
-        );
+        $bytes = random_bytes(16);
+        $bytes[6] = chr((ord($bytes[6]) & 0x0f) | 0x40); // version 4
+        $bytes[8] = chr((ord($bytes[8]) & 0x3f) | 0x80); // variant RFC 4122
+        return vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($bytes), 4));
     }
 }
