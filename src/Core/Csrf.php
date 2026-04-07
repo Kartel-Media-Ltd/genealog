@@ -45,4 +45,42 @@ class Csrf
             htmlspecialchars(self::getToken(), ENT_QUOTES | ENT_HTML5)
         );
     }
+
+    /**
+     * Token per-form (osobny od globalnego) — używaj dla form gdzie chcesz
+     * unieważnić TYLKO tę konkretną formę (np. delete-account dialog) bez
+     * niszczenia globalnego tokenu rotującego.
+     *
+     * @example
+     *   <?= Csrf::hiddenInputForForm('delete-account') ?>
+     *   // W kontrolerze: $request->verifyCsrfForForm('delete-account');
+     */
+    public static function hiddenInputForForm(string $formId): string
+    {
+        return sprintf(
+            '<input type="hidden" name="_csrf_token_%s" value="%s">',
+            htmlspecialchars($formId, ENT_QUOTES | ENT_HTML5),
+            htmlspecialchars(self::getTokenForForm($formId), ENT_QUOTES | ENT_HTML5)
+        );
+    }
+
+    public static function getTokenForForm(string $formId): string
+    {
+        $key = '_csrf_form_' . $formId;
+        if (!isset($_SESSION[$key])) {
+            $_SESSION[$key] = bin2hex(random_bytes(32));
+        }
+        return $_SESSION[$key];
+    }
+
+    public static function verifyForForm(string $formId, string $token): bool
+    {
+        $key    = '_csrf_form_' . $formId;
+        $stored = $_SESSION[$key] ?? '';
+        $valid  = hash_equals($stored, $token) && $stored !== '';
+        if ($valid) {
+            unset($_SESSION[$key]);
+        }
+        return $valid;
+    }
 }

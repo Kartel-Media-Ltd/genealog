@@ -1,0 +1,45 @@
+parameters:
+    # Level 5 = sweet spot dla scaffolda. Level 6+ wymaga pełnych PHPDoc generic types.
+    # Sukcesywnie podnoś poziom (6, 7, 8) — każdy krok wymaga ~50 fix'ów.
+    level: 5
+    paths:
+        - src
+        - public/index.php
+    excludePaths:
+        - src/views/*
+    bootstrapFiles:
+        - tests/bootstrap.php
+    ignoreErrors:
+        # Dynamic property access on PDO
+        - '#Call to an undefined method PDO#'
+        # Runtime config constants (BCRYPT_COST, SITE_URL, etc.)
+        - '#Constant [A-Z_]+ not found#'
+        # Render helpers globally available via require
+        - '#Function render_[a-z_]+ not found#'
+        # Constructor-injected DTOs — request/response są prawnie wymagane przez DI nawet jeśli nieużywane bezpośrednio
+        - '#Property App\\Controllers\\[A-Za-z]+::\$(request|response) is never read#'
+        # Database singleton — `new static()` i return type są intencjonalne dla LSB
+        -
+            message: '#Unsafe usage of new static#'
+            path: src/Core/Database.php
+        -
+            message: '#should return static#'
+            path: src/Core/Database.php
+        # Constants in front controller (APP_DEBUG defined runtime via .env)
+        -
+            message: '#If condition is always true#'
+            path: public/index.php
+        # Constants used by admin views (ignore unused warning)
+        -
+            message: '#IMPERSONATE_RATE_LIMIT is unused#'
+            path: src/Controllers/AdminController.php
+        # Stateful fluent setter — used in chain
+        -
+            message: '#Property App\\Core\\Response::\$statusCode is never read#'
+            path: src/Core/Response.php
+        # GedcomService parser internal — &$subArr is intentionally checked
+        -
+            message: '#\$subArr in isset\(\) always exists#'
+            path: src/Services/GedcomService.php
+    treatPhpDocTypesAsCertain: false
+    reportUnmatchedIgnoredErrors: false

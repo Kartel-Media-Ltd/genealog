@@ -44,7 +44,15 @@ class GedcomService
 
             // Normalize line endings
             $content = str_replace(["\r\n", "\r"], "\n", $content);
+
+            // Walidacja struktury GEDCOM przed parsowaniem
+            $this->validateGedcomStructure($content);
+
             $records = $this->parseGedcom($content);
+
+            if (empty($records['individuals']) && empty($records['families'])) {
+                throw new \RuntimeException('Plik nie zawiera żadnych osób ani rodzin (INDI/FAM).');
+            }
 
             $this->pdo->beginTransaction();
 
@@ -72,6 +80,29 @@ class GedcomService
             if (file_exists($filePath)) {
                 unlink($filePath);
             }
+        }
+    }
+
+    /**
+     * Walidacja podstawowej struktury pliku GEDCOM.
+     * Sprawdza obecność `0 HEAD` i `0 TRLR` — chroni przed śmieciami i mylonymi formatami.
+     *
+     * @throws \RuntimeException gdy plik nie wygląda na poprawny GEDCOM
+     */
+    private function validateGedcomStructure(string $content): void
+    {
+        $maxBytes = 10 * 1024; // sprawdzamy tylko nagłówek pliku
+        $head     = substr($content, 0, $maxBytes);
+
+        if (!preg_match('/^\s*0\s+HEAD\b/m', $head)) {
+            throw new \RuntimeException(
+                'Nieprawidłowy format GEDCOM: brakuje nagłówka "0 HEAD" na początku pliku.'
+            );
+        }
+        if (!preg_match('/^\s*0\s+TRLR\b/m', $content)) {
+            throw new \RuntimeException(
+                'Nieprawidłowy format GEDCOM: brakuje znacznika końca "0 TRLR".'
+            );
         }
     }
 

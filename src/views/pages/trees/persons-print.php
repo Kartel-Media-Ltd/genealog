@@ -14,6 +14,7 @@ $personsTree ??= null;
 <div class="no-print flex items-center gap-2 border-b border-gray-200 bg-gray-50 px-4 py-2">
     <span class="mr-2 text-sm font-medium text-gray-700">
         Lista osób — <?= htmlspecialchars($tree->name) ?>
+        <span class="text-gray-500">(<?= count($persons) ?>)</span>
     </span>
     <div class="ml-auto flex gap-2">
         <button
@@ -42,6 +43,15 @@ $personsTree ??= null;
 
 <!-- Zawartość -->
 <div class="p-4">
+    <!-- Nagłówek widoczny przy druku — pomaga zorientować się w długich listach -->
+    <header class="mb-4 hidden print:block">
+        <h1 class="text-lg font-semibold text-gray-900">Lista osób — <?= htmlspecialchars($tree->name) ?></h1>
+        <p class="text-xs text-gray-600">
+            Liczba osób: <strong><?= count($persons) ?></strong>
+            &bull; Wydrukowano: <?= date('d.m.Y H:i') ?>
+        </p>
+    </header>
+
     <?php if (empty($persons)): ?>
         <p class="py-8 text-center text-sm text-gray-500">Drzewo nie zawiera żadnych osób.</p>
     <?php elseif ($mode === 'hierarchy' && $personsTree !== null): ?>

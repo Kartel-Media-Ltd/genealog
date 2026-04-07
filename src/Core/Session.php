@@ -44,6 +44,12 @@ class Session
         if (!isset($_SESSION['_created_at'])) {
             $_SESSION['_created_at'] = time();
         }
+
+        // Periodic regeneration: ~1% requestów regeneruje session ID.
+        // Chroni przed sesją zalegającą bez obciążania każdego requestu.
+        if (isset($_SESSION['user_id']) && random_int(1, 100) === 1) {
+            self::regenerate(true);
+        }
     }
 
     public static function set(string $key, mixed $value): void

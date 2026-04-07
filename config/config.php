@@ -34,5 +34,6 @@ define('RATE_LIMIT_WINDOW',   900); // 15 min
 define('ROOT_PATH',    dirname(__DIR__));
 define('SRC_PATH',     ROOT_PATH . '/src');
 define('STORAGE_PATH', ROOT_PATH . '/storage');
-define('VIEWS_PATH',   SRC_PATH . '/Views');
+define('VIEWS_PATH',   SRC_PATH . '/views');
+define('TRUSTED_PROXIES', array_filter(explode(',', $_ENV['TRUSTED_PROXIES'] ?? '')));
 define('UPLOAD_MAX_MB', (int)($_ENV['UPLOAD_MAX_MB'] ?? 10));

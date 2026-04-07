@@ -1,10 +1,69 @@
 <?php
 declare(strict_types=1);
-// Variables: $logs (array[]), $page (int), $total (int), $limit (int)
+// Variables: $logs, $page, $total, $limit, $filters, $availableActions
 $totalPages = (int)ceil($total / $limit);
+$filters    = $filters ?? [];
+$availableActions = $availableActions ?? [];
+
+// Helper: czy jakikolwiek filtr aktywny?
+$hasActiveFilters = !empty(array_filter($filters, fn($v) => $v !== ''));
 ?>
+<!-- Filtry -->
+<form method="GET" action="/admin/logs" class="mb-4 rounded-lg border border-slate-200 bg-white p-4">
+    <div class="grid grid-cols-1 gap-3 md:grid-cols-5">
+        <div>
+            <label class="mb-1 block text-xs font-medium text-slate-600">Akcja</label>
+            <select name="action" class="w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm">
+                <option value="">— wszystkie —</option>
+                <?php foreach ($availableActions as $act): ?>
+                    <option value="<?= htmlspecialchars($act) ?>" <?= ($filters['action'] ?? '') === $act ? 'selected' : '' ?>>
+                        <?= htmlspecialchars($act) ?>
+                    </option>
+                <?php endforeach; ?>
+            </select>
+        </div>
+        <div>
+            <label class="mb-1 block text-xs font-medium text-slate-600">Admin ID</label>
+            <input type="text" name="admin_id"
+                   value="<?= htmlspecialchars($filters['admin_id'] ?? '') ?>"
+                   placeholder="UUID..."
+                   class="w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm font-mono">
+        </div>
+        <div>
+            <label class="mb-1 block text-xs font-medium text-slate-600">Target ID</label>
+            <input type="text" name="target_id"
+                   value="<?= htmlspecialchars($filters['target_id'] ?? '') ?>"
+                   placeholder="UUID..."
+                   class="w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm font-mono">
+        </div>
+        <div>
+            <label class="mb-1 block text-xs font-medium text-slate-600">Od daty</label>
+            <input type="date" name="date_from"
+                   value="<?= htmlspecialchars($filters['date_from'] ?? '') ?>"
+                   class="w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm">
+        </div>
+        <div>
+            <label class="mb-1 block text-xs font-medium text-slate-600">Do daty</label>
+            <input type="date" name="date_to"
+                   value="<?= htmlspecialchars($filters['date_to'] ?? '') ?>"
+                   class="w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm">
+        </div>
+    </div>
+    <div class="mt-3 flex gap-2">
+        <button type="submit"
+                class="rounded-md bg-slate-800 px-4 py-1.5 text-sm font-medium text-white hover:bg-slate-700">
+            Filtruj
+        </button>
+        <?php if ($hasActiveFilters): ?>
+            <a href="/admin/logs" class="rounded-md border border-slate-300 px-4 py-1.5 text-sm text-slate-600 hover:bg-slate-50">
+                Wyczyść
+            </a>
+        <?php endif; ?>
+    </div>
+</form>
+
 <div class="mb-4 flex items-center justify-between">
-    <p class="text-sm text-slate-500"><?= number_format($total) ?> wpisów</p>
+    <p class="text-sm text-slate-500"><?= number_format($total) ?> wpisów<?= $hasActiveFilters ? ' (filtrowanych)' : '' ?></p>
 </div>
 
 <div class="bg-white rounded-lg border border-slate-200 overflow-hidden">

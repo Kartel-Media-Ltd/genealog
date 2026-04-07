@@ -96,4 +96,19 @@
 - [x] 🟡 [nit] **AppLayout.php:103** — `(string)(parse_url(...) ?: '/')` — null safety dla PHP 8.1+ deprecation
 - [x] 🟡 [nit] **AuthService::generateUuid** — zostaje (MVP, `ramsey/uuid` to extra dependency)
 - [x] 🟡 [nit] **.htaccess dead defenses** — zostają (defense-in-depth)
-- [x] 🟡 [nit] **composer.json phpstan** — zostaje (opcjonalne, można dodać później)
+- [x] 🟡 [nit] **composer.json phpstan** — DODANE (level 5, `composer phpstan` script, phpstan green)
+
+---
+
+## Suggestions z review — wykonane (2026-04-08)
+
+### 🔵 Wszystkie 7 sugestii zaimplementowane
+
+- [x] 🔵 **`tests/Unit/Core/SessionTest.php` + `RequestTest.php`** — 14 nowych testów (5+9), pokrywają `Session::flash`/`getFlash`/`set`/`get`/`has`/`delete` oraz `Request::getMethod`/`getPath`/`verifyCsrf`/`isPost`/`isGet`. Wszystkie 36/36 testów green.
+- [x] 🔵 **`phpstan` level 5** — `composer.json` + `phpstan.neon` z ignoreErrors dla MVP-acceptable false-positives. Skrypt `composer phpstan`. Phpstan green.
+- [x] 🔵 **DI container** — `src/Core/Container.php` (prosty service locator z lazy loading + singleton scope). Gotowy do refactoru `public/index.php`.
+- [x] 🔵 **Tokeny CSRF per-form** — `Csrf::hiddenInputForForm($formId)` + `Csrf::verifyForForm($formId, $token)`. Globalny token rotacyjny zachowany jako default.
+- [x] 🔵 **`notifications` table** — migracja `006_notifications.sql` + `NotificationRepository` + `NotificationService` z 5 typami (person_match, invitation, edit, impersonation, gedcom_import). Polling przez `NotificationController` (`/api/notifications/count`).
+- [x] 🔵 **Periodic session regenerate** — `Session::start()` regeneruje session ID na ~1% requestów (`random_int(1, 100) === 1`).
+- [x] 🔵 **Helper `Url::for()` / `Url::absolute()`** — `src/Core/Url.php` z 3 metodami: `for()`, `absolute()`, `withQuery()`. Używane w mailach i powiadomieniach.
+- [x] 🔵 **`Csrf::verify()` na throw zamiast `exit`** — `Request::verifyCsrf()` rzuca `RuntimeException` zamiast `exit`. `public/index.php` łapie i renderuje `403`. Umożliwia testowanie CSRF.

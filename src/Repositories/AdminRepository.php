@@ -78,24 +78,78 @@ class AdminRepository
         return (int)($this->db->fetchOne('SELECT COUNT(*) AS cnt FROM trees')['cnt'] ?? 0);
     }
 
-    /** @return array[] */
-    public function findLogs(int $limit = 50, int $offset = 0): array
+    /**
+     * @param array{action?: string, admin_id?: string, target_id?: string, date_from?: string, date_to?: string} $filters
+     * @return array[]
+     */
+    public function findLogs(int $limit = 50, int $offset = 0, array $filters = []): array
     {
         $lim = max(1, $limit);
         $off = max(0, $offset);
+
+        [$where, $params] = $this->buildLogFilters($filters);
 
         return $this->db->fetchAll(
             "SELECT al.*, u.name AS admin_name, u.email AS admin_email
              FROM admin_logs al
              JOIN users u ON u.id = al.admin_id
+             {$where}
              ORDER BY al.created_at DESC
-             LIMIT {$lim} OFFSET {$off}"
+             LIMIT {$lim} OFFSET {$off}",
+            $params
         );
     }
 
-    public function countLogs(): int
+    /** @param array<string, string> $filters */
+    public function countLogs(array $filters = []): int
     {
-        return (int)($this->db->fetchOne('SELECT COUNT(*) AS cnt FROM admin_logs')['cnt'] ?? 0);
+        [$where, $params] = $this->buildLogFilters($filters);
+        $row = $this->db->fetchOne(
+            "SELECT COUNT(*) AS cnt FROM admin_logs al {$where}",
+            $params
+        );
+        return (int)($row['cnt'] ?? 0);
+    }
+
+    /** @return list<string> Lista distinct typów akcji w logach (do filter dropdown) */
+    public function getLogActions(): array
+    {
+        $rows = $this->db->fetchAll('SELECT DISTINCT action FROM admin_logs ORDER BY action');
+        return array_map(fn(array $r) => (string)$r['action'], $rows);
+    }
+
+    /**
+     * @param array<string, string> $filters
+     * @return array{0: string, 1: array<int, string>}
+     */
+    private function buildLogFilters(array $filters): array
+    {
+        $conditions = [];
+        $params     = [];
+
+        if (!empty($filters['action'])) {
+            $conditions[] = 'al.action = ?';
+            $params[]     = $filters['action'];
+        }
+        if (!empty($filters['admin_id'])) {
+            $conditions[] = 'al.admin_id = ?';
+            $params[]     = $filters['admin_id'];
+        }
+        if (!empty($filters['target_id'])) {
+            $conditions[] = 'al.target_id = ?';
+            $params[]     = $filters['target_id'];
+        }
+        if (!empty($filters['date_from'])) {
+            $conditions[] = 'al.created_at >= ?';
+            $params[]     = $filters['date_from'] . ' 00:00:00';
+        }
+        if (!empty($filters['date_to'])) {
+            $conditions[] = 'al.created_at <= ?';
+            $params[]     = $filters['date_to'] . ' 23:59:59';
+        }
+
+        $where = empty($conditions) ? '' : 'WHERE ' . implode(' AND ', $conditions);
+        return [$where, $params];
     }
 
     public function createLog(

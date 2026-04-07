@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
+use App\Controllers\Concerns\RequiresTreeAccess;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
@@ -13,6 +14,8 @@ use App\Services\GedcomService;
 
 class GedcomController
 {
+    use RequiresTreeAccess;
+
     private const MAX_UPLOAD_BYTES = 50 * 1024 * 1024; // 50 MB
     private const ALLOWED_MIME     = ['text/plain', 'text/x-gedcom', 'application/octet-stream'];
 
@@ -119,6 +122,15 @@ class GedcomController
                 $msg .= " Pominięto {$result->skippedCount} istniejących rekordów.";
             }
 
+            // Zapisz pierwsze 10 błędów w sesji żeby UI mogło je wyświetlić
+            if (!empty($result->errors)) {
+                $errorsCount = count($result->errors);
+                $msg .= " Wystąpiło {$errorsCount} ostrzeżeń.";
+                Session::set('gedcom_import_errors', array_slice($result->errors, 0, 10));
+            } else {
+                Session::delete('gedcom_import_errors');
+            }
+
             $this->response->withFlash('success', $msg)
                 ->redirect('/trees/' . $treeId . '/persons');
         } catch (\Throwable $e) {
@@ -164,18 +176,6 @@ class GedcomController
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────────
-
-    private function requireTreeAccess(
-        string $treeId,
-        string $userId,
-        array $roles = ['owner', 'editor', 'viewer'],
-    ): string {
-        $role = $this->treeRepo->getUserRole($treeId, $userId);
-        if (!in_array($role, $roles, true)) {
-            $this->response->withFlash('error', 'Brak dostępu do drzewa.')->redirect('/trees');
-        }
-        return (string)$role;
-    }
 
     private function currentUser(): array
     {

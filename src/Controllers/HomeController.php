@@ -29,6 +29,15 @@ class HomeController
             $trees = [];
         }
 
+        $totalPersons = array_sum(array_map(fn($t) => $t->personsCount, $trees));
+
+        $recentActivity = [];
+        try {
+            $recentActivity = $this->treeRepo->getRecentPersonActivity($userId);
+        } catch (\Exception) {
+            $recentActivity = [];
+        }
+
         $this->response->view('pages/dashboard', [
             'title'       => 'Dashboard',
             'currentUser' => [
@@ -37,8 +46,12 @@ class HomeController
                 'avatar' => '',
             ],
             'trees'       => $trees,
-            'recentTrees' => [],
-            'stats'       => ['total_trees' => count($trees), 'total_persons' => 0, 'total_events' => 0],
+            'recentTrees' => $recentActivity,
+            'stats'       => [
+                'total_trees'   => count($trees),
+                'total_persons' => $totalPersons,
+                'total_events'  => 0,
+            ],
         ]);
     }
 }

@@ -3,7 +3,7 @@
    shadcn/ui design tokens portowane do PHP/HTML + Tailwind v4
    ============================================================= */
 
-/* Play CDN loaded via <script src="https://cdn.tailwindcss.com"> — no @import needed */
+/* Tailwind Play loaded via <script src="/vendor/tailwind.js"> — no @import needed */
 
 /* -------------------------------------------------------------
    CSS Custom Properties — Light Mode (:root)

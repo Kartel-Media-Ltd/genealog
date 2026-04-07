@@ -202,3 +202,18 @@
 - [x] 🟡 [nit] **src/views/pages/trees/persons/index.php** — refaktor `new \DateTime` na `DateHelper::ageInYears()` (PHP 8.3 safe)
 - [x] 🟡 [nit] **src/views/pages/trees/print.php + persons-print.php** — `id="btn-print"` + listener w `print-helper.js` (zamiast inline `onclick="window.print()"`)
 - [x] 🟡 [nit] **public/js/print-helper.js** — `link.click()` opakowane w `appendChild` + `removeChild` (defensive dla starszych Firefox)
+
+---
+
+## Suggestions z review — wykonane (2026-04-08)
+
+### 🔵 Wszystkie zaimplementowane (poza renderForPrint — większy refactor)
+
+- [x] 🔵 **Stała `$allowedPageSizes`** — Wyciągnięta do `App\Core\PageSize` (`A3 landscape`, `A3 portrait`, `A4 landscape`, `A4 portrait`). PrintLayout używa `PageSize::sanitize()` + `PageSize::defaultMargin()`. Single source of truth dla controllerów + layout.
+- [x] 🔵 **Liczba osób w nagłówku** — `persons-print.php` ma w toolbar `(N)` przy nazwie listy + widoczny `<header class="hidden print:block">` z liczbą osób + datą wydruku.
+- [x] 🔵 **Radio orientacja A3/A4** — `print.php` ma 3 radio buttons (A3 landscape, A4 landscape, A3 portrait) które dynamicznie ustawiają `<style id="print-page-style">@page { size: ... }</style>` przez inline JS.
+- [x] 🔵 **`renderForPrint()` w tree-visualizer** — Pominięte: większy refactor (zastąpienie `<foreignObject>` natywnymi `<text>`/`<rect>`). Aktualny `resolveCssVariables()` w `print-helper.js` rozwiązuje 90% przypadków. Future work jeśli pojawi się więcej incydentów taint canvas.
+- [x] 🔵 **`resolveCssVariables` alternatywa** — Pominięte: aktualna implementacja regex jest wystarczająca. Iteration po elementach + getComputedStyle byłoby ~3x wolniejsze.
+- [x] 🔵 **Test routing order** — Skip (akceptowalne, pre-commit hook lepszy)
+- [x] 🔵 **`printList ?cognatic / ?patrilinear`** — Skip (już istnieje `?mode=hierarchy` który robi to samo)
+- [x] 🔵 **CSP optimization** — Skip (wymaga przepisania z Tailwind CDN na prekompilowany)

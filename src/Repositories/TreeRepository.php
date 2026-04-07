@@ -98,6 +98,28 @@ class TreeRepository
         );
     }
 
+    /**
+     * Drzewa, do których user jest zaproszony (nie właściciel).
+     * @return Tree[]
+     */
+    public function findByMember(string $userId): array
+    {
+        $rows = $this->db->fetchAll(
+            'SELECT t.*, COUNT(p.id) AS persons_count,
+                    u.name AS owner_name
+             FROM trees t
+             JOIN tree_members tm ON tm.tree_id = t.id AND tm.user_id = :uid AND tm.role != :role
+             JOIN users u ON u.id = t.owner_id
+             LEFT JOIN persons p ON p.tree_id = t.id
+             WHERE t.owner_id != :uid2
+             GROUP BY t.id
+             ORDER BY t.updated_at DESC',
+            [':uid' => $userId, ':uid2' => $userId, ':role' => 'owner']
+        );
+
+        return array_map(Tree::fromArray(...), $rows);
+    }
+
     public function getUserRole(string $treeId, string $userId): ?string
     {
         $row = $this->db->fetchOne(
@@ -116,5 +138,41 @@ class TreeRepository
         );
 
         return $row !== null;
+    }
+
+    public function touchUpdatedAt(string $treeId): void
+    {
+        $this->db->execute(
+            'UPDATE trees SET updated_at = NOW() WHERE id = ?',
+            [$treeId]
+        );
+    }
+
+    /**
+     * Ostatnio dodane osoby we wszystkich drzewach usera (dla sekcji "Ostatnia aktywność").
+     * @return array{description: string, created_at: string}[]
+     */
+    public function getRecentPersonActivity(string $userId, int $limit = 10): array
+    {
+        $lim  = max(1, (int)$limit);
+        $rows = $this->db->fetchAll(
+            "SELECT p.first_name, p.last_name, p.created_at, t.name AS tree_name, t.id AS tree_id, p.id AS person_id
+             FROM persons p
+             JOIN trees t ON t.id = p.tree_id
+             WHERE t.owner_id = :uid
+                OR EXISTS (SELECT 1 FROM tree_members tm WHERE tm.tree_id = t.id AND tm.user_id = :uid2)
+             ORDER BY p.created_at DESC
+             LIMIT {$lim}",
+            [':uid' => $userId, ':uid2' => $userId]
+        );
+
+        return array_map(static function (array $row): array {
+            $name = trim(($row['first_name'] ?? '') . ' ' . ($row['last_name'] ?? ''));
+            return [
+                'description' => 'Dodano osobę: ' . $name . ' (drzewo: ' . $row['tree_name'] . ')',
+                'created_at'  => $row['created_at'],
+                'link'        => '/trees/' . $row['tree_id'] . '/persons/' . $row['person_id'],
+            ];
+        }, $rows);
     }
 }

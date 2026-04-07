@@ -231,6 +231,22 @@ try {
 } catch (NotFoundException) {
     http_response_code(404);
     echo '<h1>404 — Strona nie istnieje</h1>';
+} catch (\RuntimeException $e) {
+    // CSRF mismatch i podobne security exceptions
+    if (str_contains($e->getMessage(), '403') || str_contains($e->getMessage(), 'CSRF')) {
+        http_response_code(403);
+        echo '<h1>403 — Brak uprawnień</h1>';
+        if (APP_DEBUG) {
+            echo '<pre>' . htmlspecialchars($e->getMessage()) . '</pre>';
+        }
+    } else {
+        http_response_code(500);
+        if (APP_DEBUG) {
+            echo '<pre>' . htmlspecialchars((string)$e) . '</pre>';
+        } else {
+            echo '<h1>Błąd serwera. Spróbuj ponownie.</h1>';
+        }
+    }
 } catch (\Throwable $e) {
     http_response_code(500);
     if (APP_DEBUG) {

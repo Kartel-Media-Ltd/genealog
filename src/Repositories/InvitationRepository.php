@@ -54,6 +54,21 @@ class InvitationRepository
         );
     }
 
+    public function findAllActiveByEmail(string $email): array
+    {
+        return $this->db->fetchAll(
+            'SELECT i.*, t.name AS tree_name, u.name AS inviter_name
+             FROM invitations i
+             JOIN trees t ON t.id = i.tree_id
+             LEFT JOIN users u ON u.id = i.invited_by
+             WHERE i.invited_email = :email
+               AND i.used_at IS NULL
+               AND i.expires_at > NOW()
+             ORDER BY i.created_at DESC',
+            [':email' => $email]
+        );
+    }
+
     public function findActiveByTree(string $treeId): array
     {
         return $this->db->fetchAll(

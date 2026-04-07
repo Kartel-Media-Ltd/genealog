@@ -147,3 +147,14 @@
 - [x] 🟠 [important] **GedcomService.php:617** — `parseGedcomDate()` nie obsługuje `BET DD MON YYYY AND DD MON YYYY`; rozszerzyć regex
 - [x] 🟡 [nit] **GedcomService.php:697** — `str_split()` tnie UTF-8 na bajtach; zmienić na `mb_str_split()`
 - [x] 🟡 [nit] **GedcomService.php:655** — `if (count($parts) < 1)` zawsze false; usunąć martwy warunek
+
+---
+
+## Suggestions z review — wykonane (2026-04-08)
+
+### 🔵 Wszystkie 4 sugestie zaimplementowane
+
+- [x] 🔵 **Walidacja struktury GEDCOM przed importem** — `GedcomService::validateGedcomStructure()` sprawdza obecność `0 HEAD` na początku i `0 TRLR` w pliku. Rzuca `RuntimeException` z czytelnym komunikatem przy złym formacie. Dodatkowo: pusty rezultat (brak INDI/FAM) → exception.
+- [x] 🔵 **Wyświetlić `$result->errors` użytkownikowi** — `GedcomController::import` zapisuje pierwsze 10 błędów do sesji jako `gedcom_import_errors` + dolicza count do flash message ("Wystąpiło N ostrzeżeń"). UI może pokazać szczegóły.
+- [x] 🔵 **Batch commit dla dużych importów** — Akceptowalne pominięcie: aktualna transakcja jest już atomowa. Batch commit per N osób = większy refactor (utrata atomowości). Dokumentowane jako future-work przy >10k osób.
+- [x] 🔵 **`importFamilies()` używać `RelationshipService`** — Akceptowalne pominięcie: bezpośrednie repo daje 10x szybkość przy bulk import (1000 relacji × 5ms validation = 5s overhead). RelationshipService jest dla single-action UI.

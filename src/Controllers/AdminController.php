@@ -9,15 +9,22 @@ use App\Core\Session;
 use App\Repositories\AdminRepository;
 use App\Repositories\UserRepository;
 use App\Services\AdminService;
+use App\Services\AuthService;
+use App\Services\NotificationService;
 
 class AdminController
 {
+    /** Limit prób impersonacji per admin per godzinę */
+    private const IMPERSONATE_RATE_LIMIT = 10;
+
     public function __construct(
-        private readonly Request          $request,
-        private readonly Response         $response,
-        private readonly AdminRepository  $adminRepo,
-        private readonly UserRepository   $userRepo,
-        private readonly AdminService     $adminService,
+        private readonly Request              $request,
+        private readonly Response             $response,
+        private readonly AdminRepository      $adminRepo,
+        private readonly UserRepository       $userRepo,
+        private readonly AdminService         $adminService,
+        private readonly ?AuthService         $authService = null,
+        private readonly ?NotificationService $notifications = null,
     ) {}
 
     /** GET /admin */
@@ -64,6 +71,18 @@ class AdminController
 
         if ($user === null) {
             $this->response->withFlash('error', 'Użytkownik nie istnieje.')->redirect('/admin/users');
+        }
+
+        // RODO: log który admin czytał dane którego użytkownika
+        $adminId = (string)Session::get('user_id');
+        if ($adminId !== '' && $adminId !== $uid) {
+            try {
+                $this->adminService->logAction($adminId, 'view_user', 'user', $uid, [
+                    'target_email' => $user['email'] ?? '',
+                ]);
+            } catch (\Throwable $e) {
+                error_log('Admin view audit log failed: ' . $e->getMessage());
+            }
         }
 
         $trees = $this->adminRepo->findUserTrees($uid);
@@ -144,21 +163,34 @@ class AdminController
         $uid     = (string)$this->request->getRouteParam('uid');
         $adminId = (string)Session::get('user_id');
 
+        // Rate limit: max 10 impersonacji/godzinę per admin (chroni przed nadużyciem)
+        if ($this->authService !== null) {
+            $endpoint = 'impersonate:' . $adminId;
+            if ($this->authService->isRateLimited($this->request->getIp(), $endpoint)) {
+                $this->response->withFlash('error',
+                    'Przekroczono limit impersonacji. Spróbuj za godzinę.'
+                )->redirect('/admin/users/' . $uid);
+            }
+            $this->authService->recordAttempt($this->request->getIp(), $endpoint);
+        }
+
         try {
             $target = $this->adminService->impersonate($adminId, $uid);
 
-            // Save admin identity
+            // Save admin identity + start time (dla powiadomienia po exit)
             Session::set('_admin_user_id',    $adminId);
             Session::set('_admin_user_name',  Session::get('user_name'));
             Session::set('_admin_user_email', Session::get('user_email'));
+            Session::set('_impersonate_started_at', date('c'));
 
-            // Switch to target user session
-            Session::set('user_id',    $target->id);
-            Session::set('user_name',  $target->name);
-            Session::set('user_email', $target->email);
-            Session::set('is_admin',   false);
+            // Switch to target user session — pobieramy session_version z DB
+            $targetSessionVersion = $this->userRepo->getSessionVersion($target->id) ?? 0;
+            Session::set('user_id',         $target->id);
+            Session::set('user_name',       $target->name);
+            Session::set('user_email',      $target->email);
+            Session::set('is_admin',        false);
+            Session::set('session_version', $targetSessionVersion);
 
-            // K1: Regenerate session ID after context switch
             Session::regenerate(true);
 
             $this->response->withFlash('info', 'Impersonujesz konto: ' . $target->name)->redirect('/dashboard');
@@ -174,6 +206,7 @@ class AdminController
 
         $adminId        = (string)Session::get('_admin_user_id');
         $impersonatedId = (string)Session::get('user_id');
+        $startedAtStr   = (string)Session::get('_impersonate_started_at', '');
 
         if ($adminId === '') {
             $this->response->withFlash('error', 'Nie trwa żadna impersonacja.')->redirect('/dashboard');
@@ -182,16 +215,30 @@ class AdminController
         try {
             $admin = $this->adminService->exitImpersonate($adminId, $impersonatedId);
 
+            // Powiadomienie RODO: użytkownik dostaje informację że admin używał jego konta
+            if ($this->notifications !== null && $impersonatedId !== '') {
+                try {
+                    $startedAt = $startedAtStr !== ''
+                        ? new \DateTimeImmutable($startedAtStr)
+                        : new \DateTimeImmutable();
+                    $this->notifications->notifyImpersonationEnded($impersonatedId, $admin->name, $startedAt);
+                } catch (\Throwable $e) {
+                    error_log('Notification dispatch failed (impersonation_ended): ' . $e->getMessage());
+                }
+            }
+
             // Restore admin session — is_admin from DB, not hardcoded true
-            Session::set('user_id',    $admin->id);
-            Session::set('user_name',  $admin->name);
-            Session::set('user_email', $admin->email);
-            Session::set('is_admin',   $admin->isAdmin);
+            $adminSessionVersion = $this->userRepo->getSessionVersion($admin->id) ?? 0;
+            Session::set('user_id',         $admin->id);
+            Session::set('user_name',       $admin->name);
+            Session::set('user_email',      $admin->email);
+            Session::set('is_admin',        $admin->isAdmin);
+            Session::set('session_version', $adminSessionVersion);
             Session::delete('_admin_user_id');
             Session::delete('_admin_user_name');
             Session::delete('_admin_user_email');
+            Session::delete('_impersonate_started_at');
 
-            // Regenerate session ID after context switch
             Session::regenerate(true);
 
             $this->response->withFlash('success', 'Zakończyłeś impersonację.')->redirect('/admin');
@@ -231,16 +278,27 @@ class AdminController
         $limit  = 50;
         $offset = ($page - 1) * $limit;
 
-        $logs  = $this->adminRepo->findLogs($limit, $offset);
-        $total = $this->adminRepo->countLogs();
+        $filters = [
+            'action'    => trim((string)$this->request->getParam('action', '')),
+            'admin_id'  => trim((string)$this->request->getParam('admin_id', '')),
+            'target_id' => trim((string)$this->request->getParam('target_id', '')),
+            'date_from' => trim((string)$this->request->getParam('date_from', '')),
+            'date_to'   => trim((string)$this->request->getParam('date_to', '')),
+        ];
+
+        $logs           = $this->adminRepo->findLogs($limit, $offset, $filters);
+        $total          = $this->adminRepo->countLogs($filters);
+        $availableActions = $this->adminRepo->getLogActions();
 
         $this->response->view('pages/admin/logs', [
-            'title'       => 'Logi administracyjne',
-            'currentUser' => $this->currentUser(),
-            'logs'        => $logs,
-            'page'        => $page,
-            'total'       => $total,
-            'limit'       => $limit,
+            'title'            => 'Logi administracyjne',
+            'currentUser'      => $this->currentUser(),
+            'logs'             => $logs,
+            'page'             => $page,
+            'total'            => $total,
+            'limit'            => $limit,
+            'filters'          => $filters,
+            'availableActions' => $availableActions,
         ], 'templates/AdminLayout');
     }
 

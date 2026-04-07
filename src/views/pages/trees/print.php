@@ -9,6 +9,27 @@ declare(strict_types=1);
         <span class="mr-2 text-sm font-medium text-gray-700">
             <?= htmlspecialchars($tree->name) ?>
         </span>
+        <!-- Radio orientacja — ustawia inline @page przy zmianie -->
+        <div class="ml-2 flex items-center gap-2 text-xs text-gray-600">
+            <span>Format:</span>
+            <label class="flex items-center gap-1 cursor-pointer">
+                <input type="radio" name="orientation" value="A3 landscape" checked
+                       onchange="document.getElementById('print-page-style').textContent = '@page { size: A3 landscape; margin: 10mm; }'">
+                A3 ↔
+            </label>
+            <label class="flex items-center gap-1 cursor-pointer">
+                <input type="radio" name="orientation" value="A4 landscape"
+                       onchange="document.getElementById('print-page-style').textContent = '@page { size: A4 landscape; margin: 10mm; }'">
+                A4 ↔
+            </label>
+            <label class="flex items-center gap-1 cursor-pointer">
+                <input type="radio" name="orientation" value="A3 portrait"
+                       onchange="document.getElementById('print-page-style').textContent = '@page { size: A3 portrait; margin: 15mm; }'">
+                A3 ↕
+            </label>
+        </div>
+        <style id="print-page-style"></style>
+
         <div class="ml-auto flex gap-2">
             <button
                 type="button"

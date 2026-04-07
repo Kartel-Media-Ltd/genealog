@@ -1,0 +1,37 @@
+- generic [active] [ref=e1]:
+  - main [ref=e2]:
+    - generic [ref=e3]:
+      - link "Genealog" [ref=e4] [cursor=pointer]:
+        - /url: /
+        - img [ref=e5]
+        - generic [ref=e9]: Genealog
+      - paragraph [ref=e10]: Odkryj swoje korzenie
+    - alert [ref=e13]:
+      - img [ref=e14]
+      - paragraph [ref=e17]: Zaloguj się, aby kontynuować.
+      - button "Zamknij komunikat" [ref=e18] [cursor=pointer]:
+        - img [ref=e19]
+    - generic [ref=e22]:
+      - heading "Zaloguj się" [level=2] [ref=e23]
+      - paragraph [ref=e24]: Wprowadź dane dostępowe do konta
+      - generic [ref=e26]:
+        - generic [ref=e27]:
+          - generic [ref=e28]: Adres e-mail *
+          - textbox "Adres e-mail" [ref=e29]:
+            - /placeholder: jan@kowalski.pl
+        - generic [ref=e30]:
+          - generic [ref=e31]:
+            - generic [ref=e32]: Hasło *
+            - link "Nie pamiętasz?" [ref=e33] [cursor=pointer]:
+              - /url: /forgot-password
+          - generic [ref=e34]:
+            - textbox "Hasło" [ref=e35]
+            - button "Pokaż hasło" [ref=e36] [cursor=pointer]:
+              - img [ref=e37]
+        - button "Zaloguj się" [ref=e40] [cursor=pointer]
+      - generic [ref=e41]:
+        - text: Nie masz konta?
+        - link "Zarejestruj się" [ref=e42] [cursor=pointer]:
+          - /url: /register
+  - contentinfo [ref=e43]:
+    - paragraph [ref=e44]: © 2026 Genealog. Wszelkie prawa zastrzeżone.

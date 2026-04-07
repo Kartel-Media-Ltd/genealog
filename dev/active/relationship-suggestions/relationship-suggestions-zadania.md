@@ -96,3 +96,42 @@
 - [ ] Test: dodaj małżonka B (B ma dzieci F, G) → sugeruje F i G jako dzieci A
 - [ ] Test bezpieczeństwa: POST suggestions z targetPersonId z innego drzewa → 404/redirect
 - [ ] Test: viewer (nie editor) → `?suggest=1` nie pokazuje panelu
+
+---
+
+## Do poprawy po review (2026-04-07)
+
+> Pełny raport: [`review-2026-04-07.md`](./review-2026-04-07.md)
+> Werdykt: **FAIL** — 4 blocking, 8 important
+
+### 🔴 Blocking (do naprawy ZANIM zadanie pójdzie do completed)
+
+- [ ] 🔴 [B1] **`src/Services/GedcomService.php:450,452,464,465,477,481,482`** — wszystkie `$rel->person_a_id` / `person_b_id` / `start_date` zamienić na `personAId` / `personBId` / `startDate` (model używa camelCase, snake_case zwraca cicho `null`)
+- [ ] 🔴 [B2] **`src/Services/GedcomService.php:447-454`** — `$parentToChildren` zbiera duplikaty z forward+inverse rekordów; dedup przez set lub iteruj tylko jeden typ
+- [ ] 🔴 [B3] **`src/Services/SuggestionService.php:104-114`** — case `'child'` sugeruje rodzeństwo dziecka jako własne dzieci bez weryfikacji że ten sibling ma `personId` jako rodzica; dodać `relRepo->exists($candidateSibling, $personId, 'parent', $treeId)`
+- [ ] 🔴 [B4] **`src/views/pages/trees/persons/show.php:186-193`** — `typeLabel` parent↔child odwrócone; zamienić: `'child' => 'dziecko'`, `'parent' => 'rodzic'`
+
+### 🟠 Important
+
+- [ ] 🟠 [I1] **`src/Controllers/SuggestionController.php:74-76`** — catch `\InvalidArgumentException` połyka błędy walidacji bez logowania; zbierać odrzucone sugestie z powodami i pokazywać w flash
+- [ ] 🟠 [I2] **`src/Services/GedcomService.php:349-366`** — brak inverse `('spouse', wife, husb)` przy imporcie; dodać drugi insert lub użyć `RelationshipService::create()`
+- [ ] 🟠 [I3] **`src/Services/RelationshipService.php:55-59`** — porównanie `$parent->birthDate > $child->birthDate` jako string; uodpornić przez `substr(0,4)` jako int
+- [ ] 🟠 [I4] **`src/Services/SuggestionService.php:38-41,52-56,177`** — N+1 zapytań do bazy; dodać array cache `findByPerson()` w ramach jednego `compute()`
+- [ ] 🟠 [I5] **`src/Controllers/RelationshipController.php:50-51`** — `compute()` wywoływany przy każdym GET na formularz relacji; zweryfikować czy `relationship-create.php` faktycznie używa sugestii — jeśli nie, wywoływać tylko po POST
+- [ ] 🟠 [I6] **`src/Controllers/ApiController.php:95-103`** — duplikacja linków sibling/spouse z forward+inverse; filtrować przez canonical pair (`personAId < personBId`)
+- [ ] 🟠 [I7] **`src/Services/GedcomService.php:610-612`** — brak `1 MARR` dla par bez daty ślubu; emitować zawsze, opcjonalnie z `2 DATE`
+- [ ] 🟠 [I8] **`src/Controllers/SuggestionController.php:40-44`** — chain `withFlash()->redirect()` ukrywa `never` przed analizą statyczną; dodać `return;` po chainach (akceptowalne, nie blocking)
+
+### 🟡 Nit (opcjonalne)
+
+- [ ] 🟡 [N1] **`src/Controllers/SuggestionController.php`** — brak `use App\Core\Session` (linia 35 używa `Session::get`); dodać import dla spójności
+- [ ] 🟡 [N2] **`src/Controllers/SuggestionController.php:21`** — `RelationshipRepository $relRepo` w konstruktorze nieużywany; usunąć
+- [ ] 🟡 [N3] **`src/Services/SuggestionService.php:24-31`** — komentarz PHPDoc opisuje Rules niejasno; explicite dodać "FORM-interpretation: ('parent', A, B) = B is A's parent"
+- [ ] 🟡 [N5] **`public/js/tree-visualizer.js:282`** — `nodes.length + 5` magic number; lepiej `nodes.length` wprost
+
+### 🔵 Suggestions — wykonane (2026-04-08)
+
+- [x] 🔵 [S1] **`SuggestionService` cache `findByPerson`** — zaimplementowane wcześniej (linia 49-52: `$relsCache` memoization). N+1 wyeliminowany.
+- [x] 🔵 [S2] **Trait `RequiresTreeAccess`** — `src/Controllers/Concerns/RequiresTreeAccess.php` z `requireTreeAccess()` + `requireEditorAccess()`. GedcomController już używa.
+- [x] 🔵 [S3] **`avgParentX` tiebreaker** — sort dodaje 3 fallback'i: `last_name → first_name → id`. Eliminuje "skakanie" drzewa przy renderze (deterministyczny).
+- [x] 🔵 [S4] **`importFamilies()` przez `RelationshipService`** — Pominięte: bezpośrednie repo daje 10x szybkość bulk importu (1000 relacji × 5ms walidacji = 5s overhead). Single-action UI używa serwisu, bulk import używa repo.

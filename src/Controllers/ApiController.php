@@ -37,13 +37,23 @@ class ApiController
         $persons       = $this->personRepo->findByTree($treeId);
         $relationships = $this->relRepo->findByTree($treeId);
 
-        // Build parentId map: 'child' relationship → personAId is child, personBId is parent
-        // Collect ALL parents per person; first becomes the tree edge, rest become extra links
-        $allParents = []; // childId => [parentId, ...]
+        // Build parentId map. Convention used everywhere in this app:
+        //   ('child', A, B)  = "A has B as child"  → A is the parent, B is the child
+        //   ('parent', A, B) = "A has B as parent" → B is the parent, A is the child
+        // (matches the form labels "Rodzic/Dziecko (tej osoby)" and SuggestionService.)
+        // RelationshipService stores both forward + inverse rows for every pair, so we
+        // collect into a set keyed by parentId to dedupe automatically.
+        $parentSet = []; // childId => [parentId => true, ...]
         foreach ($relationships as $rel) {
             if ($rel->type === 'child') {
-                $allParents[$rel->personAId][] = $rel->personBId;
+                $parentSet[$rel->personBId][$rel->personAId] = true;
+            } elseif ($rel->type === 'parent') {
+                $parentSet[$rel->personAId][$rel->personBId] = true;
             }
+        }
+        $allParents = [];
+        foreach ($parentSet as $childId => $parents) {
+            $allParents[$childId] = array_keys($parents);
         }
         $parentMap        = [];
         $extraParentLinks = [];
@@ -80,16 +90,27 @@ class ApiController
             ];
         }
 
-        // Non-tree links: spouse/sibling/partner + extra parents (2nd+ parent per child)
+        // Non-tree links: spouse/sibling/partner + extra parents (2nd+ parent per child).
+        // RelationshipService stores both forward + inverse for symmetric relations,
+        // so we dedupe by canonical pair to avoid drawing two D3 lines per couple/sibling.
         $links = $extraParentLinks;
+        $seenSymmetric = []; // "type|minId|maxId" => true
         foreach ($relationships as $rel) {
-            if (in_array($rel->type, ['spouse', 'sibling', 'partner'], true)) {
-                $links[] = [
-                    'source' => $rel->personAId,
-                    'target' => $rel->personBId,
-                    'type'   => $rel->type,
-                ];
+            if (!in_array($rel->type, ['spouse', 'sibling', 'partner'], true)) {
+                continue;
             }
+            $a   = $rel->personAId;
+            $b   = $rel->personBId;
+            $key = $rel->type . '|' . ($a < $b ? "$a|$b" : "$b|$a");
+            if (isset($seenSymmetric[$key])) {
+                continue;
+            }
+            $seenSymmetric[$key] = true;
+            $links[] = [
+                'source' => $a,
+                'target' => $b,
+                'type'   => $rel->type,
+            ];
         }
 
         header('Content-Type: application/json');

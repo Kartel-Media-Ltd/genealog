@@ -43,6 +43,11 @@ class Request
         $this->routeParams = $params;
     }
 
+    /**
+     * Weryfikuje CSRF token z body lub nagłówka X-CSRF-TOKEN.
+     *
+     * @throws \RuntimeException gdy token jest nieprawidłowy lub brak
+     */
     public function verifyCsrf(): void
     {
         $token = $this->getBody()['_csrf_token']
@@ -50,8 +55,7 @@ class Request
             ?? '';
 
         if (!Csrf::verify((string)$token)) {
-            http_response_code(403);
-            exit('403 Forbidden — CSRF token mismatch');
+            throw new \RuntimeException('403 Forbidden — CSRF token mismatch');
         }
     }
 

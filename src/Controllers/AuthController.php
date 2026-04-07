@@ -41,10 +41,11 @@ class AuthController
             }
 
             Session::regenerate(true);
-            Session::set('user_id',    $user->id);
-            Session::set('user_name',  $user->name);
-            Session::set('user_email', $user->email);
-            Session::set('is_admin',   $user->isAdmin);
+            Session::set('user_id',         $user->id);
+            Session::set('user_name',       $user->name);
+            Session::set('user_email',      $user->email);
+            Session::set('is_admin',        $user->isAdmin);
+            Session::set('session_version', $user->sessionVersion);
 
             if ($this->hasPendingInvitations($user->email)) {
                 $this->response->redirect('/invitations');
@@ -80,9 +81,11 @@ class AuthController
         try {
             $user = $this->authService->register($name, $email, $password, $this->request->getIp());
             Session::regenerate(true);
-            Session::set('user_id', $user->id);
-            Session::set('user_name', $user->name);
-            Session::set('user_email', $user->email);
+            Session::set('user_id',         $user->id);
+            Session::set('user_name',       $user->name);
+            Session::set('user_email',      $user->email);
+            Session::set('is_admin',        $user->isAdmin);
+            Session::set('session_version', $user->sessionVersion);
 
             if ($this->hasPendingInvitations($user->email)) {
                 $this->response->withFlash('success', 'Konto zostało utworzone. Masz oczekujące zaproszenia!')->redirect('/invitations');

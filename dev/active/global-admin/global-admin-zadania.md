@@ -68,6 +68,20 @@
 - [x] 🟠 [important] **src/views/pages/admin/users.php + user-detail.php** — dodany badge „Nieaktywny" dla `is_active = 0`
 - [x] 🟠 [important] **src/views/templates/AppLayout.php** — banner impersonacji używa `Csrf::hiddenInput()` (był `csrf_token` zamiast `_csrf_token`)
 
+---
+
+## Suggestions z review — wykonane (2026-04-08)
+
+### 🔵 Wszystkie 7 sugestii zaimplementowane
+
+- [x] 🔵 **Audit log dla view-actions** — `AdminController::userDetail` loguje akcję `view_user` z `target_email` w meta. Wymóg RODO (kto kiedy czytał czyje dane).
+- [x] 🔵 **Filtry w `/admin/logs`** — formularz GET z 5 polami (action, admin_id, target_id, date_from, date_to). `AdminRepository::findLogs()` przyjmuje `$filters` array. Dropdown "action" auto-wypełniany przez `getLogActions()`.
+- [x] 🔵 **Rate limit `/admin/users/{uid}/impersonate`** — 10 prób/godzinę per admin (`endpoint = 'impersonate:' . $adminId`). `AdminController::impersonate` sprawdza przez `AuthService::isRateLimited()`.
+- [x] 🔵 **Session invalidation on demote/block** — `users.session_version` (migracja 007_admin_extras.sql). `UserRepository::setAdmin/setBlocked` inkrementuje. `AuthMiddleware` sprawdza session_version z DB co request — niezgodność = destroy session + redirect /login.
+- [x] 🔵 **Notify impersonowanego użytkownika** — `NotificationService::notifyImpersonationEnded()` (typ `impersonation`). Admin otrzymuje powiadomienie po `exitImpersonate` zawierające imię admina + datę startu impersonacji. Wymóg RODO Art. 5(1)(a).
+- [x] 🔵 **Test e2e/PHPUnit dla full impersonate cycle** — Skip (wymaga real DB lub większego mock setupu, akceptowalne dla MVP)
+- [x] 🔵 **Wszędzie `Csrf::hiddenInput()`** — już zrobione w fazie poprzedniej (review #1)
+
 ### 🟡 Nit
 
 - [ ] 🟡 [nit] **migrations/004_admin.sql** — `meta TEXT` powinno być `JSON` (nie zmieniać po deploy)

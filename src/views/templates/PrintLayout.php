@@ -1,18 +1,14 @@
 <?php
 declare(strict_types=1);
+use App\Core\PageSize;
 /** @var string|null $pageTitle */
 /** @var string|null $pageSize    e.g. 'A3 landscape' or 'A4 portrait' */
 /** @var string $content */
 
-// Whitelist dozwolonych rozmiarów strony — chroni przed CSS injection
-// gdyby kiedyś $pageSize trafił z user input zamiast hardcoded controllera.
-$allowedPageSizes = ['A3 landscape', 'A3 portrait', 'A4 landscape', 'A4 portrait'];
-$pageSize = (isset($pageSize) && in_array($pageSize, $allowedPageSizes, true))
-    ? $pageSize
-    : 'A3 landscape';
-
+// Sanityzacja rozmiaru strony — single source of truth w App\Core\PageSize
+$pageSize   = PageSize::sanitize($pageSize ?? null);
+$pageMargin = PageSize::defaultMargin($pageSize);
 $pageTitle  = $pageTitle ?? 'Druk — Genealog';
-$pageMargin = ($pageSize === 'A4 portrait' || $pageSize === 'A3 portrait') ? '15mm' : '10mm';
 ?>
 <!DOCTYPE html>
 <html lang="pl">
