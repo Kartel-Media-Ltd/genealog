@@ -34,7 +34,17 @@ class AuthServiceTest extends TestCase
         $this->userRepo->expects($this->once())
             ->method('create');
 
-        $expectedUser = new User('uuid-1', 'jan@test.pl', 'Jan', 'pl', true, true, '2026-01-01');
+        $expectedUser = new User(
+            id:                 'uuid-1',
+            email:              'jan@test.pl',
+            name:               'Jan',
+            locale:             'pl',
+            isActive:           true,
+            emailNotifications: true,
+            isAdmin:            false,
+            isBlocked:          false,
+            createdAt:          '2026-01-01',
+        );
         $this->userRepo->expects($this->once())
             ->method('findById')
             ->willReturn($expectedUser);

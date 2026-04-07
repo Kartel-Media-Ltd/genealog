@@ -104,6 +104,12 @@ class Router
 
         if (is_string($handler) && str_contains($handler, '@')) {
             [$class, $method] = explode('@', $handler, 2);
+            if (!class_exists($class)) {
+                throw new \RuntimeException("Route handler class not found: {$class}");
+            }
+            if (!method_exists($class, $method)) {
+                throw new \RuntimeException("Route handler method not found: {$class}::{$method}");
+            }
             (new $class())->$method($request);
             return;
         }

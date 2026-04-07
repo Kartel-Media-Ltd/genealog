@@ -14,8 +14,9 @@ class Request
 
     public function getPath(): string
     {
-        $path = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?? '/';
-        return '/' . trim($path, '/') ?: '/';
+        $path    = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?? '/';
+        $trimmed = trim($path, '/');
+        return $trimmed === '' ? '/' : '/' . $trimmed;
     }
 
     public function getBody(): array
@@ -69,11 +70,16 @@ class Request
 
     public function getIp(): string
     {
-        foreach (['HTTP_CF_CONNECTING_IP', 'HTTP_X_FORWARDED_FOR', 'REMOTE_ADDR'] as $key) {
-            if (!empty($_SERVER[$key])) {
-                return trim(explode(',', $_SERVER[$key])[0]);
+        $remoteAddr    = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+        $trustedProxies = defined('TRUSTED_PROXIES') ? TRUSTED_PROXIES : [];
+
+        if (in_array($remoteAddr, (array)$trustedProxies, true)) {
+            foreach (['HTTP_CF_CONNECTING_IP', 'HTTP_X_FORWARDED_FOR'] as $key) {
+                if (!empty($_SERVER[$key])) {
+                    return trim(explode(',', $_SERVER[$key])[0]);
+                }
             }
         }
-        return '0.0.0.0';
+        return $remoteAddr;
     }
 }

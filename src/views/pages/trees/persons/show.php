@@ -183,9 +183,11 @@ $suggestions ??= [];
                     <?php foreach ($suggestions as $s): ?>
                         <?php
                         $tp      = $s['targetPerson'];
+                        // FORM-interpretation: ('parent', A, B) = "B is A's parent",
+                        // ('child', A, B) = "B is A's child" — label describes role of $tp.
                         $typeLabel = match($s['type']) {
-                            'child'   => 'rodzic',
-                            'parent'  => 'dziecko',
+                            'parent'  => 'rodzic',
+                            'child'   => 'dziecko',
                             'sibling' => 'rodzeństwo',
                             'spouse'  => 'małżonek/małżonka',
                             'partner' => 'partner/partnerka',

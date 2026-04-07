@@ -59,6 +59,6 @@ declare(strict_types=1);
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js" defer></script>
+<script src="/vendor/d3.min.js" defer></script>
 <script src="/js/tree-visualizer.js" defer></script>
 <script src="/js/print-helper.js" defer></script>

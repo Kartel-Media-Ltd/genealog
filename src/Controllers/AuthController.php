@@ -6,14 +6,16 @@ namespace App\Controllers;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
+use App\Repositories\InvitationRepository;
 use App\Services\AuthService;
 
 class AuthController
 {
     public function __construct(
-        private readonly Request      $request,
-        private readonly Response     $response,
-        private readonly AuthService  $authService,
+        private readonly Request               $request,
+        private readonly Response              $response,
+        private readonly AuthService           $authService,
+        private readonly ?InvitationRepository $invRepo = null,
     ) {}
 
     public function showLogin(): never
@@ -33,10 +35,21 @@ class AuthController
 
         try {
             $user = $this->authService->login($email, $password, $this->request->getIp());
+
+            if ($user->isBlocked) {
+                $this->response->withFlash('error', 'Twoje konto zostało zablokowane. Skontaktuj się z administratorem.')->redirect('/login');
+            }
+
             Session::regenerate(true);
-            Session::set('user_id', $user->id);
-            Session::set('user_name', $user->name);
+            Session::set('user_id',    $user->id);
+            Session::set('user_name',  $user->name);
             Session::set('user_email', $user->email);
+            Session::set('is_admin',   $user->isAdmin);
+
+            if ($this->hasPendingInvitations($user->email)) {
+                $this->response->redirect('/invitations');
+            }
+
             $this->response->redirect('/dashboard');
         } catch (\Exception $e) {
             $this->response->withFlash('error', $e->getMessage())->redirect('/login');
@@ -65,11 +78,16 @@ class AuthController
         }
 
         try {
-            $user = $this->authService->register($name, $email, $password);
+            $user = $this->authService->register($name, $email, $password, $this->request->getIp());
             Session::regenerate(true);
             Session::set('user_id', $user->id);
             Session::set('user_name', $user->name);
             Session::set('user_email', $user->email);
+
+            if ($this->hasPendingInvitations($user->email)) {
+                $this->response->withFlash('success', 'Konto zostało utworzone. Masz oczekujące zaproszenia!')->redirect('/invitations');
+            }
+
             $this->response->withFlash('success', 'Konto zostało utworzone. Witaj!')->redirect('/dashboard');
         } catch (\Exception $e) {
             $this->response->withFlash('error', $e->getMessage())->redirect('/register');
@@ -81,5 +99,13 @@ class AuthController
         $this->request->verifyCsrf();
         Session::destroy();
         $this->response->redirect('/login');
+    }
+
+    private function hasPendingInvitations(string $email): bool
+    {
+        if ($this->invRepo === null) {
+            return false;
+        }
+        return count($this->invRepo->findAllActiveByEmail($email)) > 0;
     }
 }

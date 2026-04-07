@@ -9,8 +9,17 @@ class Response
 
     public function redirect(string $url, int $statusCode = 302): never
     {
-        // Zapobiegaj open redirect — akceptuj tylko lokalne URL
-        if (!str_starts_with($url, '/') && !str_starts_with($url, SITE_URL)) {
+        // Zapobiegaj open redirect — akceptuj tylko ścieżki względne LUB pełne URL
+        // wskazujące na nasz host. Porównanie hostów eliminuje atak typu
+        // "http://localhost:8002.attacker.com/login" który zaczyna się od SITE_URL.
+        $isRelative = str_starts_with($url, '/') && !str_starts_with($url, '//');
+        $isSameHost = false;
+        if (!$isRelative) {
+            $urlHost  = parse_url($url, PHP_URL_HOST);
+            $siteHost = parse_url(SITE_URL, PHP_URL_HOST);
+            $isSameHost = ($urlHost !== null && $urlHost !== false && $urlHost === $siteHost);
+        }
+        if (!$isRelative && !$isSameHost) {
             $url = '/';
         }
         http_response_code($statusCode);
@@ -30,18 +39,24 @@ class Response
     {
         $viewPath = $this->resolveViewPath($view);
 
+        // Render view content
         ob_start();
         extract($data, EXTR_SKIP);
         include $viewPath;
         $content = ob_get_clean();
 
-        if ($layout !== null) {
-            $layoutPath = $this->resolveViewPath($layout);
-            extract(['content' => $content] + $data, EXTR_SKIP);
-            include $layoutPath;
-        } else {
+        if ($layout === null) {
             echo $content;
+            exit;
         }
+
+        // Render layout. UWAGA: drugi `extract($data, EXTR_SKIP)` byłby
+        // no-op (zmienne już zdefiniowane w lokalnym scope przez pierwszy extract).
+        // `$content` natomiast jest świeży — potrzebujemy go w layoucie.
+        // EXTR_SKIP zachowuje istniejące zmienne, więc kolejność jest bezpieczna.
+        $layoutPath = $this->resolveViewPath($layout);
+        extract(['content' => $content] + $data, EXTR_SKIP);
+        include $layoutPath;
         exit;
     }
 

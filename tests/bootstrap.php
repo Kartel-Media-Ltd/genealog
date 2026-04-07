@@ -17,7 +17,7 @@ if (!defined('RATE_LIMIT_ATTEMPTS')) define('RATE_LIMIT_ATTEMPTS', 5);
 if (!defined('RATE_LIMIT_WINDOW'))   define('RATE_LIMIT_WINDOW', 900);
 if (!defined('ROOT_PATH'))          define('ROOT_PATH', dirname(__DIR__));
 if (!defined('SRC_PATH'))           define('SRC_PATH', ROOT_PATH . '/src');
-if (!defined('VIEWS_PATH'))         define('VIEWS_PATH', SRC_PATH . '/Views');
+if (!defined('VIEWS_PATH'))         define('VIEWS_PATH', SRC_PATH . '/views');
 if (!defined('STORAGE_PATH'))       define('STORAGE_PATH', ROOT_PATH . '/storage');
 if (!defined('SITE_URL'))           define('SITE_URL', 'http://localhost:8002');
 if (!defined('APP_ENV'))            define('APP_ENV', 'test');

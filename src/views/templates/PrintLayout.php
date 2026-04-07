@@ -21,7 +21,7 @@ $pageMargin = ($pageSize === 'A4 portrait' || $pageSize === 'A3 portrait') ? '15
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" href="data:,">
     <title><?= htmlspecialchars($pageTitle) ?></title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="/vendor/tailwind.js"></script>
     <link rel="stylesheet" href="/css/globals.css">
     <style>
         /* Per-page size — wartość z whitelist, pozostałe reguły @media print w globals.css */

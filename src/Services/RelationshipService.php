@@ -24,10 +24,12 @@ class RelationshipService
         ?string $notes     = null,
     ): Relationship {
         // Validate both persons belong to this tree
-        if ($this->personRepo->findById($personAId, $treeId) === null) {
+        $personA = $this->personRepo->findById($personAId, $treeId);
+        if ($personA === null) {
             throw new \InvalidArgumentException('Pierwsza osoba nie istnieje w tym drzewie.');
         }
-        if ($this->personRepo->findById($personBId, $treeId) === null) {
+        $personB = $this->personRepo->findById($personBId, $treeId);
+        if ($personB === null) {
             throw new \InvalidArgumentException('Druga osoba nie istnieje w tym drzewie.');
         }
 
@@ -42,6 +44,34 @@ class RelationshipService
         // Check for duplicate
         if ($this->relRepo->exists($personAId, $personBId, $type, $treeId)) {
             throw new \InvalidArgumentException('Ta relacja już istnieje.');
+        }
+
+        // Sanity check for parent/child: parent must be older than child (when both dates known).
+        // App convention: ('parent', A, B) = "A has B as parent" → B is parent, A is child
+        //                 ('child',  A, B) = "A has B as child"  → A is parent, B is child
+        if (in_array($type, ['parent', 'child'], true)) {
+            $parent = $type === 'parent' ? $personB : $personA;
+            $child  = $type === 'parent' ? $personA : $personB;
+            // Compare birth years as integers — string compare on Y-m-d would work,
+            // but breaks if a date is stored as bare "1850" or with a different format.
+            $parentYear = $parent->birthDate !== null ? (int) substr($parent->birthDate, 0, 4) : null;
+            $childYear  = $child->birthDate  !== null ? (int) substr($child->birthDate,  0, 4) : null;
+            if ($parentYear !== null && $childYear !== null && $parentYear > $childYear) {
+                throw new \InvalidArgumentException(sprintf(
+                    'Nie można dodać relacji: %s (ur. %d) jest młodszy/a niż %s (ur. %d) i nie może być rodzicem.',
+                    $parent->fullName(), $parentYear,
+                    $child->fullName(),  $childYear,
+                ));
+            }
+            // Reject creating a cycle: opposite-direction parent/child for the same pair.
+            $opposite = $type === 'parent' ? 'child' : 'parent';
+            if ($this->relRepo->exists($personAId, $personBId, $opposite, $treeId)
+                || $this->relRepo->exists($personBId, $personAId, $type, $treeId)) {
+                throw new \InvalidArgumentException(sprintf(
+                    'Sprzeczna relacja: między %s i %s istnieje już odwrotne pokrewieństwo.',
+                    $personA->fullName(), $personB->fullName(),
+                ));
+            }
         }
 
         $id = $this->generateUuid();

@@ -12,6 +12,7 @@
  * @param string $src   URL zdjęcia (pusty = tylko inicjały)
  * @param string $size  sm | md | lg | xl
  */
+if (!function_exists('render_avatar')):
 function render_avatar(
     string $name,
     string $src = '',
@@ -63,6 +64,9 @@ function render_avatar(
     <?php
 }
 
+endif;
+
+if (!function_exists('avatar_initials')):
 /**
  * Generuje inicjały z nazwy (max 2 litery).
  * "Jan Kowalski" → "JK"
@@ -78,6 +82,9 @@ function avatar_initials(string $name): string {
     return mb_strtoupper(mb_substr($name, 0, 2));
 }
 
+endif;
+
+if (!function_exists('avatar_bg_color')):
 /**
  * Deterministyczny kolor tła z nazwy (spójny dla tego samego użytkownika).
  */
@@ -93,14 +100,11 @@ function avatar_bg_color(string $name): string {
         '#0369a1', // sky
     ];
 
-    $hash = 0;
-    for ($i = 0; $i < mb_strlen($name); $i++) {
-        $hash = (($hash << 5) - $hash) + mb_ord(mb_substr($name, $i, 1));
-        $hash &= $hash;
-    }
-
-    return $colors[abs($hash) % count($colors)];
+    // crc32 jest deterministyczne, szybkie i bezpieczne dla 32-bit + 64-bit systemów
+    $hash = crc32($name);
+    return $colors[$hash % count($colors)];
 }
+endif;
 
 /*
  * ─────────────────────────────────────────────────────────────

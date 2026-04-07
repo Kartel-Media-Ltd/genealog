@@ -60,3 +60,40 @@
 - [x] `tests/Unit/Core/RouterTest.php` — testStaticRoute, testParamRoute, testNotFound, testMethodNotAllowed
 - [x] `tests/Unit/Services/AuthServiceTest.php` — testRegister, testLoginSuccess, testLoginWrongPassword, testRateLimit
 - [x] `composer test` — wszystkie testy zielone (22/22)
+
+---
+
+## Do poprawy po review
+
+### 🔴 Blocking — wszystkie naprawione
+
+- [x] 🔴 [blocking] **AppLayout.php:225-227, 282-284** — logout (desktop+mobile) używa `<?= \App\Core\Csrf::hiddenInput() ?>` zamiast hardcoded `csrf_token`
+- [x] 🔴 [blocking] **invite/pending.php:67** — `<?= Csrf::hiddenInput() ?>`
+- [x] 🔴 [blocking] **AdminLayout.php:117** — flash render: `if (!empty($flash['type']))` z dostępem przez `$flash['type']/$flash['message']` (nie foreach)
+- [x] 🔴 [blocking] **tests/bootstrap.php:20** — `'/views'` (lowercase, zgodnie z filesystem)
+- [x] 🔴 [blocking] **Response::redirect** — open redirect fix: porównanie hostów przez `parse_url(...)`, blokowanie `//attacker.com` przez `str_starts_with($url, '//')`
+- [x] 🔴 [blocking] **form-group.php:48** — `render_input(id, type, label, value, error, helperText, attrs)` poprawna sygnatura
+
+### 🟠 Important — wszystkie naprawione
+
+- [x] 🟠 [important] **AuthServiceTest.php:37** — `new User(...)` z named args (`id:`, `email:`, ..., `isAdmin: false`, `isBlocked: false`); 22/22 testy przechodzą
+- [x] 🟠 [important] **pages/login.php + register.php** — usunięte (były dead duplikaty `pages/auth/login.php` + `pages/auth/register.php`)
+- [x] 🟠 [important] **organisms/site-header.php** — usunięte (helper `render_site_header()` nigdzie nie wołany; AppLayout inlinuje header)
+- [x] 🟠 [important] **AuthService::register()** — rate limit przez `isRateLimited($ip, 'register')` + `recordAttempt($ip, 'register')`; AuthController przekazuje `$request->getIp()`
+- [x] 🟠 [important] **public/index.php:20** — HSTS warunkowy gdy HTTPS: `Strict-Transport-Security: max-age=31536000; includeSubDomains`
+- [x] 🟠 [important] **Database.php** — `__wakeup()` rzuca `LogicException`; usunięty duplikat `__clone()`
+- [x] 🟠 [important] **Csrf::verify()** — docblock wyjaśniający rotation side-effect (podwójny klik = 403, celowe)
+
+> **Uwaga:** review błędnie sklasyfikował `pages/dashboard.php`, `profile.php`, `settings.php` jako dead code — te pliki SĄ aktywnie używane przez `HomeController`, `ProfileController`, `SettingsController`. Tylko `pages/login.php`, `pages/register.php` (root level) i `organisms/site-header.php` były dead.
+
+### 🟡 Nit — wszystkie naprawione
+
+- [x] 🟡 [nit] **Session.php** — `error_log` ostrzeżenie gdy sesja już aktywna z innego źródła; explicit `if ($started) return` przed sprawdzeniem PHP_SESSION_ACTIVE
+- [x] 🟡 [nit] **Response.php** — komentarz wyjaśniający bezpieczne użycie `EXTR_SKIP` w 2-fazowym extract
+- [x] 🟡 [nit] **Router.php:107** — dodane `class_exists` + `method_exists` check przed dynamic call
+- [x] 🟡 [nit] **Request.php:18** — refactor `getPath()` na czytelne `trim` + ternary bez precedence pułapki
+- [x] 🟡 [nit] **avatar.php** — `crc32($name)` zamiast ręcznego hash loop (deterministyczne, 32-bit safe)
+- [x] 🟡 [nit] **AppLayout.php:103** — `(string)(parse_url(...) ?: '/')` — null safety dla PHP 8.1+ deprecation
+- [x] 🟡 [nit] **AuthService::generateUuid** — zostaje (MVP, `ramsey/uuid` to extra dependency)
+- [x] 🟡 [nit] **.htaccess dead defenses** — zostają (defense-in-depth)
+- [x] 🟡 [nit] **composer.json phpstan** — zostaje (opcjonalne, można dodać później)

@@ -4,15 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="<?= htmlspecialchars($pageDescription ?? 'Genealog — aplikacja genealogiczna') ?>">
+    <link rel="icon" href="data:,">
     <title><?= htmlspecialchars(($pageTitle ?? 'Genealog') . ' — Genealog') ?></title>
 
-    <!-- Tailwind CSS v4 CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Tailwind CSS (lokalny vendor) -->
+    <script src="/vendor/tailwind.js"></script>
     <!-- Globalne style (tokeny shadcn, animacje) -->
     <link rel="stylesheet" href="/css/globals.css">
 
-    <!-- Alpine.js (dismiss alertów, interakcje) -->
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <!-- Alpine.js (lokalny vendor) -->
+    <script defer src="/vendor/alpine.min.js"></script>
 
     <!-- Tailwind config — CSS variables -->
     <script>

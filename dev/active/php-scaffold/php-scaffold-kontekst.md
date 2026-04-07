@@ -46,3 +46,46 @@ CSS variables z shadcn skopiowane do `globals.css`. Komponenty reimplementowane 
 - `Csrf::verify()` w każdym POST/PUT/DELETE — **bez wyjątków**
 - `resolveViewPath()` w Response: `realpath()` + assert że ścieżka zaczyna się od VIEWS_PATH
 - Rate limit check PRZED weryfikacją hasła (nie ujawniaj "złe hasło" vs "zablokowany")
+
+---
+
+## Code Review — 2026-04-07
+
+Review fundamentu po wdrożeniu wszystkich faz scaffolda + kolejnych feature'ów.
+
+**Wynik:** 6 blocking, 9 important, 9 nit, 8 suggestions.
+
+**Pre-existing bugi widoków scaffolda (blockery):**
+1. **CSRF field name mismatch** w 5 miejscach (`csrf_token` zamiast `_csrf_token`):
+   - `AppLayout.php:225-227, 282-284` — logout form (desktop+mobile)
+   - `pages/invite/pending.php:67` — akcept zaproszenia
+   - `pages/login.php`, `pages/register.php` (dead pages, root level)
+   - **Rezultat:** każde wylogowanie i akcept zaproszenia → 403
+2. **AdminLayout.php:117** — `foreach ($flash as $type => $msg)` iteruje tablicę `['type'=>...,'message'=>...]` → renderuje 2 alerty z mangled content (każdy admin flash widać 2x)
+3. **`tests/bootstrap.php:20`** — `'/Views'` (uppercase), katalog to `src/views` — działa tylko na macOS APFS
+4. **Open redirect w `Response::redirect`** — `str_starts_with($url, SITE_URL)` przepuszcza `http://localhost:8002.attacker.com`
+5. **`form-group.php:48`** — `render_input` ze złą sygnaturą (dead code, ale bug-trap)
+
+**Pre-existing fail w testach:**
+- `AuthServiceTest::testRegisterSuccess` — `new User(...)` z 7 argumentami; konstruktor wymaga 9 (po wprowadzeniu admin/blocked)
+
+**Dead code (~1500 linii):**
+- `views/pages/{login,register,dashboard,profile,settings}.php` (root level) — duplikaty zastąpione wersjami w podkatalogach
+- `views/organisms/site-header.php` (222 linie) — helper nigdzie nie wołany; AppLayout inlinuje header
+
+**Architektoniczne braki:**
+- Brak rate limitu na `register()` (tylko `login`)
+- Brak HSTS w security headers
+- Brak DI containera (front controller rozrasta się liniowo)
+- Brak `phpstan`/`psalm` w dev-deps
+- Brak testów `Session::flash`/`Request::verifyCsrf` (źródło 1/3 dzisiejszych bugów)
+
+**Co działa dobrze:**
+- Cryptographically secure CSRF (random_bytes(32), hash_equals, rotacja)
+- PDO bez konkatenacji, EMULATE_PREPARES=false
+- Bcrypt cost 12, path traversal protection
+- Session security (httponly, samesite=Strict, cookie_secure, regeneracja)
+- Rate limiting pre-password-verify
+- Atomic design + WCAG
+
+Pełny raport: `dev/active/php-scaffold/review-php-scaffold.md`

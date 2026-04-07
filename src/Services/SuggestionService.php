@@ -20,30 +20,45 @@ class SuggestionService
      * Returns array of:
      *   ['type' => string, 'targetPerson' => Person, 'reason' => string]
      *
+     * Convention used here (FORM-interpretation, matches the form labels and the rest
+     * of the codebase after the 2026-04-07 refactor):
+     *
+     *   ('parent', A, B) = "A has B as a parent"  → B is A's parent
+     *   ('child',  A, B) = "A has B as a child"   → B is A's child
+     *   ('sibling',A, B) = symmetric
+     *   ('spouse', A, B) = symmetric
+     *
+     * `findByPerson(X)` returns rows where X = personA, so the joined "other" is in
+     * personB and the row's type tells us what role personB plays for X.
+     *
      * Rules:
-     *  sibling(A,B)         → parents of B (B has type='parent' rows) become candidate parents of A
-     *                       → other siblings of B become candidate siblings of A
-     *  spouse/partner(A,B)  → children of B (B has type='child' rows) become candidate children of A
-     *  child(A,B i.e. B is A's child) → siblings of B become candidate children of A
-     *                                  → B's other parent becomes candidate spouse of A
-     *  parent(A,B i.e. B is A's parent) → B's other children become siblings of A
-     *                                    → B's spouse becomes A's other parent
+     *  sibling(me,B)        → parents of B → my parents; other siblings of B → my siblings
+     *  spouse/partner(me,B) → children of B → my children
+     *  child(me,B)          → siblings of B that share me as parent → my children;
+     *                         B's other parent → my spouse
+     *  parent(me,B)         → B's other children → my siblings; B's spouse → my other parent
      */
     public function compute(string $personId, string $treeId): array
     {
-        $myRels    = $this->relRepo->findByPerson($personId, $treeId);
-        $seen      = [];  // dedup key: "type|targetPersonId"
-        $result    = [];
+        $myRels = $this->relRepo->findByPerson($personId, $treeId);
+        $seen   = [];  // dedup key: "type|targetPersonId"
+        $result = [];
+
+        // Memoise findByPerson() to avoid the obvious N+1 — a single compute() can
+        // touch the same neighbour many times when families are dense.
+        $relsCache = [$personId => $myRels];
+        $relsOf = function (string $id) use (&$relsCache, $treeId): array {
+            return $relsCache[$id] ??= $this->relRepo->findByPerson($id, $treeId);
+        };
 
         foreach ($myRels as $rel) {
-            $otherId = $rel->personBId;
-            $otherRels = $this->relRepo->findByPerson($otherId, $treeId);
+            $otherId   = $rel->personBId;
+            $otherRels = $relsOf($otherId);
 
             switch ($rel->type) {
                 case 'sibling':
                     foreach ($otherRels as $or) {
                         // Parents of sibling → suggest as my parents
-                        // type='parent' in findByPerson(B): B has parent personBId
                         if ($or->type === 'parent') {
                             $candidateId = $or->personBId;
                             // Skip if this candidate is a child of any of my siblings
@@ -66,7 +81,7 @@ class SuggestionService
                         // Other siblings of sibling → suggest as my siblings
                         if ($or->type === 'sibling' && $or->personBId !== $personId) {
                             $candidateSibId = $or->personBId;
-                            // Skip if candidate is a parent of any of my parents (= grandparent, not sibling)
+                            // Skip if candidate is a parent of any of my parents (= grandparent)
                             $isGrandparent = false;
                             foreach ($myRels as $myRel) {
                                 if ($myRel->type === 'parent'
@@ -90,7 +105,6 @@ class SuggestionService
                 case 'partner':
                     foreach ($otherRels as $or) {
                         // Children of spouse → suggest as my children
-                        // type='child' in findByPerson(B): B has child personBId
                         if ($or->type === 'child') {
                             $this->addSuggestion(
                                 $result, $seen, $personId, $treeId,
@@ -102,17 +116,22 @@ class SuggestionService
                     break;
 
                 case 'child':
-                    // $otherId = B = A's child
-                    // type='sibling' in findByPerson(B): B has sibling personBId → suggest as A's other child
+                    // $otherId = B = my child
                     foreach ($otherRels as $or) {
+                        // B's siblings → suggest as my children, but ONLY when the sibling
+                        // already has me (`$personId`) as a parent — otherwise the sibling
+                        // could be from B's other parent's previous relationship.
                         if ($or->type === 'sibling') {
-                            $this->addSuggestion(
-                                $result, $seen, $personId, $treeId,
-                                'child', $or->personBId,
-                                'rodzeństwo dziecka ' . $this->relatedName($rel),
-                            );
+                            $candidateChildId = $or->personBId;
+                            if ($this->relRepo->exists($candidateChildId, $personId, 'parent', $treeId)) {
+                                $this->addSuggestion(
+                                    $result, $seen, $personId, $treeId,
+                                    'child', $candidateChildId,
+                                    'rodzeństwo dziecka ' . $this->relatedName($rel),
+                                );
+                            }
                         }
-                        // B's other parent → suggest as A's spouse
+                        // B's other parent → suggest as my spouse
                         if ($or->type === 'parent' && $or->personBId !== $personId) {
                             $this->addSuggestion(
                                 $result, $seen, $personId, $treeId,
@@ -124,13 +143,12 @@ class SuggestionService
                     break;
 
                 case 'parent':
-                    // $otherId is my parent — their other children are my siblings
-                    // type='child' in findByPerson(B): B has child personBId
+                    // $otherId = B = my parent
                     foreach ($otherRels as $or) {
+                        // B's other children (excluding me) → suggest as my siblings
                         if ($or->type === 'child' && $or->personBId !== $personId) {
                             $candidateChildId = $or->personBId;
-                            // Skip if candidate is also a parent of $otherId (my parent) —
-                            // that would make them my grandparent, not sibling
+                            // Skip if candidate is also a parent of B (= my grandparent)
                             if (!$this->relRepo->exists($otherId, $candidateChildId, 'parent', $treeId)) {
                                 $this->addSuggestion(
                                     $result, $seen, $personId, $treeId,
@@ -139,7 +157,7 @@ class SuggestionService
                                 );
                             }
                         }
-                        // Parent's spouse → suggest as my other parent
+                        // B's spouse → suggest as my other parent
                         if (in_array($or->type, ['spouse', 'partner'], true)) {
                             $this->addSuggestion(
                                 $result, $seen, $personId, $treeId,

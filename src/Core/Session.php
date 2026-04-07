@@ -9,7 +9,15 @@ class Session
 
     public static function start(): void
     {
-        if (self::$started || session_status() === PHP_SESSION_ACTIVE) {
+        if (self::$started) {
+            return;
+        }
+
+        // Defensive: jeśli sesja została już wystartowana z innego źródła
+        // (np. session.auto_start), ustawienia bezpieczne nie zostały zaaplikowane.
+        // Logujemy ostrzeżenie, ale nie restartujemy — to mogłoby zniszczyć dane sesji.
+        if (session_status() === PHP_SESSION_ACTIVE) {
+            error_log('Session::start() — sesja już aktywna z innego źródła; ustawienia httponly/samesite mogą być nieaplikowane');
             self::$started = true;
             return;
         }

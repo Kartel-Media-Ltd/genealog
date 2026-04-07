@@ -15,10 +15,22 @@ class Csrf
         return $_SESSION[self::TOKEN_KEY];
     }
 
+    /**
+     * Weryfikuje token CSRF i — przy sukcesie — rotuje go (nowy token na następny request).
+     *
+     * Side-effect: szybki podwójny submit tego samego formularza po sukcesie pierwszego
+     * skutkuje 403 dla drugiego (bo token został już zrotowany). To celowe — chroni przed
+     * podwójnym wykonaniem akcji (np. podwójne kliknięcie "Wyloguj").
+     */
     public static function verify(string $token): bool
     {
         $stored = $_SESSION[self::TOKEN_KEY] ?? '';
-        return hash_equals($stored, $token);
+        $valid  = hash_equals($stored, $token) && $stored !== '';
+        if ($valid) {
+            unset($_SESSION[self::TOKEN_KEY]);
+            self::generate();
+        }
+        return $valid;
     }
 
     public static function getToken(): string

@@ -19,7 +19,7 @@ function admin_nav_class(string $path, string $current): string {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= htmlspecialchars($title ?? 'Admin') ?> — Genealog Admin</title>
     <link rel="icon" href="data:,">
-    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="/vendor/tailwind.js"></script>
     <style>
         :root {
             --background: 0 0% 100%; --foreground: 240 10% 3.9%;
@@ -113,19 +113,18 @@ function admin_nav_class(string $path, string $current): string {
         <!-- Content -->
         <main class="flex-1 p-6">
 
-            <!-- Flash messages -->
-            <?php foreach ($flash as $type => $msg): ?>
-                <?php
-                $cls = match($type) {
+            <!-- Flash messages — Session::getFlash() zwraca tablicę ['type' => '…', 'message' => '…'] -->
+            <?php if (!empty($flash['type']) && !empty($flash['message'])):
+                $cls = match($flash['type']) {
                     'success' => 'bg-green-50 border-green-200 text-green-800',
                     'error'   => 'bg-red-50 border-red-200 text-red-800',
                     default   => 'bg-blue-50 border-blue-200 text-blue-800',
                 };
-                ?>
+            ?>
                 <div class="mb-4 rounded-md border px-4 py-3 text-sm <?= $cls ?>" role="alert">
-                    <?= htmlspecialchars($msg) ?>
+                    <?= htmlspecialchars($flash['message']) ?>
                 </div>
-            <?php endforeach; ?>
+            <?php endif; ?>
 
             <?= $content ?>
         </main>

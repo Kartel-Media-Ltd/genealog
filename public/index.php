@@ -17,11 +17,17 @@ if (APP_DEBUG) {
 }
 
 // 4. HTTP Security Headers (audit K2)
-header("Content-Security-Policy: default-src 'self'; script-src 'self' https://cdn.tailwindcss.com https://cdn.jsdelivr.net 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; frame-ancestors 'none'");
+header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; frame-ancestors 'none'");
 header("X-Frame-Options: DENY");
 header("X-Content-Type-Options: nosniff");
 header("Referrer-Policy: strict-origin-when-cross-origin");
 header("Permissions-Policy: geolocation=(), microphone=(), camera=()");
+
+// HSTS — wymuś HTTPS dla powracających użytkowników (1 rok, włącznie z subdomenami).
+// Tylko gdy aktualne żądanie idzie przez HTTPS — ustawianie nagłówka po HTTP jest no-op.
+if (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') {
+    header("Strict-Transport-Security: max-age=31536000; includeSubDomains");
+}
 
 // 5. Session start
 use App\Core\Session;
@@ -149,7 +155,7 @@ $router->group('/trees', $mw, function (Router $r) use (
     $treeCtrl   = new TreeController($request, $response, $treeRepo, $treeSvc);
     $personCtrl = new PersonController($request, $response, $treeRepo, $personRepo, $personSvc, $mediaSvc, $relRepo, $suggSvc, $registerSvc);
     $relCtrl    = new RelationshipController($request, $response, $treeRepo, $personRepo, $relRepo, $relSvc, $suggSvc);
-    $suggCtrl   = new SuggestionController($request, $response, $treeRepo, $personRepo, $relRepo, $relSvc);
+    $suggCtrl   = new SuggestionController($request, $response, $treeRepo, $personRepo, $relSvc);
     $invCtrl    = new InvitationController($request, $response, $treeRepo, $invRepo, $invSvc);
 
     // Tree CRUD

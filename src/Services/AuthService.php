@@ -14,8 +14,18 @@ class AuthService
         private readonly Database       $db,
     ) {}
 
-    public function register(string $name, string $email, string $password): User
+    /**
+     * Rejestracja użytkownika.
+     *
+     * @param string|null $ip Adres IP do rate limitu (null = pomiń sprawdzenie, np. w testach)
+     */
+    public function register(string $name, string $email, string $password, ?string $ip = null): User
     {
+        // Rate limit chroni przed spam-rejestracją (sprawdzony PRZED walidacją)
+        if ($ip !== null && $this->isRateLimited($ip, 'register')) {
+            throw new \RuntimeException('Zbyt wiele prób rejestracji. Spróbuj za 15 minut.');
+        }
+
         if (strlen($name) < 2 || strlen($name) > 100) {
             throw new \InvalidArgumentException('Imię musi mieć od 2 do 100 znaków.');
         }
@@ -26,6 +36,10 @@ class AuthService
             throw new \InvalidArgumentException('Hasło musi mieć co najmniej 8 znaków.');
         }
         if ($this->userRepo->emailExists($email)) {
+            // Loguj próbę żeby attacker nie mógł użyć /register jako enumeration
+            if ($ip !== null) {
+                $this->recordAttempt($ip, 'register');
+            }
             throw new \InvalidArgumentException('Konto z tym adresem e-mail już istnieje.');
         }
 
@@ -33,6 +47,10 @@ class AuthService
         $hash = password_hash($password, PASSWORD_BCRYPT, ['cost' => BCRYPT_COST]);
 
         $this->userRepo->create($id, $email, $hash, $name);
+
+        if ($ip !== null) {
+            $this->recordAttempt($ip, 'register');
+        }
 
         return $this->userRepo->findById($id)
             ?? throw new \RuntimeException('Błąd tworzenia konta.');

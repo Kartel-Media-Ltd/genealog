@@ -292,52 +292,49 @@ $pageTitle = 'Dashboard';
                                         </div>
                                         <div>
                                             <h3 class="font-medium text-sm leading-tight text-[hsl(var(--foreground))]">
-                                                <a href="/trees/<?= (int)$tree['id'] ?>"
+                                                <a href="/trees/<?= htmlspecialchars($tree->id) ?>"
                                                    class="focus-visible:outline-none focus-visible:ring-2
                                                           focus-visible:ring-[hsl(var(--ring))] rounded
                                                           after:absolute after:inset-0">
-                                                    <?= htmlspecialchars($tree['name']) ?>
+                                                    <?= htmlspecialchars($tree->name) ?>
                                                 </a>
                                             </h3>
                                             <p class="text-xs text-[hsl(var(--muted-foreground))]">
-                                                <?= (int)($tree['persons_count'] ?? 0) ?> osób
+                                                <?= $tree->personsCount ?> osób
                                             </p>
                                         </div>
                                     </div>
                                     <?php
                                     render_badge(
-                                        ($tree['is_private'] ?? false) ? 'Prywatne' : 'Publiczne',
-                                        ($tree['is_private'] ?? false) ? 'secondary' : 'success'
+                                        $tree->isPublic ? 'Publiczne' : 'Prywatne',
+                                        $tree->isPublic ? 'success' : 'secondary'
                                     );
                                     ?>
                                 </div>
 
                                 <!-- Meta: ostatnia aktualizacja -->
                                 <p class="mb-4 text-xs text-[hsl(var(--muted-foreground))]">
-                                    Zaktualizowano:
-                                    <?= isset($tree['updated_at'])
-                                        ? date('j M Y', strtotime($tree['updated_at']))
-                                        : 'nigdy' ?>
+                                    Zaktualizowano: <?= date('j M Y', strtotime($tree->updatedAt)) ?>
                                 </p>
 
                                 <!-- Akcje karty -->
                                 <div class="relative flex items-center gap-2">
-                                    <a href="/trees/<?= (int)$tree['id'] ?>"
+                                    <a href="/trees/<?= htmlspecialchars($tree->id) ?>"
                                        class="inline-flex h-9 flex-1 items-center justify-center gap-1.5
                                               rounded-md bg-[hsl(var(--primary))] px-3 text-xs font-medium
                                               text-[hsl(var(--primary-foreground))]
                                               hover:bg-[hsl(var(--primary)/0.9)] transition-colors duration-150
                                               focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))]"
-                                       aria-label="Otwórz drzewo: <?= htmlspecialchars($tree['name']) ?>">
+                                       aria-label="Otwórz drzewo: <?= htmlspecialchars($tree->name) ?>">
                                         Otwórz
                                     </a>
-                                    <a href="/trees/<?= (int)$tree['id'] ?>/edit"
+                                    <a href="/trees/<?= htmlspecialchars($tree->id) ?>/edit"
                                        class="inline-flex h-9 items-center justify-center rounded-md border
                                               border-[hsl(var(--input))] px-3 text-xs font-medium
                                               text-[hsl(var(--foreground))] hover:bg-[hsl(var(--accent))]
                                               transition-colors duration-150
                                               focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))]"
-                                       aria-label="Edytuj drzewo: <?= htmlspecialchars($tree['name']) ?>">
+                                       aria-label="Edytuj drzewo: <?= htmlspecialchars($tree->name) ?>">
                                         Edytuj
                                     </a>
                                 </div>

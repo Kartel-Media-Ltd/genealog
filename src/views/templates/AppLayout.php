@@ -7,12 +7,12 @@
     <link rel="icon" href="data:,">
     <title><?= htmlspecialchars(($pageTitle ?? 'Dashboard') . ' — Genealog') ?></title>
 
-    <!-- Tailwind CSS v4 CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Tailwind CSS (lokalny vendor) -->
+    <script src="/vendor/tailwind.js"></script>
     <link rel="stylesheet" href="/css/globals.css">
 
-    <!-- Alpine.js -->
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <!-- Alpine.js (lokalny vendor) -->
+    <script defer src="/vendor/alpine.min.js"></script>
 
     <script>
         tailwind.config = {
@@ -100,7 +100,8 @@
                     ['href' => '/trees',        'label' => 'Moje drzewa'],
                     ['href' => '/search',       'label' => 'Poszukiwania'],
                 ];
-                $currentPath = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+                // PHP 8.1+: str_starts_with($null, ...) jest deprecated — fallback na '/'
+                $currentPath = (string)(parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/');
 
                 foreach ($navItems as $item):
                     $isActive = str_starts_with($currentPath, $item['href']);
@@ -223,8 +224,7 @@
                         <div class="border-t border-[hsl(var(--border))] my-1"></div>
 
                         <form method="POST" action="/logout">
-                            <input type="hidden" name="csrf_token"
-                                   value="<?= htmlspecialchars($_SESSION['_csrf_token'] ?? '') ?>">
+                            <?= \App\Core\Csrf::hiddenInput() ?>
                             <button type="submit" role="menuitem"
                                     class="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm
                                            text-[hsl(var(--destructive))] hover:bg-[hsl(var(--destructive)/0.1)]
@@ -280,7 +280,7 @@
                 </a>
 
                 <form method="POST" action="/logout" class="mt-1">
-                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['_csrf_token'] ?? '') ?>">
+                    <?= \App\Core\Csrf::hiddenInput() ?>
                     <button type="submit"
                             class="flex w-full rounded-md px-3 py-2.5 text-sm text-[hsl(var(--destructive))] hover:bg-[hsl(var(--destructive)/0.1)]">
                         Wyloguj się

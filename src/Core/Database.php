@@ -27,6 +27,13 @@ class Database
         return self::$instance;
     }
 
+    /** Singleton — nie pozwalamy na klonowanie ani deserializację. */
+    private function __clone() {}
+    public function __wakeup(): void
+    {
+        throw new \LogicException('Database singleton cannot be unserialized.');
+    }
+
     public function getPdo(): \PDO
     {
         return $this->pdo;
@@ -63,7 +70,4 @@ class Database
     public function beginTransaction(): void { $this->pdo->beginTransaction(); }
     public function commit(): void           { $this->pdo->commit(); }
     public function rollback(): void         { $this->pdo->rollBack(); }
-
-    // Zapobiega klonowaniu singletona
-    private function __clone() {}
 }

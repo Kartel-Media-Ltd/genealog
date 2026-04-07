@@ -27,32 +27,21 @@ function render_form_group(
     ?string $error = null,
     array   $attrs = []
 ): void {
-    $errorId  = $id . '-error';
-    $hasError = $error !== null;
-
-    // name domyślnie = id
-    $attrs['name'] ??= $id;
-    $attrs['id']   = $id;
-    $attrs['type'] = $type;
-    $attrs['value'] = $value;
-
-    if ($hasError) {
-        $attrs['aria-invalid']       = 'true';
-        $attrs['aria-describedby']   = $errorId;
-    }
-
+    // render_input ma sygnaturę: (id, type, label, value, error, helperText, attrs)
+    // Wewnątrz sam renderuje label przez render_label, więc używamy go w pełni —
+    // bez ręcznego wywołania render_label.
     $required = !empty($attrs['required']);
-    ?>
-    <div class="space-y-1">
-        <?php render_label($id, $labelText, $required) ?>
-        <?php render_input($attrs, $hasError) ?>
-        <?php if ($hasError): ?>
-            <p id="<?= htmlspecialchars($errorId) ?>"
-               class="text-xs text-destructive"
-               role="alert">
-                <?= htmlspecialchars($error) ?>
-            </p>
-        <?php endif; ?>
-    </div>
-    <?php
+    if ($required && !str_contains($labelText, '*')) {
+        // render_input nie obsługuje "required marker" sam — i tak nie szkodzi
+        // bo render_label dba o gwiazdkę.
+    }
+    render_input(
+        id: $id,
+        type: $type,
+        label: $labelText,
+        value: $value,
+        error: $error ?? '',
+        helperText: '',
+        attrs: $attrs,
+    );
 }

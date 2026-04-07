@@ -345,7 +345,9 @@ class GedcomService
             $husbId = $husbXref ? ($xrefMap[$husbXref] ?? null) : null;
             $wifeId = $wifeXref ? ($xrefMap[$wifeXref] ?? null) : null;
 
-            // Spouse relationship — check both directions to avoid duplicates on re-import
+            // Spouse relationship — check both directions to avoid duplicates on re-import.
+            // Spouse is symmetric, so we store both (a,b) and (b,a) just like RelationshipService::create()
+            // does for UI-created spouses, so findByPerson() returns the relation from either side.
             if ($husbId && $wifeId) {
                 $aId = ($husbId < $wifeId) ? $husbId : $wifeId;
                 $bId = ($husbId < $wifeId) ? $wifeId : $husbId;
@@ -362,7 +364,10 @@ class GedcomService
                     $this->relationshipRepo->create(
                         $this->generateUuid(), $treeId, $aId, $bId, 'spouse', $startDate
                     );
-                    $count++;
+                    $this->relationshipRepo->create(
+                        $this->generateUuid(), $treeId, $bId, $aId, 'spouse', $startDate
+                    );
+                    $count += 2;
                 }
             }
 
@@ -376,31 +381,38 @@ class GedcomService
                     continue; // xref not in import — skip
                 }
 
+                // App convention:
+                //   ('parent', A, B) = "A has B as parent"  → personA is the child, personB is the parent
+                //   ('child',  A, B) = "A has B as child"   → personA is the parent, personB is the child
                 if ($husbId) {
-                    if (!$this->relationshipRepo->exists($husbId, $childId, 'parent', $treeId)) {
+                    // child has husb as parent
+                    if (!$this->relationshipRepo->exists($childId, $husbId, 'parent', $treeId)) {
                         $this->relationshipRepo->create(
-                            $this->generateUuid(), $treeId, $husbId, $childId, 'parent'
+                            $this->generateUuid(), $treeId, $childId, $husbId, 'parent'
                         );
                         $count++;
                     }
-                    if (!$this->relationshipRepo->exists($childId, $husbId, 'child', $treeId)) {
+                    // husb has child as child
+                    if (!$this->relationshipRepo->exists($husbId, $childId, 'child', $treeId)) {
                         $this->relationshipRepo->create(
-                            $this->generateUuid(), $treeId, $childId, $husbId, 'child'
+                            $this->generateUuid(), $treeId, $husbId, $childId, 'child'
                         );
                         $count++;
                     }
                 }
 
                 if ($wifeId) {
-                    if (!$this->relationshipRepo->exists($wifeId, $childId, 'parent', $treeId)) {
+                    // child has wife as parent
+                    if (!$this->relationshipRepo->exists($childId, $wifeId, 'parent', $treeId)) {
                         $this->relationshipRepo->create(
-                            $this->generateUuid(), $treeId, $wifeId, $childId, 'parent'
+                            $this->generateUuid(), $treeId, $childId, $wifeId, 'parent'
                         );
                         $count++;
                     }
-                    if (!$this->relationshipRepo->exists($childId, $wifeId, 'child', $treeId)) {
+                    // wife has child as child
+                    if (!$this->relationshipRepo->exists($wifeId, $childId, 'child', $treeId)) {
                         $this->relationshipRepo->create(
-                            $this->generateUuid(), $treeId, $childId, $wifeId, 'child'
+                            $this->generateUuid(), $treeId, $wifeId, $childId, 'child'
                         );
                         $count++;
                     }
@@ -434,12 +446,22 @@ class GedcomService
             fn($r) => $r->type === 'spouse'
         );
 
-        // Index parent relationships for quick lookup: parentId => [childId, ...]
-        $parentToChildren = [];
+        // Index parent relationships for quick lookup: parentId => set of childIds.
+        // App convention: ('parent', A, B) = "A has B as parent" → B is parent, A is child
+        //                 ('child',  A, B) = "A has B as child"  → A is parent, B is child
+        // RelationshipService stores both forward + inverse for each pair, so we use a
+        // set keyed by childId to dedupe automatically.
+        $parentChildSet = []; // parentId => [childId => true, ...]
         foreach ($relationships as $rel) {
             if ($rel->type === 'parent') {
-                $parentToChildren[$rel->person_a_id][] = $rel->person_b_id;
+                $parentChildSet[$rel->personBId][$rel->personAId] = true;
+            } elseif ($rel->type === 'child') {
+                $parentChildSet[$rel->personAId][$rel->personBId] = true;
             }
+        }
+        $parentToChildren = [];
+        foreach ($parentChildSet as $parentId => $children) {
+            $parentToChildren[$parentId] = array_keys($children);
         }
 
         // Build gender lookup for proper HUSB/WIFE assignment
@@ -448,10 +470,20 @@ class GedcomService
             $genderById[$p->id] = $p->gender ?? 'unknown';
         }
 
+        // Dedupe spouse pairs (forward + inverse stored by RelationshipService)
+        $seenSpousePairs = [];
         foreach ($spouseRels as $spouseRel) {
+            $a = $spouseRel->personAId;
+            $b = $spouseRel->personBId;
+            $key = $a < $b ? "$a|$b" : "$b|$a";
+            if (isset($seenSpousePairs[$key])) {
+                continue;
+            }
+            $seenSpousePairs[$key] = true;
+
             // Assign HUSB/WIFE by gender: male → husb, female → wife, unknown → a/b order
-            $aId    = $spouseRel->person_a_id;
-            $bId    = $spouseRel->person_b_id;
+            $aId    = $a;
+            $bId    = $b;
             $aGender = $genderById[$aId] ?? 'unknown';
             $bGender = $genderById[$bId] ?? 'unknown';
 
@@ -463,12 +495,12 @@ class GedcomService
                 'husb'       => $aId,
                 'wife'       => $bId,
                 'children'   => [],
-                'start_date' => $spouseRel->start_date ?? null,
+                'start_date' => $spouseRel->startDate ?? null,
             ];
 
             // Children = persons who have both partners as parents
-            $childrenOfA = $parentToChildren[$spouseRel->person_a_id] ?? [];
-            $childrenOfB = $parentToChildren[$spouseRel->person_b_id] ?? [];
+            $childrenOfA = $parentToChildren[$a] ?? [];
+            $childrenOfB = $parentToChildren[$b] ?? [];
             $family['children'] = array_values(array_intersect($childrenOfA, $childrenOfB));
 
             // If one side has no children listed, try children of either parent
@@ -504,9 +536,9 @@ class GedcomService
     }
 
     /** Build one INDI record */
-    private function buildIndi(object $person): string
+    private function buildIndi(\App\Models\Person $person): string
     {
-        $xref = $person->gedcom_xref ?? ('@I' . $person->id . '@');
+        $xref = $person->gedcomXref ?? ('@I' . $person->id . '@');
         $sex  = match ($person->gender) {
             'male'   => 'M',
             'female' => 'F',
@@ -515,35 +547,35 @@ class GedcomService
 
         $lines = [];
         $lines[] = "0 {$xref} INDI";
-        $lines[] = "1 NAME {$person->first_name} /{$person->last_name}/";
-        $lines[] = "2 GIVN {$person->first_name}";
-        $lines[] = "2 SURN {$person->last_name}";
+        $lines[] = "1 NAME {$person->firstName} /{$person->lastName}/";
+        $lines[] = "2 GIVN {$person->firstName}";
+        $lines[] = "2 SURN {$person->lastName}";
 
-        if (!empty($person->maiden_name)) {
-            $lines[] = "2 _MARN {$person->maiden_name}";
+        if (!empty($person->maidenName)) {
+            $lines[] = "2 _MARN {$person->maidenName}";
         }
 
         $lines[] = "1 SEX {$sex}";
 
         // BIRT
-        if ($person->birth_date || $person->birth_place) {
+        if ($person->birthDate || $person->birthPlace) {
             $lines[] = '1 BIRT';
-            if ($person->birth_date) {
-                $lines[] = '2 DATE ' . $this->formatGedcomDate($person->birth_date);
+            if ($person->birthDate) {
+                $lines[] = '2 DATE ' . $this->formatGedcomDate($person->birthDate);
             }
-            if ($person->birth_place) {
-                $lines[] = "2 PLAC {$person->birth_place}";
+            if ($person->birthPlace) {
+                $lines[] = "2 PLAC {$person->birthPlace}";
             }
         }
 
         // DEAT
-        if ((int)$person->is_living === 0) {
+        if (!$person->isLiving) {
             $lines[] = '1 DEAT Y';
-            if ($person->death_date) {
-                $lines[] = '2 DATE ' . $this->formatGedcomDate($person->death_date);
+            if ($person->deathDate) {
+                $lines[] = '2 DATE ' . $this->formatGedcomDate($person->deathDate);
             }
-            if ($person->death_place) {
-                $lines[] = "2 PLAC {$person->death_place}";
+            if ($person->deathPlace) {
+                $lines[] = "2 PLAC {$person->deathPlace}";
             }
         }
 
@@ -576,7 +608,7 @@ class GedcomService
         // Build xref lookup
         $xrefById = [];
         foreach ($persons as $p) {
-            $xrefById[$p->id] = $p->gedcom_xref ?? ('@I' . $p->id . '@');
+            $xrefById[$p->id] = $p->gedcomXref ?? ('@I' . $p->id . '@');
         }
 
         $lines   = [];
@@ -596,8 +628,10 @@ class GedcomService
             $lines[] = "1 CHIL {$xref}";
         }
 
+        // GEDCOM 5.5.1: emit `1 MARR` for every spouse pair to mark the marriage fact,
+        // even when the wedding date is unknown — Ancestry/MyHeritage rely on this tag.
+        $lines[] = '1 MARR';
         if ($family['start_date']) {
-            $lines[] = '1 MARR';
             $lines[] = '2 DATE ' . $this->formatGedcomDate($family['start_date']);
         }
 
