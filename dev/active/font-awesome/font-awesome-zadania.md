@@ -5,14 +5,14 @@
 ---
 
 ## Status ogólny
-- [ ] Faza 1: Setup vendor + helper (15 min)
-- [ ] Faza 2: Integracja CSS w layoutach (10 min)
-- [ ] Faza 3: Migracja AppLayout (20 min)
-- [ ] Faza 4: Migracja toolbara show.php (15 min)
-- [ ] Faza 5: Migracja AdminLayout sidebar (10 min)
-- [ ] Faza 6: Migracja atomów (20 min)
-- [ ] Faza 7: Migracja stron (30 min)
-- [ ] Faza 8: Verification + dokumentacja (15 min)
+- [x] Faza 1: Setup vendor + helper (15 min)
+- [x] Faza 2: Integracja CSS w layoutach (10 min)
+- [x] Faza 3: Migracja AppLayout (20 min)
+- [x] Faza 4: Migracja toolbara show.php (15 min)
+- [x] Faza 5: Migracja AdminLayout sidebar (10 min)
+- [x] Faza 6: Migracja atomów (20 min)
+- [x] Faza 7: Migracja stron (30 min)
+- [x] Faza 8: Verification + dokumentacja (15 min)
 
 **Total estimated time:** ~2h
 

@@ -397,6 +397,12 @@
                               focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] rounded">
                         Regulamin
                     </a>
+                    <a href="https://fontawesome.com/license/free"
+                       class="text-xs text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]
+                              focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] rounded"
+                       target="_blank" rel="noopener noreferrer">
+                        Icons by Font Awesome (CC BY 4.0)
+                    </a>
                 </nav>
             </div>
         </div>

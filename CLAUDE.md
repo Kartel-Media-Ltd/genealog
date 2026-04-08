@@ -14,6 +14,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Design system**: shadcn/ui — tokeny kolorów, typografia, komponenty (portowane do PHP/HTML)
 - **Wizualizacja drzewa**: **D3.js v7** — `d3.tree()` + SVG (rekomendowane, darmowe, pełna kontrola)
 - **Eksport/druk**: CSS `@media print` + opcjonalnie Puppeteer (Node.js sidecar) do PDF
+- **Ikony**: **Font Awesome 6 Free** (lokalnie w `public/vendor/fontawesome/`) — helper `render_icon()`
 
 > **Dlaczego D3.js a nie GoJS?** GoJS jest płatny (~$600/dev). D3.js daje pełną kontrolę nad SVG, działa dobrze z GEDCOM-style hierarchiami, duża społeczność przykładów genealogicznych. Alternatywa: [FamilyTreeJS](https://github.com/nickaknudson/family-tree) (open source, specjalizowany).
 
@@ -536,6 +537,25 @@ source .env.local && docker exec -i mariadb_docker mariadb \
   -u $DATABASE_USER -p$DATABASE_PASSWORD $DATABASE_NAME \
   < migrations/001_init.sql
 ```
+
+## Ikony — Font Awesome 6 Free
+
+Projekt używa Font Awesome 6 Free hostowanego lokalnie w `public/vendor/fontawesome/`.
+
+**NIE używaj inline SVG dla nowych komponentów** — używaj helpera `render_icon()`.
+
+```php
+<?php require_once __DIR__ . '/../atoms/icon.php'; // dostosuj ścieżkę
+render_icon('user')                                 // dekoracyjna ikona (aria-hidden)
+render_icon('github', 'brands')                     // wariant brands
+render_icon('gear', 'solid', 'h-5 w-5')             // z rozmiarami Tailwind
+render_icon('trash', 'solid', 'h-4 w-4', 'Usuń')   // z aria-label (interaktywna)
+```
+
+**Warianty:** `solid` (default), `brands`, `regular`  
+**Lista ikon:** https://fontawesome.com/search?o=r&m=free&s=solid  
+**fa-fw:** w sidebarach dla wyrównania ikon w kolumnie  
+**A11y:** Każde `render_icon` w `<button>` lub `<a>` MUSI mieć `$title` lub `<span class="sr-only">` w parent.
 
 ## Komendy deweloperskie
 

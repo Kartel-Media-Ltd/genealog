@@ -1,0 +1,3 @@
+# Font Awesome vendor — traktuj jako binary/vendored
+public/vendor/fontawesome/** -text
+public/vendor/fontawesome/** linguist-vendored
