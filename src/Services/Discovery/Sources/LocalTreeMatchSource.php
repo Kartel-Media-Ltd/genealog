@@ -90,7 +90,7 @@ final class LocalTreeMatchSource implements MatchSourceInterface
 
         $rows = $this->db->fetchAll(
             "SELECT p.id, p.first_name, p.last_name, p.birth_date, p.birth_place,
-                    p.death_date, p.gender, p.tree_id,
+                    p.death_date, p.gender, p.tree_id, p.is_living,
                     t.name AS tree_name
              FROM persons p
              JOIN trees t ON t.id = p.tree_id
@@ -119,18 +119,31 @@ final class LocalTreeMatchSource implements MatchSourceInterface
             return [];
         }
 
+        // Jeśli podano nazwisko panieńskie — szukaj też po soundex(imię+panieńskie)
+        $maidenSoundex = null;
+        if ($criteria->maidenName !== null && mb_strlen($criteria->maidenName) >= 2) {
+            $maidenSoundex = $this->fingerprint->computeSoundex($criteria->firstName, $criteria->maidenName);
+        }
+
         $placeholders = implode(',', array_fill(0, count($context->accessibleTreeIds), '?'));
-        $binds        = array_merge([$soundex], $context->accessibleTreeIds);
+
+        if ($maidenSoundex !== null) {
+            $nameWhere = '(p.name_soundex = ? OR p.name_soundex = ?)';
+            $binds     = array_merge([$soundex, $maidenSoundex], $context->accessibleTreeIds);
+        } else {
+            $nameWhere = 'p.name_soundex = ?';
+            $binds     = array_merge([$soundex], $context->accessibleTreeIds);
+        }
 
         $extraWhere = $this->buildExtraWhere($criteria, $binds);
 
         $rows = $this->db->fetchAll(
             "SELECT p.id, p.first_name, p.last_name, p.birth_date, p.birth_place,
-                    p.death_date, p.gender, p.tree_id,
+                    p.death_date, p.gender, p.tree_id, p.is_living,
                     t.name AS tree_name
              FROM persons p
              JOIN trees t ON t.id = p.tree_id
-             WHERE p.name_soundex = ?
+             WHERE {$nameWhere}
                AND p.tree_id IN ($placeholders)
                {$extraWhere}
              LIMIT " . self::FUZZY_LIMIT,
@@ -238,6 +251,7 @@ final class LocalTreeMatchSource implements MatchSourceInterface
     {
         $birthYear = !empty($row['birth_date']) ? (int)substr((string)$row['birth_date'], 0, 4) : null;
         $deathYear = !empty($row['death_date']) ? (int)substr((string)$row['death_date'], 0, 4) : null;
+        $isDead    = !(bool)($row['is_living'] ?? 1);
 
         return new MatchResult(
             sourceType: 'local',
@@ -253,6 +267,7 @@ final class LocalTreeMatchSource implements MatchSourceInterface
             treeId:     (string)$row['tree_id'],
             deathYear:  $deathYear,
             gender:     (string)$row['gender'],
+            isDead:     $isDead,
         );
     }
 }

@@ -184,6 +184,7 @@ final class CrossTreeMatchSource implements MatchSourceInterface
                 treeRef:    $treeRef,
                 treeName:   null,
                 treeId:     null,
+                isDead:     true, // GlobalIndex indeksuje wyłącznie is_living=0
             );
         }
 

@@ -159,13 +159,11 @@ $suggestions ??= [];
         ?>
 
         <?php if (!empty($matchSuggestions) && $canEdit): ?>
-        <!-- Important #9: emit JSON jako script tag zamiast inline `x-data`
-             — chroni przed 50KB+ atrybutem przy bulk GEDCOM imporcie. -->
+        <!-- Stored DB suggestions (z MatchingService) — zachowane dla zgodności wstecznej -->
         <script type="application/json" id="match-suggestions-data">
             <?= json_encode($matchSuggestions, JSON_HEX_TAG | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE) ?>
         </script>
 
-        <!-- Discovery match suggestions — cross-tree / external / local fingerprint matches -->
         <div x-data="matchSuggestionsPanel()"
              class="rounded-lg border border-amber-300 bg-amber-50/60 shadow-sm">
             <div class="border-b border-amber-200 px-6 py-4 flex items-center gap-2">
@@ -188,6 +186,9 @@ $suggestions ??= [];
                                     <span class="text-xs text-amber-700" x-text="item.data.sourceLabel || item.source_type"></span>
                                 </div>
                                 <p class="mt-1 font-medium text-amber-950">
+                                    <template x-if="item.data.isDead || item.data.deathYear">
+                                        <span class="mr-0.5 text-amber-700" title="Osoba zmarła">&#x271D;</span>
+                                    </template>
                                     <span x-text="(item.data.firstName || '?') + ' ' + (item.data.lastName || '?')"></span>
                                     <template x-if="item.data.birthYear">
                                         <span class="text-amber-700 text-sm">
@@ -317,6 +318,324 @@ $suggestions ??= [];
         }
         </script>
         <?php endif; ?>
+
+        <?php if ($canEdit && !$person->isLiving): ?>
+        <!-- Panel live discovery — autosearch na otwarciu strony (dla osób nieżyjących) -->
+        <div x-data="liveDiscoveryPanel('<?= htmlspecialchars($tree->id) ?>', '<?= htmlspecialchars($person->id) ?>', <?= $hasPendingCrossTreeRequest ? 'true' : 'false' ?>, <?= htmlspecialchars(json_encode($crossTreeLinkStatuses, JSON_UNESCAPED_UNICODE), ENT_QUOTES) ?>, <?= $isGlobalAdmin ? 'true' : 'false' ?>)"
+             x-init="autoSearch()"
+             class="rounded-lg border border-amber-200 bg-amber-50/40 shadow-sm">
+
+            <div class="border-b border-amber-100 px-5 py-3.5 flex items-center justify-between gap-3">
+                <div class="flex items-center gap-2">
+                    <?php render_icon('magnifying-glass', 'solid', 'h-4 w-4 text-amber-600') ?>
+                    <h2 class="text-sm font-semibold text-amber-900">Możliwe powiązania</h2>
+                    <span x-show="!loading && totalResults > 0" x-cloak
+                          class="inline-flex items-center rounded-full bg-amber-200 px-1.5 py-0.5 text-xs font-medium text-amber-800"
+                          x-text="totalResults"></span>
+                    <span x-show="loading" x-cloak class="text-xs text-amber-600">
+                        <?php render_icon('spinner', 'solid', 'fa-spin h-3 w-3 mr-1') ?>Szukam…
+                    </span>
+                </div>
+                <button type="button" @click="autoSearch()"
+                        :disabled="loading"
+                        class="text-xs text-amber-600 hover:text-amber-800 disabled:opacity-50">
+                    Odśwież
+                </button>
+            </div>
+
+            <!-- Brak wyników -->
+            <div x-show="!loading && totalResults === 0 && searched" x-transition
+                 class="px-5 py-5 text-center text-sm text-amber-700">
+                Nie znaleziono osób z podobnym profilem w innych drzewach.
+                <p class="mt-1 text-xs text-amber-600">
+                    Aby pojawić się w wyszukiwaniu innych użytkowników, ustaw widoczność osoby na <strong>Anonimowe</strong>
+                    i włącz indeksowanie w <a href="/trees/<?= htmlspecialchars($tree->id) ?>/settings/discovery" class="underline">ustawieniach drzewa</a>.
+                </p>
+            </div>
+
+            <!-- Wyniki cross-tree -->
+            <template x-if="!loading && crossTree.length > 0">
+                <div class="px-5 py-3 border-b border-amber-100 last:border-0">
+                    <h3 class="text-xs font-semibold text-amber-800 mb-2.5">
+                        Z innych drzew (<span x-text="crossTree.length"></span>)
+                        <span class="font-normal text-amber-600">— anonimowe, zgodne z RODO</span>
+                    </h3>
+                    <div class="space-y-2">
+                        <template x-for="m in crossTree" :key="'ct-' + m.sourceId">
+                            <div class="rounded-md border border-amber-200 bg-white px-4 py-3">
+                                <div class="flex items-start justify-between gap-3">
+                                    <div class="min-w-0 flex-1">
+                                        <p class="text-sm font-medium text-slate-800">
+                                            <span class="mr-0.5 text-slate-400">†</span>
+                                            <span x-text="m.firstName + ' ' + m.lastName"></span>
+                                            <span x-show="m.birthYear" class="text-slate-500 text-xs">
+                                                (ur. <span x-text="m.birthYear"></span>)
+                                            </span>
+                                        </p>
+                                        <p class="text-xs text-slate-500 mt-0.5">
+                                            <span x-text="m.treeRef"></span>
+                                            <span x-show="m.region"> · <span x-text="m.region"></span></span>
+                                            <span class="ml-1.5 inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-medium"
+                                                  :class="m.confidence >= 0.85 ? 'bg-green-100 text-green-700' : m.confidence >= 0.65 ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-600'"
+                                                  x-text="Math.round(m.confidence * 100) + '% zgodności'"></span>
+                                        </p>
+                                    </div>
+                                    <!-- Status per-osoba -->
+                                    <template x-if="sentRequests[m.sourceId]?.status === 'pending'">
+                                        <div class="shrink-0 text-xs text-amber-600 flex items-center gap-1">
+                                            <?php render_icon('clock', 'solid', 'h-3 w-3') ?>
+                                            Oczekuje
+                                        </div>
+                                    </template>
+                                    <template x-if="sentRequests[m.sourceId]?.status === 'rejected'">
+                                        <div class="shrink-0 flex items-center gap-1.5">
+                                            <span class="text-xs text-red-500 flex items-center gap-1">
+                                                <?php render_icon('xmark', 'solid', 'h-3 w-3') ?>
+                                                Odrzucono
+                                            </span>
+                                            <template x-if="isAdmin">
+                                                <button type="button" @click="openRequestModal(m)"
+                                                        title="Admin: wyślij prośbę ponownie (nadpisze odrzucone)"
+                                                        class="inline-flex h-6 items-center gap-1 rounded px-2 text-[11px] font-medium border border-orange-300 bg-orange-50 text-orange-700 hover:bg-orange-100 transition-colors">
+                                                    <?php render_icon('rotate-right', 'solid', 'h-3 w-3') ?>
+                                                    Ponów (admin)
+                                                </button>
+                                            </template>
+                                        </div>
+                                    </template>
+                                    <template x-if="sentRequests[m.sourceId]?.status === 'cancelled'">
+                                        <div class="shrink-0 flex items-center gap-1.5">
+                                            <span class="text-xs text-slate-400 flex items-center gap-1">
+                                                <?php render_icon('ban', 'solid', 'h-3 w-3') ?>
+                                                Anulowano
+                                            </span>
+                                            <template x-if="isAdmin">
+                                                <button type="button" @click="openRequestModal(m)"
+                                                        title="Admin: wyślij prośbę ponownie (nadpisze anulowane)"
+                                                        class="inline-flex h-6 items-center gap-1 rounded px-2 text-[11px] font-medium border border-orange-300 bg-orange-50 text-orange-700 hover:bg-orange-100 transition-colors">
+                                                    <?php render_icon('rotate-right', 'solid', 'h-3 w-3') ?>
+                                                    Ponów (admin)
+                                                </button>
+                                            </template>
+                                        </div>
+                                    </template>
+                                    <template x-if="sentRequests[m.sourceId]?.status === 'accepted'">
+                                        <div class="shrink-0 text-xs text-green-600 flex items-center gap-1">
+                                            <?php render_icon('check', 'solid', 'h-3 w-3') ?>
+                                            Połączono
+                                        </div>
+                                    </template>
+                                    <!-- Globalna blokada (pending do innej osoby) -->
+                                    <template x-if="!sentRequests[m.sourceId] && hasPendingRequest">
+                                        <div class="shrink-0 text-xs text-amber-600 flex items-center gap-1"
+                                             title="Masz już oczekującą prośbę. Poczekaj na odpowiedź lub anuluj ją w /connections.">
+                                            <?php render_icon('clock', 'solid', 'h-3 w-3') ?>
+                                            Prośba oczekuje
+                                        </div>
+                                    </template>
+                                    <!-- Przycisk (gdy brak statusu i brak globalnie pending) -->
+                                    <template x-if="!sentRequests[m.sourceId] && !hasPendingRequest">
+                                        <button type="button"
+                                                @click="openRequestModal(m)"
+                                                class="shrink-0 inline-flex h-7 items-center gap-1 rounded-md border border-purple-300 bg-purple-50 px-2.5 text-xs font-medium text-purple-700 hover:bg-purple-100 transition-colors">
+                                            <?php render_icon('link', 'solid', 'h-3 w-3') ?>
+                                            Wyślij prośbę
+                                        </button>
+                                    </template>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+            </template>
+
+            <!-- Wyniki local -->
+            <template x-if="!loading && local.length > 0">
+                <div class="px-5 py-3 border-b border-amber-100 last:border-0">
+                    <h3 class="text-xs font-semibold text-amber-800 mb-2.5">
+                        Z Twoich innych drzew (<span x-text="local.length"></span>)
+                    </h3>
+                    <div class="space-y-2">
+                        <template x-for="m in local" :key="'l-' + m.sourceId">
+                            <div class="rounded-md border border-amber-200 bg-white px-4 py-2.5 flex items-center justify-between gap-3">
+                                <div class="min-w-0">
+                                    <p class="text-sm font-medium text-slate-800 truncate">
+                                        <span x-text="m.firstName + ' ' + m.lastName"></span>
+                                        <span x-show="m.birthYear" class="text-xs text-slate-500">(ur. <span x-text="m.birthYear"></span>)</span>
+                                    </p>
+                                    <p class="text-xs text-slate-500 truncate" x-text="m.treeName"></p>
+                                </div>
+                                <span class="text-xs text-slate-400 shrink-0" x-text="Math.round(m.confidence * 100) + '%'"></span>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+            </template>
+
+            <!-- Modal do wysyłania prośby cross-tree -->
+            <div x-show="requestModal.open" x-cloak
+                 class="fixed inset-0 z-50 flex items-center justify-center p-4"
+                 @keydown.escape.window="requestModal.open = false">
+                <div class="absolute inset-0 bg-black/40" @click="requestModal.open = false"></div>
+                <div class="relative w-full max-w-sm rounded-xl border bg-white shadow-2xl p-5 space-y-3" @click.stop>
+                    <h3 class="text-sm font-semibold text-slate-800">Wyślij prośbę o powiązanie</h3>
+                    <p class="text-xs text-slate-600">
+                        Łączysz: <strong><?= htmlspecialchars($person->firstName . ' ' . $person->lastName) ?></strong>
+                        ↔ <strong x-text="requestModal.targetName"></strong>
+                    </p>
+                    <div>
+                        <label class="text-xs font-medium text-slate-700 block mb-1">Poziom dostępu do danych</label>
+                        <select x-model="requestModal.visibilityLevel"
+                                class="block w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-purple-400">
+                            <option value="shared_basic">Podstawowe (imię, nazwisko, rok ur., płeć)</option>
+                            <option value="shared_full">Pełne (wszystkie dane poza notatkami)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-xs font-medium text-slate-700 block mb-1">Wiadomość (opcjonalnie)</label>
+                        <textarea x-model="requestModal.note" rows="2" maxlength="500"
+                                  placeholder="Np. Ta osoba to babcia ze strony ojca..."
+                                  class="block w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-purple-400 resize-none"></textarea>
+                    </div>
+                    <p x-show="requestModal.error" x-text="requestModal.error" class="text-xs text-red-600"></p>
+                    <div class="flex gap-2 pt-1">
+                        <button type="button"
+                                @click="sendRequest()"
+                                :disabled="requestModal.sending"
+                                class="flex-1 inline-flex justify-center items-center gap-1.5 rounded-md bg-purple-600 px-4 py-2 text-xs font-medium text-white hover:bg-purple-700 disabled:opacity-50 transition-colors">
+                            <span x-show="!requestModal.sending">Wyślij prośbę</span>
+                            <span x-show="requestModal.sending">Wysyłam…</span>
+                        </button>
+                        <button type="button" @click="requestModal.open = false"
+                                class="rounded-md border border-slate-200 px-3 py-2 text-xs font-medium text-slate-600 hover:bg-slate-50">
+                            Anuluj
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script>
+        function liveDiscoveryPanel(treeId, personId, hasPendingRequest, linkStatuses, isAdmin) {
+            return {
+                treeId,
+                personId,
+                hasPendingRequest,
+                isAdmin: !!isAdmin,
+                loading: false,
+                searched: false,
+                local:     [],
+                crossTree: [],
+                external:  [],
+                sentRequests: linkStatuses || {},
+                requestModal: {
+                    open: false,
+                    targetName: '',
+                    targetGpiId: '',
+                    visibilityLevel: 'shared_basic',
+                    note: '',
+                    sending: false,
+                    error: '',
+                },
+
+                get totalResults() {
+                    return this.local.length + this.crossTree.length + this.external.length;
+                },
+
+                async autoSearch() {
+                    this.loading = true;
+                    const params = new URLSearchParams({
+                        treeId:     this.treeId,
+                        firstName:  '<?= addslashes($person->firstName) ?>',
+                        lastName:   '<?= addslashes($person->lastName) ?>',
+                        gender:     '<?= htmlspecialchars($person->gender) ?>',
+                    });
+                    <?php if ($person->birthDate): ?>
+                    params.append('birthYear', '<?= htmlspecialchars(substr($person->birthDate, 0, 4)) ?>');
+                    <?php endif; ?>
+                    <?php if ($person->birthPlace): ?>
+                    params.append('birthPlace', '<?= addslashes($person->birthPlace) ?>');
+                    <?php endif; ?>
+                    <?php if ($person->deathPlace): ?>
+                    params.append('deathPlace', '<?= addslashes($person->deathPlace) ?>');
+                    <?php endif; ?>
+
+                    try {
+                        const resp = await fetch('/api/discovery/search?' + params.toString(), {
+                            headers: { 'Accept': 'application/json' },
+                        });
+                        if (!resp.ok) throw new Error('HTTP ' + resp.status);
+                        const data = await resp.json();
+                        this.local     = data.local     || [];
+                        this.crossTree = data.crossTree || [];
+                        this.external  = data.external  || [];
+
+                        // Auto-open request modal if redirected from /persons/new with ?connect_gpi=
+                        const connectGpi = new URLSearchParams(window.location.search).get('connect_gpi');
+                        if (connectGpi) {
+                            const match = this.crossTree.find(m => m.sourceId === connectGpi);
+                            if (match) {
+                                this.$nextTick(() => this.openRequestModal(match));
+                            }
+                            // Clean up URL without reloading
+                            const cleanUrl = window.location.pathname;
+                            window.history.replaceState(null, '', cleanUrl);
+                        }
+                    } catch (e) {
+                        console.warn('Discovery search failed:', e);
+                    } finally {
+                        this.loading = false;
+                        this.searched = true;
+                    }
+                },
+
+                openRequestModal(match) {
+                    const prev = this.sentRequests[match.sourceId];
+                    this.requestModal.targetName      = match.firstName + ' ' + match.lastName + (match.birthYear ? ' (ur. ' + match.birthYear + ')' : '');
+                    this.requestModal.targetGpiId     = match.sourceId;
+                    this.requestModal.visibilityLevel = prev?.visibilityLevel || 'shared_basic';
+                    this.requestModal.note            = prev?.note || '';
+                    this.requestModal.error           = '';
+                    this.requestModal.sending         = false;
+                    this.requestModal.open            = true;
+                },
+
+                async sendRequest() {
+                    if (this.requestModal.sending) return;
+                    this.requestModal.sending = true;
+                    this.requestModal.error   = '';
+                    try {
+                        const token = document.querySelector('input[name="_csrf_token"]')?.value || '';
+                        const res = await fetch('/api/connections/request', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                            body: new URLSearchParams({
+                                _csrf_token:       token,
+                                requesterPersonId: this.personId,
+                                targetGpiId:       this.requestModal.targetGpiId,
+                                visibilityLevel:   this.requestModal.visibilityLevel,
+                                note:              this.requestModal.note,
+                            }),
+                        });
+                        const json = await res.json();
+                        if (!res.ok) throw new Error(json.error || 'Błąd serwera');
+                        this.sentRequests[this.requestModal.targetGpiId] = {
+                            status: 'pending',
+                            note: this.requestModal.note,
+                            visibilityLevel: this.requestModal.visibilityLevel,
+                        };
+                        this.hasPendingRequest = true;
+                        this.requestModal.open = false;
+                    } catch (e) {
+                        this.requestModal.error = e.message;
+                    } finally {
+                        this.requestModal.sending = false;
+                    }
+                },
+            };
+        }
+        </script>
+        <?php endif; // $canEdit && !$person->isLiving ?>
 
         <?php if (!empty($suggestions) && $canEdit): ?>
         <!-- Suggestions panel -->

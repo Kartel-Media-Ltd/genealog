@@ -42,17 +42,45 @@ require_once __DIR__ . '/../../atoms/icon.php';
             >
         </div>
 
-        <div>
+        <div x-data="{
+                show: false,
+                pw: '',
+                get checks() {
+                    return {
+                        length:  this.pw.length >= 12,
+                        upper:   /[A-Z]/.test(this.pw),
+                        lower:   /[a-z]/.test(this.pw),
+                        digit:   /[0-9]/.test(this.pw),
+                        special: /[^A-Za-z0-9]/.test(this.pw),
+                    };
+                },
+                get score() {
+                    return Object.values(this.checks).filter(Boolean).length;
+                },
+                get label() {
+                    if (!this.pw) return '';
+                    return ['', 'Bardzo słabe', 'Słabe', 'Przeciętne', 'Dobre', 'Silne'][this.score] || 'Silne';
+                },
+                get labelColor() {
+                    return ['', 'text-red-500', 'text-orange-500', 'text-amber-600', 'text-lime-600', 'text-emerald-600'][this.score] || 'text-emerald-600';
+                },
+                segmentColor(i) {
+                    if (this.score === 0 || i >= this.score) return 'bg-muted';
+                    return ['', 'bg-red-500', 'bg-orange-500', 'bg-amber-500', 'bg-lime-500', 'bg-emerald-500'][this.score];
+                },
+            }">
             <label for="password" class="block text-sm font-medium text-foreground mb-1">
                 Hasło <span class="text-destructive" aria-hidden="true">*</span>
             </label>
-            <div class="relative" x-data="{ show: false }">
+            <div class="relative">
                 <input
                     :type="show ? 'text' : 'password'"
+                    x-model="pw"
                     id="password"
                     name="password"
                     required
                     autocomplete="new-password"
+                    aria-describedby="password-strength-desc"
                     class="w-full h-10 px-3 py-2 pr-10 rounded-md border border-border bg-background text-foreground text-sm
                            placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
                 >
@@ -63,7 +91,48 @@ require_once __DIR__ . '/../../atoms/icon.php';
                     <span x-show="show"><?php render_icon('eye-slash', 'solid', 'h-4 w-4') ?></span>
                 </button>
             </div>
-            <p class="mt-1 text-xs text-muted-foreground">Minimum 12 znaków, w tym cyfra lub znak specjalny.</p>
+
+            <!-- Pasek siły hasła -->
+            <div class="mt-2" id="password-strength-desc" aria-live="polite">
+                <div class="flex gap-1 mb-1" role="presentation" aria-hidden="true">
+                    <template x-for="i in 5" :key="i">
+                        <div class="h-1 flex-1 rounded-full transition-colors duration-300"
+                             :class="segmentColor(i)"></div>
+                    </template>
+                </div>
+                <div class="flex items-center justify-between">
+                    <p class="text-[11px] font-medium transition-colors duration-200"
+                       :class="pw ? labelColor : 'text-muted-foreground'"
+                       x-text="pw ? label : 'Wpisz hasło'"></p>
+                    <p class="text-[11px] text-muted-foreground" x-show="pw"
+                       x-text="score + '/5'"></p>
+                </div>
+
+                <!-- Wymagania -->
+                <ul class="mt-2 space-y-1" x-show="pw" x-transition>
+                    <template x-for="(item, idx) in [
+                        { key: 'length',  label: 'Min. 12 znaków' },
+                        { key: 'upper',   label: 'Wielka litera (A–Z)' },
+                        { key: 'lower',   label: 'Mała litera (a–z)' },
+                        { key: 'digit',   label: 'Cyfra (0–9)' },
+                        { key: 'special', label: 'Znak specjalny (!@#$…)' },
+                    ]" :key="idx">
+                        <li class="flex items-center gap-1.5 text-[11px] transition-colors duration-150"
+                            :class="checks[item.key] ? 'text-emerald-600' : 'text-muted-foreground'">
+                            <span class="flex-shrink-0 h-3.5 w-3.5 rounded-full flex items-center justify-center transition-colors duration-150"
+                                  :class="checks[item.key] ? 'bg-emerald-100' : 'bg-muted'">
+                                <svg x-show="checks[item.key]" class="h-2 w-2 text-emerald-600" fill="currentColor" viewBox="0 0 12 12" aria-hidden="true">
+                                    <path d="M10 3L5 8.5 2 5.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                                </svg>
+                                <svg x-show="!checks[item.key]" class="h-1.5 w-1.5 text-muted-foreground/50" fill="currentColor" viewBox="0 0 6 6" aria-hidden="true">
+                                    <circle cx="3" cy="3" r="2"/>
+                                </svg>
+                            </span>
+                            <span x-text="item.label"></span>
+                        </li>
+                    </template>
+                </ul>
+            </div>
         </div>
 
         <div>

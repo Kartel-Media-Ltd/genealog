@@ -30,6 +30,7 @@ require_once __DIR__ . '/../../../atoms/icon.php';
               class="p-6 space-y-6" novalidate
               x-data="personDiscovery('<?= htmlspecialchars($tree->id) ?>')">
             <?= Csrf::hiddenInput() ?>
+            <input type="hidden" name="cross_tree_gpi_id" :value="selectedCrossTreeGpi">
 
             <!-- Sekcja 1: Dane podstawowe -->
             <fieldset class="space-y-4">
@@ -88,6 +89,7 @@ require_once __DIR__ . '/../../../atoms/icon.php';
                                 <div class="flex items-center justify-between gap-2 rounded-md border border-border bg-card px-3 py-2">
                                     <div class="min-w-0">
                                         <div class="text-sm font-medium text-foreground truncate">
+                                            <template x-if="m.isDead || m.deathYear"><span class="mr-0.5 text-muted-foreground">&#x271D;</span></template>
                                             <span x-text="m.firstName + ' ' + m.lastName"></span>
                                             <span x-show="m.birthYear" class="text-xs text-muted-foreground">
                                                 (ur. <span x-text="m.birthYear"></span>)
@@ -117,11 +119,22 @@ require_once __DIR__ . '/../../../atoms/icon.php';
                             Z innych drzew (<span x-text="results.crossTree.length"></span>)
                             <span class="font-normal text-muted-foreground">— anonimowe, zgodne z RODO</span>
                         </h4>
+                        <p class="text-xs text-muted-foreground mb-2">
+                            Zaznacz osobę, z którą chcesz się połączyć — po zapisaniu zostaniesz przekierowany do wysłania prośby o powiązanie.
+                        </p>
                         <div class="space-y-1.5">
                             <template x-for="m in results.crossTree" :key="'c-' + m.sourceId">
-                                <div class="flex items-center justify-between gap-2 rounded-md border border-border bg-card px-3 py-2">
-                                    <div class="min-w-0">
+                                <label class="flex items-center gap-2.5 rounded-md border bg-card px-3 py-2 cursor-pointer transition-colors"
+                                       :class="selectedCrossTreeGpi === m.sourceId
+                                           ? 'border-purple-400 bg-purple-50'
+                                           : 'border-border hover:border-purple-200'">
+                                    <input type="radio"
+                                           :value="m.sourceId"
+                                           x-model="selectedCrossTreeGpi"
+                                           class="h-3.5 w-3.5 shrink-0 text-purple-600 border-border focus:ring-purple-400">
+                                    <div class="min-w-0 flex-1">
                                         <div class="text-sm font-medium text-foreground truncate">
+                                            <template x-if="m.isDead || m.deathYear"><span class="mr-0.5 text-muted-foreground">&#x271D;</span></template>
                                             <span x-text="m.firstName + ' ' + m.lastName"></span>
                                             <span x-show="m.birthYear" class="text-xs text-muted-foreground">
                                                 (ur. <span x-text="m.birthYear"></span>)
@@ -132,11 +145,25 @@ require_once __DIR__ . '/../../../atoms/icon.php';
                                             <span x-show="m.region" class="ml-1">· <span x-text="m.region"></span></span>
                                         </div>
                                     </div>
-                                    <span class="text-xs text-muted-foreground shrink-0"
-                                          x-text="Math.round(m.confidence * 100) + '%'"></span>
-                                </div>
+                                    <div class="flex items-center gap-2 shrink-0">
+                                        <span class="text-xs text-muted-foreground"
+                                              x-text="Math.round(m.confidence * 100) + '%'"></span>
+                                        <button type="button" @click.stop="useMatch(m)"
+                                                class="inline-flex h-6 items-center rounded px-2 text-[11px] font-medium border border-input text-foreground hover:bg-accent transition-colors">
+                                            Użyj danych
+                                        </button>
+                                    </div>
+                                </label>
                             </template>
                         </div>
+                        <!-- Odznacz -->
+                        <button type="button"
+                                x-show="selectedCrossTreeGpi"
+                                x-cloak
+                                @click="selectedCrossTreeGpi = ''"
+                                class="mt-1 text-xs text-muted-foreground hover:text-foreground">
+                            × Odznacz wybór
+                        </button>
                     </div>
 
                     <!-- External (Faza 7) -->
@@ -149,6 +176,7 @@ require_once __DIR__ . '/../../../atoms/icon.php';
                                 <div class="flex items-center justify-between gap-2 rounded-md border border-border bg-card px-3 py-2">
                                     <div class="min-w-0">
                                         <div class="text-sm font-medium text-foreground truncate">
+                                            <template x-if="m.isDead || m.deathYear"><span class="mr-0.5 text-muted-foreground">&#x271D;</span></template>
                                             <span x-text="m.firstName + ' ' + m.lastName"></span>
                                             <span x-show="m.birthYear" class="text-xs text-muted-foreground">
                                                 (ur. <span x-text="m.birthYear"></span>)
@@ -410,6 +438,7 @@ function personDiscovery(treeId) {
         showPanel: false,
         results: { local: [], crossTree: [], external: [] },
         lastQuery: '',
+        selectedCrossTreeGpi: '',
 
         get totalResults() {
             return this.results.local.length
@@ -418,31 +447,32 @@ function personDiscovery(treeId) {
         },
 
         triggerSearch() {
-            const first = this.$refs.firstName.value.trim();
-            const last  = this.$refs.lastName.value.trim();
+            const first  = this.$refs.firstName.value.trim();
+            const last   = this.$refs.lastName.value.trim();
+            const gender = document.getElementById('gender')?.value?.trim() ?? '';
 
-            // Minimum: 2 znaki w co najmniej jednym polu
-            if (first.length < 2 && last.length < 2) {
+            // Wymagane: imię ≥2 znaków, nazwisko ≥2 znaków, płeć wybrana (nie 'unknown')
+            if (first.length < 2 || last.length < 2 || gender === 'unknown' || gender === '') {
                 this.showPanel = false;
                 return;
             }
 
-            const birthDate  = document.getElementById('birth_date')?.value?.trim() ?? '';
-            const birthPlace = document.getElementById('birth_place')?.value?.trim() ?? '';
-            const deathDate  = document.getElementById('death_date')?.value?.trim() ?? '';
-            const deathPlace = document.getElementById('death_place')?.value?.trim() ?? '';
-            const gender     = document.getElementById('gender')?.value?.trim() ?? '';
+            const birthDate   = document.getElementById('birth_date')?.value?.trim() ?? '';
+            const birthPlace  = document.getElementById('birth_place')?.value?.trim() ?? '';
+            const deathDate   = document.getElementById('death_date')?.value?.trim() ?? '';
+            const deathPlace  = document.getElementById('death_place')?.value?.trim() ?? '';
+            const maidenName  = document.getElementById('maiden_name')?.value?.trim() ?? '';
 
-            const query = first + '|' + last + '|' + birthDate + '|' + birthPlace + '|' + deathPlace + '|' + gender;
+            const query = first + '|' + last + '|' + gender + '|' + birthDate + '|' + birthPlace + '|' + deathPlace + '|' + maidenName;
             if (query === this.lastQuery && this.showPanel) {
                 return;
             }
             this.lastQuery = query;
 
-            this.fetchMatches(first, last, birthDate, birthPlace, deathDate, deathPlace, gender);
+            this.fetchMatches(first, last, birthDate, birthPlace, deathDate, deathPlace, gender, maidenName);
         },
 
-        async fetchMatches(firstName, lastName, birthDate = '', birthPlace = '', deathDate = '', deathPlace = '', gender = '') {
+        async fetchMatches(firstName, lastName, birthDate = '', birthPlace = '', deathDate = '', deathPlace = '', gender = '', maidenName = '') {
             this.loading = true;
             this.showPanel = true;
 
@@ -452,11 +482,12 @@ function personDiscovery(treeId) {
                 treeId: this.treeId,
                 firstName: firstName,
                 lastName: lastName,
+                gender: gender,
             });
-            if (birthYear)  params.append('birthYear',  birthYear);
-            if (birthPlace) params.append('birthPlace', birthPlace);
-            if (deathPlace) params.append('deathPlace', deathPlace);
-            if (gender && gender !== 'unknown') params.append('gender', gender);
+            if (birthYear)   params.append('birthYear',  birthYear);
+            if (birthPlace)  params.append('birthPlace', birthPlace);
+            if (deathPlace)  params.append('deathPlace', deathPlace);
+            if (maidenName)  params.append('maidenName', maidenName);
 
             try {
                 const resp = await fetch('/api/discovery/search?' + params.toString(), {

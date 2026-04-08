@@ -19,7 +19,7 @@
 
   fetch('/api/trees/' + treeId + '/persons')
     .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
-    .then(renderTree)
+    .then(data => { _lastNormalData = data; renderTree(data); })
     .catch(err => renderError(String(err)));
 
   // ── Graph helpers ──────────────────────────────────────────────────────────
@@ -359,6 +359,28 @@
             .attr('opacity', 0.5)
             .attr('x1', s.x + NODE_W / 2).attr('y1', s.y + NODE_H / 2)
             .attr('x2', t.x + NODE_W / 2).attr('y2', t.y + NODE_H / 2);
+
+        } else if (l.kind === 'cross-tree') {
+          // Złota linia przerywana — powiązanie cross-tree
+          const x1 = s.x + NODE_W / 2;
+          const y1 = s.y + NODE_H / 2;
+          const x2 = t.x + NODE_W / 2;
+          const y2 = t.y + NODE_H / 2;
+          lg.append('line')
+            .attr('stroke', '#d97706')    // amber-600
+            .attr('stroke-width', 2)
+            .attr('stroke-dasharray', '8 4')
+            .attr('opacity', 0.85)
+            .attr('x1', x1).attr('y1', y1)
+            .attr('x2', x2).attr('y2', y2);
+          // Mała etykieta '↔' w środku linii
+          lg.append('text')
+            .attr('x', (x1 + x2) / 2)
+            .attr('y', (y1 + y2) / 2 - 4)
+            .attr('text-anchor', 'middle')
+            .attr('font-size', '10px')
+            .attr('fill', '#d97706')
+            .text('↔');
         }
       });
     }
@@ -383,11 +405,17 @@
       .style('padding',        '8px')
       .style('border-radius',  '8px')
       .style('border',         '1px solid hsl(var(--border))')
-      .style('background',     d => d.data.isLiving === false ? 'hsl(0,0%,93%)' : 'hsl(var(--card))')
+      .style('background',     d => d.data.isRemote
+          ? 'hsl(271,60%,96%)'   // fioletowe tło dla zdalnych osób
+          : d.data.isLiving === false ? 'hsl(0,0%,93%)' : 'hsl(var(--card))')
+      .style('border',         d => d.data.isRemote
+          ? '1.5px dashed hsl(271,50%,70%)'  // przerywana fioletowa ramka
+          : '1px solid hsl(var(--border))')
+      .style('opacity',        d => d.data.isRemote ? '0.75' : '1')
       .style('box-shadow',     '0 1px 3px rgba(0,0,0,.1)')
       .style('overflow',       'hidden')
       .style('user-select',    'none')
-      .style('cursor',         'grab')
+      .style('cursor',         d => d.data.profileUrl ? 'grab' : 'default')
       .html(d => nodeHtml(d.data));
 
     // ── Drag ─────────────────────────────────────────────────────────────────
@@ -407,9 +435,9 @@
         drawLinks();
       })
       .on('end', function (event, d) {
-        d3.select(this).select('div').style('cursor', 'grab');
+        d3.select(this).select('div').style('cursor', d.data.profileUrl ? 'grab' : 'default');
         if (!dragged) {
-          window.location.href = d.data.profileUrl;
+          if (d.data.profileUrl) window.location.href = d.data.profileUrl;
           return;
         }
         // Snap Y to nearest generation row
@@ -474,6 +502,10 @@
       ? `<span style="font-size:10px;color:hsl(var(--muted-foreground));">ur. ${data.birthYear}</span>`
       : '';
 
+    const remoteLabel = data.isRemote
+      ? `<span style="font-size:9px;color:hsl(271,50%,55%);display:block;margin-top:1px;">↔ inne drzewo</span>`
+      : '';
+
     return `${avatar}
       <div style="min-width:0;overflow:hidden;">
         <div style="font-size:11px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
@@ -481,8 +513,98 @@
         <div style="font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
                     color:hsl(var(--card-foreground));">${escHtml(last)}</div>
         ${birth}
+        ${remoteLabel}
       </div>`;
   }
+
+  // ── Merged (cross-tree) view ────────────────────────────────────────────────
+
+  let _lastNormalData = null; // cache do powrotu z merged → normalny
+
+  /**
+   * Przekształca dane z /api/trees/{id}/merged-persons do formatu renderTree().
+   * Lokalne osoby są identyczne z normalnym API.
+   * Zdalne osoby: isRemote=true, opacity 0.65, profileUrl = null (brak dostępu).
+   * Cross-tree linki → kind 'cross-tree' (złota linia przerywana).
+   */
+  function buildMergedRenderData(mergedData, normalData) {
+    if (!mergedData || !mergedData.crossLinks || mergedData.crossLinks.length === 0) {
+      return normalData;
+    }
+
+    // Zacznij od normalnych węzłów i linków
+    const nodes = (normalData.nodes || []).map(n => ({ ...n }));
+    const links = (normalData.links || []).map(l => ({ ...l }));
+
+    // Mapa lokalnych ID (do sprawdzenia czy remote node już nie istnieje)
+    const localIds = new Set(nodes.map(n => n.id));
+
+    // Dodaj zdalne węzły
+    (mergedData.remotePersons || []).forEach(rp => {
+      if (localIds.has(rp.id)) return; // nie duplikuj
+      const birthYear = rp.birth_date ? parseInt(rp.birth_date.slice(0, 4), 10) : null;
+      nodes.push({
+        id:       rp.id,
+        parentId: null, // zdalna osoba — brak relacji rodzic/dziecko w tym widoku
+        data: {
+          firstName:  rp.first_name  || '',
+          lastName:   rp.last_name   || '',
+          birthYear:  birthYear || null,
+          gender:     rp.gender || 'unknown',
+          isLiving:   rp.is_living,
+          photoUrl:   null,
+          profileUrl: null,  // brak klikalnego linku — to cudza osoba
+          isRemote:   true,
+          visibilityLevel: rp.visibility_level || 'shared_basic',
+        },
+      });
+    });
+
+    // Dodaj cross-tree linki jako 'cross-tree' kind
+    (mergedData.crossLinks || []).forEach(cl => {
+      links.push({
+        source: cl.person_a_id,
+        target: cl.person_b_id,
+        type:   'cross-tree',
+      });
+    });
+
+    return { nodes, links };
+  }
+
+  // ── Cross-tree link drawing (złota linia przerywana) ──────────────────────
+  // Ta funkcja musi być wywoływana po drawLinks() — rozszerzamy tablicę simLinks.
+
+  // ── Merged event listener ─────────────────────────────────────────────────
+
+  document.addEventListener('tree:merged-toggle', function (event) {
+    const { merged, data } = event.detail;
+
+    if (!merged) {
+      // Wróć do normalnego widoku
+      if (_lastNormalData) {
+        renderTree(_lastNormalData);
+      }
+      return;
+    }
+
+    if (!data || (!data.remotePersons && !data.crossLinks)) {
+      return; // Brak danych merged
+    }
+
+    // Pobierz normalny widok z cache lub ze świeżego API
+    if (_lastNormalData) {
+      renderTree(buildMergedRenderData(data, _lastNormalData));
+    } else {
+      fetch('/api/trees/' + treeId + '/persons')
+        .then(r => r.json())
+        .then(normalData => {
+          _lastNormalData = normalData;
+          renderTree(buildMergedRenderData(data, normalData));
+        })
+        .catch(() => {});
+    }
+  });
 
   // ── Error ─────────────────────────────────────────────────────────────────
 

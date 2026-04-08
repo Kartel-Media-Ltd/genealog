@@ -37,6 +37,7 @@ final class MatchResult implements \JsonSerializable
         public readonly ?int    $deathYear     = null,
         public readonly ?string $gender        = null,
         public readonly ?string $externalUrl   = null, // link do profilu w external systemie
+        public readonly bool    $isDead        = false, // true gdy is_living=0 (nawet bez daty śmierci)
     ) {
         // Nit guard: cross-tree NIE może mieć birthPlace ani treeName/treeId
         // (anonimizacja RODO Art. 25 — Privacy by Design enforced w konstruktorze).
@@ -79,21 +80,25 @@ final class MatchResult implements \JsonSerializable
             $data['treeId']     = $this->treeId;
             $data['deathYear']  = $this->deathYear;
             $data['gender']     = $this->gender;
+            $data['isDead']     = $this->isDead;
             return $data;
         }
 
         if ($this->sourceType === 'cross_tree') {
             // Anonimowe dane — TYLKO rok, region, anonimowy ref do drzewa
+            // GlobalIndex zawiera TYLKO osoby z is_living=0 → zawsze isDead
             $data['region']  = $this->region;
             $data['treeRef'] = $this->treeRef;
+            $data['isDead']  = true;
             return $data;
         }
 
-        // external — zależy od źródła
+        // external — rejestry cmentarne, zawsze osoby nieżyjące
         $data['birthPlace']  = $this->birthPlace;
         $data['deathYear']   = $this->deathYear;
         $data['gender']      = $this->gender;
         $data['externalUrl'] = $this->externalUrl;
+        $data['isDead']      = true;
         return $data;
     }
 }

@@ -9,6 +9,8 @@ Część projektu [Genealog](https://genealog.pl).
 |---------|--------|--------|
 | **Grobonet** | ✅ Gotowy | 600+ cmentarzy komunalnych/parafialnych |
 | **eCmentarze** | ⚠️ Wymaga weryfikacji DOM | 2,36 mln rekordów |
+| **Mogily.pl** | ⚠️ Wymaga weryfikacji DOM | Kilkanaście większych miast, GPS grobu |
+| **Cmentarze24** | ⚠️ Wymaga weryfikacji DOM | Nekrologi i klepsydry (skład rodziny w treści) |
 
 ## Szybki start
 
@@ -47,6 +49,8 @@ uvicorn main:app --reload --port 8010
 | GET | `/registries` | Lista włączonych rejestrów |
 | POST | `/search/grobonet` | Wyszukaj w Grobonet |
 | POST | `/search/ecmentarze` | Wyszukaj w eCmentarze |
+| POST | `/search/mogily` | Wyszukaj w Mogily.pl |
+| POST | `/search/cmentarze24` | Wyszukaj w Cmentarze24 (nekrologi) |
 | POST | `/search/all` | Wyszukaj we wszystkich równolegle |
 
 ### Przykład zapytania
@@ -89,6 +93,8 @@ curl -X POST http://localhost:8010/search/grobonet \
 |---------|-----------|------|
 | `GROBONET_ENABLED` | `true` | Włącz scraper Grobonet |
 | `ECMENTARZE_ENABLED` | `false` | Włącz po weryfikacji robots.txt |
+| `MOGILY_ENABLED` | `false` | Włącz po weryfikacji robots.txt i inspekcji DOM |
+| `CMENTARZE24_ENABLED` | `false` | Włącz po weryfikacji robots.txt i inspekcji DOM |
 | `API_SECRET` | `""` | Klucz API (nagłówek X-API-Secret) — zostaw puste dla lokalnego dev |
 | `PORT` | `8010` | Port serwisu |
 | `LOG_LEVEL` | `INFO` | Poziom logów: DEBUG/INFO/WARNING/ERROR |

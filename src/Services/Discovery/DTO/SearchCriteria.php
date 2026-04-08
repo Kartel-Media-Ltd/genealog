@@ -19,6 +19,7 @@ final class SearchCriteria
         public readonly ?int    $deathYear  = null,
         public readonly ?string $deathPlace = null,
         public readonly ?string $gender     = null,  // 'male'|'female'|'unknown'|null (null = nieznana)
+        public readonly ?string $maidenName = null,
     ) {}
 
     public static function fromArray(array $input): self
@@ -46,6 +47,8 @@ final class SearchCriteria
         $rawGender = trim((string)($input['gender'] ?? ''));
         $gender    = in_array($rawGender, self::VALID_GENDERS, true) ? $rawGender : null;
 
+        $maidenName = trim((string)($input['maidenName'] ?? $input['maiden_name'] ?? ''));
+
         return new self(
             firstName:  $firstName,
             lastName:   $lastName,
@@ -54,6 +57,7 @@ final class SearchCriteria
             deathYear:  $deathYear,
             deathPlace: $deathPlace !== '' ? $deathPlace : null,
             gender:     $gender,
+            maidenName: $maidenName !== '' ? $maidenName : null,
         );
     }
 

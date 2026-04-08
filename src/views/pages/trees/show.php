@@ -133,12 +133,26 @@ require_once __DIR__ . '/../../atoms/icon.php';
 </div>
 
 <!-- Placeholder drzewa D3 -->
-<div x-data="{ expanded: false }"
+<div x-data="mergedTreePanel('<?= htmlspecialchars($tree->id) ?>')"
      @keydown.escape.window="expanded = false"
      :class="expanded ? 'fixed inset-0 z-50 flex flex-col bg-background rounded-none border-0 shadow-none' : 'rounded-lg border border-border bg-card shadow-sm'">
     <div class="border-b border-border px-6 py-4 flex items-center justify-between"
          :class="expanded ? 'shrink-0' : ''">
-        <h2 class="text-base font-semibold text-card-foreground">Wizualizacja drzewa</h2>
+        <div class="flex items-center gap-3">
+            <h2 class="text-base font-semibold text-card-foreground">Wizualizacja drzewa</h2>
+            <!-- Merged view toggle — widoczny gdy są zaakceptowane cross-tree linki -->
+            <button type="button"
+                    x-show="hasCrossLinks"
+                    x-cloak
+                    @click="toggleMerged()"
+                    :class="merged
+                        ? 'border-purple-400 bg-purple-100 text-purple-800'
+                        : 'border-input text-foreground hover:bg-accent'"
+                    class="inline-flex h-7 items-center gap-1.5 rounded-full border px-3 text-xs font-medium transition-colors">
+                <i class="fa-solid fa-link fa-fw text-[11px]"></i>
+                <span x-text="merged ? 'Widok scalony ✓' : 'Scal z powiązanymi'"></span>
+            </button>
+        </div>
         <div class="flex gap-1">
             <button type="button"
                     class="inline-flex h-8 items-center gap-1.5 rounded-md border border-input
@@ -201,6 +215,7 @@ require_once __DIR__ . '/../../atoms/icon.php';
         <div id="tree-canvas"
              :class="expanded ? 'relative flex-1 w-full overflow-hidden bg-muted/30' : 'relative h-[600px] w-full overflow-hidden bg-muted/30'"
              data-tree-id="<?= htmlspecialchars($tree->id) ?>"
+             :data-merged="merged"
              aria-label="Wizualizacja drzewa genealogicznego">
             <div class="absolute inset-0 flex items-center justify-center text-sm text-muted-foreground">
                 <?php render_icon('spinner', 'solid', 'fa-spin mr-2 h-4 w-4') ?>
@@ -211,3 +226,44 @@ require_once __DIR__ . '/../../atoms/icon.php';
         <script src="/js/tree-visualizer.js" defer></script>
     <?php endif; ?>
 </div>
+
+<script>
+function mergedTreePanel(treeId) {
+    const storageKey = 'mergedTree_' + treeId;
+    return {
+        expanded: false,
+        merged: localStorage.getItem(storageKey) === '1',
+        hasCrossLinks: false,
+
+        init() {
+            // Sprawdź czy są zaakceptowane cross-tree linki (cicho, bez blokowania UI)
+            fetch('/api/trees/' + treeId + '/merged-persons')
+                .then(r => r.ok ? r.json() : null)
+                .then(data => {
+                    if (data && data.crossLinks && data.crossLinks.length > 0) {
+                        this.hasCrossLinks = true;
+                        // Poinformuj tree-visualizer o danych merged
+                        window._mergedTreeData = data;
+                        if (this.merged) {
+                            this.$nextTick(() => this._notifyVisualizer());
+                        }
+                    }
+                })
+                .catch(() => {}); // Cicho ignoruj błędy (brak połączeń = brak przycisku)
+        },
+
+        toggleMerged() {
+            this.merged = !this.merged;
+            localStorage.setItem(storageKey, this.merged ? '1' : '0');
+            this._notifyVisualizer();
+        },
+
+        _notifyVisualizer() {
+            // tree-visualizer.js nasłuchuje tego eventu i rerenderuje drzewo
+            document.dispatchEvent(new CustomEvent('tree:merged-toggle', {
+                detail: { merged: this.merged, data: window._mergedTreeData || null }
+            }));
+        },
+    };
+}
+</script>

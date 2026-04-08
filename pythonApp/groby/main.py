@@ -31,6 +31,8 @@ from pydantic import BaseModel, Field
 
 from scrapers.grobonet import GrobonetScraper
 from scrapers.ecmentarze import eCmentarzeScraper
+from scrapers.mogily import MogilyScraper
+from scrapers.cmentarze24 import Cmentarze24Scraper
 from scrapers.base import ScraperError, RobotsBlocked
 
 # ---------------------------------------------------------------------------
@@ -46,6 +48,8 @@ logger = logging.getLogger(__name__)
 
 GROBONET_ENABLED = os.getenv("GROBONET_ENABLED", "true").lower() == "true"
 ECMENTARZE_ENABLED = os.getenv("ECMENTARZE_ENABLED", "false").lower() == "true"
+MOGILY_ENABLED = os.getenv("MOGILY_ENABLED", "false").lower() == "true"
+CMENTARZE24_ENABLED = os.getenv("CMENTARZE24_ENABLED", "false").lower() == "true"
 API_SECRET = os.getenv("API_SECRET", "")
 
 # ---------------------------------------------------------------------------
@@ -54,11 +58,13 @@ API_SECRET = os.getenv("API_SECRET", "")
 
 _grobonet: Optional[GrobonetScraper] = None
 _ecmentarze: Optional[eCmentarzeScraper] = None
+_mogily: Optional[MogilyScraper] = None
+_cmentarze24: Optional[Cmentarze24Scraper] = None
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    global _grobonet, _ecmentarze
+    global _grobonet, _ecmentarze, _mogily, _cmentarze24
     if GROBONET_ENABLED:
         _grobonet = GrobonetScraper()
         logger.info("Grobonet scraper: WŁĄCZONY")
@@ -70,6 +76,18 @@ async def lifespan(app: FastAPI):
         logger.info("eCmentarze scraper: WŁĄCZONY")
     else:
         logger.info("eCmentarze scraper: wyłączony (ECMENTARZE_ENABLED=false)")
+
+    if MOGILY_ENABLED:
+        _mogily = MogilyScraper()
+        logger.info("Mogily.pl scraper: WŁĄCZONY")
+    else:
+        logger.info("Mogily.pl scraper: wyłączony (MOGILY_ENABLED=false)")
+
+    if CMENTARZE24_ENABLED:
+        _cmentarze24 = Cmentarze24Scraper()
+        logger.info("Cmentarze24 scraper: WŁĄCZONY")
+    else:
+        logger.info("Cmentarze24 scraper: wyłączony (CMENTARZE24_ENABLED=false)")
 
     yield
     logger.info("Zamykam serwis.")
@@ -115,6 +133,9 @@ class SearchResult(BaseModel):
     cemetery: str
     grave_location: str
     url: Optional[str]
+    # Pola dodatkowe — Cmentarze24 (nekrologi)
+    obituary_text: Optional[str] = None
+    record_type: Optional[str] = None   # 'nekrolog' | 'klepsydra' | 'grob'
 
 
 class SearchResponse(BaseModel):
@@ -145,6 +166,8 @@ async def health():
         "registries": {
             "grobonet": GROBONET_ENABLED,
             "ecmentarze": ECMENTARZE_ENABLED,
+            "mogily": MOGILY_ENABLED,
+            "cmentarze24": CMENTARZE24_ENABLED,
         },
     }
 
@@ -166,6 +189,20 @@ async def list_registries():
             "name": "eCmentarze",
             "description": "Ogólnopolska baza pochowanych (2,36 mln rekordów)",
             "url": "https://www.ecmentarze.pl",
+        })
+    if MOGILY_ENABLED:
+        registries.append({
+            "id": "mogily",
+            "name": "Mogily.pl",
+            "description": "Kilkanaście większych miast Polski, lokalizacja GPS grobu",
+            "url": "http://mogily.pl",
+        })
+    if CMENTARZE24_ENABLED:
+        registries.append({
+            "id": "cmentarze24",
+            "name": "Cmentarze24",
+            "description": "Nekrologi i klepsydry — skład rodziny w treści ogłoszenia",
+            "url": "https://www.cmentarze24.pl",
         })
     return {"registries": registries}
 
@@ -234,6 +271,73 @@ async def search_ecmentarze(
     return SearchResponse(registry="ecmentarze", count=len(results), results=results)
 
 
+@app.post("/search/mogily", response_model=SearchResponse)
+async def search_mogily(
+    body: SearchRequest,
+    _: None = Depends(verify_api_secret),
+):
+    """
+    Wyszukiwanie w Mogily.pl.
+
+    ⚠️  Wymaga weryfikacji robots.txt i selektorów CSS przed uruchomieniem.
+    """
+    if not MOGILY_ENABLED or _mogily is None:
+        raise HTTPException(status_code=503, detail="Mogily.pl jest wyłączony (MOGILY_ENABLED=false).")
+
+    try:
+        raw = await _mogily.search(
+            last_name=body.last_name,
+            first_name=body.first_name,
+            birth_year=body.birth_year,
+            region=body.region,
+        )
+    except RobotsBlocked as exc:
+        raise HTTPException(status_code=451, detail=str(exc))
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
+    except ScraperError as exc:
+        logger.error("[/search/mogily] ScraperError: %s", exc)
+        raise HTTPException(status_code=502, detail="Błąd scrapowania Mogily.pl. Spróbuj ponownie.")
+
+    results = [SearchResult(**r) for r in raw]
+    return SearchResponse(registry="mogily", count=len(results), results=results)
+
+
+@app.post("/search/cmentarze24", response_model=SearchResponse)
+async def search_cmentarze24(
+    body: SearchRequest,
+    _: None = Depends(verify_api_secret),
+):
+    """
+    Wyszukiwanie w Cmentarze24.pl — nekrologi i klepsydry.
+
+    Rekord wynikowy zawiera opcjonalne pole `obituary_text` z treścią nekrologu
+    (może zawierać imiona i nazwiska członków rodziny — przydatne genealogicznie).
+
+    ⚠️  Wymaga weryfikacji robots.txt i selektorów CSS przed uruchomieniem.
+    """
+    if not CMENTARZE24_ENABLED or _cmentarze24 is None:
+        raise HTTPException(status_code=503, detail="Cmentarze24 jest wyłączony (CMENTARZE24_ENABLED=false).")
+
+    try:
+        raw = await _cmentarze24.search(
+            last_name=body.last_name,
+            first_name=body.first_name,
+            birth_year=body.birth_year,
+            region=body.region,
+        )
+    except RobotsBlocked as exc:
+        raise HTTPException(status_code=451, detail=str(exc))
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
+    except ScraperError as exc:
+        logger.error("[/search/cmentarze24] ScraperError: %s", exc)
+        raise HTTPException(status_code=502, detail="Błąd scrapowania Cmentarze24. Spróbuj ponownie.")
+
+    results = [SearchResult(**r) for r in raw]
+    return SearchResponse(registry="cmentarze24", count=len(results), results=results)
+
+
 @app.post("/search/all", response_model=list[SearchResponse])
 async def search_all(
     body: SearchRequest,
@@ -265,6 +369,24 @@ async def search_all(
             region=body.region,
         ))
         names.append("ecmentarze")
+
+    if MOGILY_ENABLED and _mogily:
+        tasks.append(_mogily.search(
+            last_name=body.last_name,
+            first_name=body.first_name,
+            birth_year=body.birth_year,
+            region=body.region,
+        ))
+        names.append("mogily")
+
+    if CMENTARZE24_ENABLED and _cmentarze24:
+        tasks.append(_cmentarze24.search(
+            last_name=body.last_name,
+            first_name=body.first_name,
+            birth_year=body.birth_year,
+            region=body.region,
+        ))
+        names.append("cmentarze24")
 
     if not tasks:
         raise HTTPException(status_code=503, detail="Żaden rejestr nie jest włączony.")

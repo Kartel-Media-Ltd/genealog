@@ -7,6 +7,7 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
 use App\Models\Person;
+use App\Repositories\CrossTreeLinkRepository;
 use App\Repositories\DiscoveryRepository;
 use App\Repositories\PersonRepository;
 use App\Repositories\RelationshipRepository;
@@ -28,7 +29,8 @@ class PersonController
         private readonly RelationshipRepository $relRepo,
         private readonly SuggestionService      $suggestionService,
         private readonly RegisterService        $registerService,
-        private readonly ?DiscoveryRepository   $discoveryRepo = null,
+        private readonly ?DiscoveryRepository       $discoveryRepo = null,
+        private readonly ?CrossTreeLinkRepository   $linkRepo = null,
     ) {}
 
     /** GET /trees/{id}/persons */
@@ -166,9 +168,16 @@ class PersonController
 
         try {
             $person = $this->personService->create($treeId, $userId, $this->request->getBody());
+
+            $crossTreeGpiId = trim((string)($this->request->getBody()['cross_tree_gpi_id'] ?? ''));
+            $redirectUrl    = '/trees/' . $treeId . '/persons/' . $person->id;
+            if ($crossTreeGpiId !== '') {
+                $redirectUrl .= '?connect_gpi=' . urlencode($crossTreeGpiId);
+            }
+
             $this->response
                 ->withFlash('success', 'Osoba "' . $person->fullName() . '" została dodana.')
-                ->redirect('/trees/' . $treeId . '/persons/' . $person->id);
+                ->redirect($redirectUrl);
         } catch (\InvalidArgumentException $e) {
             $this->response->withFlash('error', $e->getMessage())
                 ->redirect('/trees/' . $treeId . '/persons/new');
@@ -204,16 +213,26 @@ class PersonController
             }
         }
 
+        $hasPendingCrossTreeRequest  = false;
+        $crossTreeLinkStatuses      = [];
+        if ($canEdit && !$person->isLiving && $this->linkRepo !== null) {
+            $hasPendingCrossTreeRequest = $this->linkRepo->hasPendingOutgoingForPerson($person->id);
+            $crossTreeLinkStatuses      = $this->linkRepo->findOutgoingStatusByGpiId($person->id);
+        }
+
         $this->response->view('pages/trees/persons/show', [
-            'title'            => $person->fullName(),
-            'currentUser'      => $this->currentUser(),
-            'tree'             => $this->treeRepo->findById($treeId),
-            'person'           => $person,
-            'userRole'         => $role,
-            'canEdit'          => $canEdit,
-            'relationships'    => $relationships,
-            'suggestions'      => $suggestions,
-            'matchSuggestions' => $matchSuggestions,
+            'title'                     => $person->fullName(),
+            'currentUser'               => $this->currentUser(),
+            'tree'                      => $this->treeRepo->findById($treeId),
+            'person'                    => $person,
+            'userRole'                  => $role,
+            'canEdit'                   => $canEdit,
+            'relationships'             => $relationships,
+            'suggestions'               => $suggestions,
+            'matchSuggestions'          => $matchSuggestions,
+            'crossTreeLinkStatuses'     => $crossTreeLinkStatuses,
+            'hasPendingCrossTreeRequest' => $hasPendingCrossTreeRequest,
+            'isGlobalAdmin'             => (bool)Session::get('is_admin') || Session::get('_admin_user_id') !== null,
         ]);
     }
 

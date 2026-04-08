@@ -125,6 +125,7 @@ final class MatchingService
             lastName:   $person->lastName,
             birthYear:  $birthYear,
             birthPlace: $person->birthPlace,
+            maidenName: $person->maidenName,
         );
         if (!$criteria->isSearchable()) {
             return;

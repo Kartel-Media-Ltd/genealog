@@ -34,6 +34,20 @@ class PersonRepository
         return $row ? Person::fromArray($row) : null;
     }
 
+    /**
+     * Wyszukaj osobę wyłącznie po ID — używane w kontekście cross-tree
+     * gdzie treeId nie jest znane z góry (np. CrossTreeLinkService).
+     * Nie nadaje się do normalnych widoków (brak filtra tree_id — IDOR risk).
+     */
+    public function findByIdGlobal(string $id): ?Person
+    {
+        $row = $this->db->fetchOne(
+            'SELECT * FROM persons WHERE id = ?',
+            [$id]
+        );
+        return $row ? Person::fromArray($row) : null;
+    }
+
     public function create(string $id, string $treeId, string $createdBy, array $data): void
     {
         $this->db->execute(

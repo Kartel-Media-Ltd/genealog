@@ -89,6 +89,19 @@ final class DiscoveryRepository
         );
     }
 
+    /**
+     * Zwraca person_id z global_person_index po GPI record ID.
+     * Używane do budowania cross-tree link request z live search result (gdzie sourceId = gpi.id).
+     */
+    public function findPersonIdByGpiId(string $gpiId): ?string
+    {
+        $row = $this->db->fetchOne(
+            'SELECT person_id FROM global_person_index WHERE id = ?',
+            [$gpiId]
+        );
+        return $row ? (string)$row['person_id'] : null;
+    }
+
     public function logAudit(
         string  $userId,
         string  $action,

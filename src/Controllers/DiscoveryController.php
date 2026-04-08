@@ -94,6 +94,7 @@ final class DiscoveryController
             'birthPlace' => $this->request->getParam('birthPlace', ''),
             'deathPlace' => $this->request->getParam('deathPlace', ''),
             'gender'     => $this->request->getParam('gender', ''),
+            'maidenName' => $this->request->getParam('maidenName', ''),
         ]);
 
         if (!$criteria->isSearchable()) {

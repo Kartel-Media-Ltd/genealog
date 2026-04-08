@@ -59,6 +59,7 @@ use App\Controllers\TreeController;
 use App\Middleware\AdminMiddleware;
 use App\Middleware\AuthMiddleware;
 use App\Services\AdminService;
+use App\Services\CrossTreeLinkService;
 use App\Services\AuthService;
 use App\Services\RedisService;
 use App\Services\EmailService;
@@ -72,6 +73,7 @@ use App\Services\RegisterService;
 use App\Services\RelationshipService;
 use App\Services\SuggestionService;
 use App\Services\TreeService;
+use App\Controllers\CrossTreeLinkController;
 use App\Controllers\DiscoveryController;
 use App\Controllers\NotificationController;
 use App\Services\Discovery\FingerprintService;
@@ -84,6 +86,7 @@ use App\Services\Discovery\Sources\CrossTreeMatchSource;
 use App\Services\Discovery\Sources\FamilySearchMatchSource;
 use App\Services\Discovery\Sources\GenetykaMatchSource;
 use App\Services\NotificationService;
+use App\Repositories\CrossTreeLinkRepository;
 use App\Repositories\DiscoveryRepository;
 use App\Repositories\NotificationRepository;
 use App\Repositories\AdminRepository;
@@ -125,6 +128,8 @@ $globalIndexSvc  = new GlobalIndexService($db, $fingerprintSvc, $personRepo, $tr
 $discoveryRepo   = new DiscoveryRepository($db);
 $notifRepo       = new NotificationRepository($db);
 $notifSvc        = new NotificationService($notifRepo);
+$crossLinkRepo   = new CrossTreeLinkRepository($db);
+$crossLinkSvc    = new CrossTreeLinkService($crossLinkRepo, $personRepo, $treeRepo, $notifSvc);
 $matchRegistry   = new MatchSourceRegistry();
 $matchRegistry->register(new LocalTreeMatchSource($db, $fingerprintSvc));
 $matchRegistry->register(new CrossTreeMatchSource($db, $fingerprintSvc));
@@ -158,18 +163,26 @@ EventDispatcher::on('tree.imported', static function ($treeId, $userId, $importe
 EventDispatcher::on('person.updated', static function ($person, $userId) use ($globalIndexSvc) {
     $globalIndexSvc->indexPerson($person);
 });
-EventDispatcher::on('person.deleted', static function ($personId) use ($globalIndexSvc) {
+EventDispatcher::on('person.deleted', static function ($personId) use ($globalIndexSvc, $crossLinkRepo) {
     $globalIndexSvc->unindexPerson($personId);
+    // Oznacz powiązania jako broken — ON DELETE RESTRICT na FK wymaga jawnej obsługi
+    $crossLinkRepo->markBrokenByPersonId($personId);
 });
-EventDispatcher::on('tree.indexed_globally.disabled', static function ($treeId) use ($globalIndexSvc) {
+EventDispatcher::on('tree.indexed_globally.disabled', static function ($treeId) use ($globalIndexSvc, $crossLinkRepo) {
     $globalIndexSvc->unindexTree($treeId);
+    $crossLinkRepo->markBrokenByTreeId($treeId);
 });
 
 // 8. Router
 $router = new Router();
 
 // Publiczne trasy
-$router->get('/',                  fn() => $response->redirect('/login'));
+$router->get('/', function () use ($response) {
+    $response->view('pages/home', [
+        'pageTitle'       => 'Genealog',
+        'pageDescription' => 'Buduj drzewo genealogiczne swojej rodziny. Współpraca, GEDCOM, eksport do druku.',
+    ], 'templates/LandingLayout');
+});
 
 // ZAD-4.7 (D8): health-check endpoint — load balancer / k8s probes
 $router->get('/health', function () use ($request, $response, $treeRepo, $personRepo, $relRepo) {
@@ -190,10 +203,10 @@ $router->post('/reset-password/{token}', [$authCtrl, 'processReset']);
 
 // ZAD-1.3 (K3): Privacy Policy + Terms of Service — wymagane RODO Art. 13-14
 $router->get('/privacy', function () use ($response) {
-    $response->view('pages/privacy', ['title' => 'Polityka prywatności'], 'templates/AuthLayout');
+    $response->view('pages/privacy', ['pageTitle' => 'Polityka prywatności'], 'templates/LandingLayout');
 });
 $router->get('/terms', function () use ($response) {
-    $response->view('pages/terms', ['title' => 'Regulamin'], 'templates/AuthLayout');
+    $response->view('pages/terms', ['pageTitle' => 'Regulamin'], 'templates/LandingLayout');
 });
 
 // Publiczne trasy zaproszeń
@@ -211,8 +224,25 @@ $router->group('/invitations', $mw, function (Router $r) use ($request, $respons
     $r->get('', [$ctrl, 'pendingList']);
 });
 
+// Powiązania cross-tree
+$router->group('/connections', $mw, function (Router $r) use ($request, $response, $crossLinkSvc, $crossLinkRepo, $personRepo, $treeRepo, $discoveryRepo) {
+    $ctrl = new CrossTreeLinkController($request, $response, $crossLinkSvc, $crossLinkRepo, $personRepo, $treeRepo, $discoveryRepo);
+    $r->get('',              [$ctrl, 'index']);
+    $r->post('/{id}/accept', [$ctrl, 'accept']);
+    $r->post('/{id}/reject', [$ctrl, 'reject']);
+    $r->post('/{id}/cancel', [$ctrl, 'cancel']);
+    $r->post('/{id}/remove', [$ctrl, 'remove']);
+});
+
 $router->group('/dashboard', $mw, function (Router $r) use ($request, $response, $treeRepo) {
     $r->get('', [new HomeController($request, $response, $treeRepo), 'index']);
+});
+
+// Poszukiwania — zaślepka (integracja rejestrów zewnętrznych w przygotowaniu)
+$router->group('/search', $mw, function (Router $r) use ($response) {
+    $r->get('', function () use ($response) {
+        $response->view('pages/search', ['title' => 'Poszukiwania']);
+    });
 });
 
 // Profile
@@ -244,9 +274,10 @@ $router->group('/trees', $mw, function (Router $r) use (
     $relRepo, $relSvc, $suggSvc, $registerSvc,
     $invRepo, $invSvc,
     $matchingSvc, $discoveryRepo, $globalIndexSvc, $db, $personImportSvc, $rateLimiter, $redis,
+    $crossLinkRepo,
 ) {
     $treeCtrl      = new TreeController($request, $response, $treeRepo, $treeSvc);
-    $personCtrl    = new PersonController($request, $response, $treeRepo, $personRepo, $personSvc, $mediaSvc, $relRepo, $suggSvc, $registerSvc, $discoveryRepo);
+    $personCtrl    = new PersonController($request, $response, $treeRepo, $personRepo, $personSvc, $mediaSvc, $relRepo, $suggSvc, $registerSvc, $discoveryRepo, $crossLinkRepo);
     $relCtrl       = new RelationshipController($request, $response, $treeRepo, $personRepo, $relRepo, $relSvc, $suggSvc);
     $suggCtrl      = new SuggestionController($request, $response, $treeRepo, $personRepo, $relSvc);
     $invCtrl       = new InvitationController($request, $response, $treeRepo, $invRepo, $invSvc, $rateLimiter);
@@ -300,16 +331,23 @@ $router->group('/trees', $mw, function (Router $r) use (
 $router->group('/api', $mw, function (Router $r) use (
     $request, $response, $treeRepo, $personRepo, $relRepo,
     $matchingSvc, $discoveryRepo, $globalIndexSvc, $db,
-    $notifRepo, $personImportSvc, $rateLimiter, $redis
+    $notifRepo, $personImportSvc, $rateLimiter, $redis,
+    $crossLinkSvc, $crossLinkRepo
 ) {
     $apiCtrl       = new ApiController($request, $response, $treeRepo, $personRepo, $relRepo);
     $discoveryCtrl = new DiscoveryController($request, $response, $treeRepo, $matchingSvc, $discoveryRepo, $globalIndexSvc, $db, $personImportSvc, $rateLimiter, $redis);
     $notifCtrl     = new NotificationController($request, $response, $notifRepo);
+    $crossCtrl     = new CrossTreeLinkController($request, $response, $crossLinkSvc, $crossLinkRepo, $personRepo, $treeRepo, $discoveryRepo);
 
-    $r->get('/trees/{id}/persons', [$apiCtrl, 'personsForTree']);
+    $r->get('/trees/{id}/persons',         [$apiCtrl,   'personsForTree']);
+    $r->get('/trees/{id}/merged-persons',  [$crossCtrl, 'mergedPersons']);
+
+    // Cross-tree link API
+    $r->post('/connections/request',       [$crossCtrl, 'request']);
 
     // Person Discovery
     $r->get('/discovery/search',              [$discoveryCtrl, 'search']);
+
     $r->post('/discovery/match/{id}/import',  [$discoveryCtrl, 'importMatch']);
     $r->post('/discovery/match/{id}/reject',  [$discoveryCtrl, 'rejectMatch']);
 

@@ -190,6 +190,7 @@
                     ['href' => '/dashboard',   'label' => 'Dashboard',     'icon' => 'house'],
                     ['href' => '/trees',        'label' => 'Moje drzewa',   'icon' => 'sitemap'],
                     ['href' => '/search',       'label' => 'Poszukiwania',  'icon' => 'magnifying-glass'],
+                    ['href' => '/connections',  'label' => 'Powiązania',    'icon' => 'link'],
                 ];
                 // PHP 8.1+: str_starts_with($null, ...) jest deprecated — fallback na '/'
                 $currentPath = (string)(parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/');
@@ -311,6 +312,11 @@
                             'md'
                         );
                         ?>
+                        <?php if (\App\Core\Session::get('is_admin') || \App\Core\Session::get('_admin_user_id')): ?>
+                        <span class="inline-flex items-center rounded-full bg-orange-100 border border-orange-300 px-1.5 py-0.5 text-[10px] font-bold text-orange-700 tracking-wide leading-none">
+                            ADMIN
+                        </span>
+                        <?php endif; ?>
                         <?php render_icon('chevron-down', 'solid', 'h-3 w-3 text-[hsl(var(--muted-foreground))]') ?>
                     </button>
 
@@ -331,9 +337,16 @@
                     >
                         <!-- Nagłówek dropdown -->
                         <div class="px-3 py-2 border-b border-[hsl(var(--border))] mb-1">
-                            <p class="text-sm font-medium text-[hsl(var(--foreground))] truncate">
-                                <?= htmlspecialchars($currentUser['name'] ?? 'Użytkownik') ?>
-                            </p>
+                            <div class="flex items-center gap-2">
+                                <p class="text-sm font-medium text-[hsl(var(--foreground))] truncate">
+                                    <?= htmlspecialchars($currentUser['name'] ?? 'Użytkownik') ?>
+                                </p>
+                                <?php if (\App\Core\Session::get('is_admin')): ?>
+                                <span class="inline-flex items-center rounded-full bg-orange-100 border border-orange-300 px-1.5 py-0.5 text-[10px] font-bold text-orange-700 tracking-wide leading-none shrink-0">
+                                    ADMIN
+                                </span>
+                                <?php endif; ?>
+                            </div>
                             <p class="text-xs text-[hsl(var(--muted-foreground))] truncate">
                                 <?= htmlspecialchars($currentUser['email'] ?? '') ?>
                             </p>
@@ -493,8 +506,9 @@
                         (<?= htmlspecialchars(\App\Core\Session::get('user_email', '') ?? '') ?>)
                     </span>
                 </div>
-                <form method="POST" action="/admin/impersonate/exit" class="flex-shrink-0">
-                    <?= \App\Core\Csrf::hiddenInput() ?>
+                <form method="POST" action="/admin/impersonate/exit" class="flex-shrink-0"
+                      onsubmit="this.querySelector('[name=_csrf_token]').value = document.querySelector('meta[name=csrf-token]')?.content || ''">
+                    <input type="hidden" name="_csrf_token" value="">
                     <button type="submit"
                             class="rounded-md bg-white/20 hover:bg-white/30 px-4 py-1.5 text-sm font-semibold transition-colors">
                         Zakończ impersonację

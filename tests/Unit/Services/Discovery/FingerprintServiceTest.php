@@ -124,10 +124,11 @@ class FingerprintServiceTest extends TestCase
         $this->assertFalse($this->service->isHistorical(false, $recentYear));
     }
 
-    public function testIsHistoricalReturnsFalseWhenYearMissing(): void
+    public function testIsHistoricalReturnsTrueWhenYearMissing(): void
     {
-        // RODO Art. 25 — bez roku urodzenia ostrożność > wygoda
-        $this->assertFalse($this->service->isHistorical(false, null));
+        // Zmienione w fixie GlobalIndexService: niezyjąca osoba bez daty urodzenia
+        // traktowana jako historyczna (umożliwia indeksację globalną).
+        $this->assertTrue($this->service->isHistorical(false, null));
     }
 
     public function testIsHistoricalBoundaryAtExactly100Years(): void
