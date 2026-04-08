@@ -100,6 +100,16 @@ ARCHIVES_API_KEY=...            # NIEDOSTĘPNE — szukajwarchiwach.gov.pl nie m
 - **D14** — `unindexTree` batching (wymaga async jobs)
 - **P5/P12/P14 (backend-3)** — CSP nonce, DPIA, MFA TOTP
 
+**Backend-5** (`dev/audit/backend-5/`) — 4/4 zadań (werdykt: **PASS** bez warunków):
+- ✅ **K1-NEW** GenetykaMatchSource — jawne nawiasy w operator precedence (`GenetykaMatchSource.php:45`)
+- ✅ **P1-NEW** `matchTreeAfterImport` timeout 120→300s (spójnie z `GlobalIndexService::reindexTree`)
+- ✅ **P2-NEW** incident-response Scenariusz E — nagłówek `### E) Awaria zewnętrznej zależności` już był obecny
+- ✅ **P3-NEW** EmailServiceTest — dodano `testSanitizeHeaderPreservesTabCharacter` (tab RFC 5322, 11/11 passed)
+
+**Backlog z backend-5 (D1-D2-NEW — nie blokują):**
+- `MatchSourceRegistry::unregister()` — low priority
+- `matchTreeAfterImport` limit powiadomień per import (max 10)
+
 ---
 
 ## ✅ Relationship Suggestions — KOMPLETNE (2026-04-08)
@@ -126,7 +136,7 @@ Wszystkie fazy (1-4) zaimplementowane. Wszystkie issues z review naprawione:
 | **gedcom** | 0 | ✅ | Fazy 1-5 kompletne; blocking/important/nity zweryfikowane; E2E = manual |
 | **global-admin** | 0 | ✅ | Fazy 1-5 kompletne; wszystkie nity N1-N7 zweryfikowane |
 | **person-discovery** | 0 | ✅ | KOMPLETNE (poza I7 reindex batch — patrz niżej) |
-| **php-scaffold** | 1 | ❌ | Pojedynczy task pozostały (sprawdzić co konkretnie) |
+| **php-scaffold** | 0 | ✅ | Fazy 1-6 + review kompletne; [USER] zrotuj hasło SMTP w .env.local |
 | **print-pdf** | 0 | ✅ | Fazy 1-6 kompletne; blocking/important/nity [x]; Faza 6 = E2E manual |
 | **registries** | 55 | ⚠️ | Cały feature — wymaga decyzji o API keys (patrz wyżej) |
 | **relationship-suggestions** | 0 | ✅ | Fazy 1-4 kompletne; Faza 5 = manual E2E |
@@ -233,7 +243,7 @@ Aktualnie tylko `FingerprintServiceTest` (24 testy). Brak testów dla:
 2. ~~**🔴 Audyty backend-3 + backend-4**~~ ✅ KOMPLETNE (50/52 zadań)
 3. **🔴 USER_ACTIONS — migracje 012-015 + env vars RODO** (patrz sekcja na górze)
 4. **🔴 Research prawny:** Privacy Policy + Terms + SCC z FamilySearch Inc. przed aktywacją
-5. **🟠 Re-audit #5** (`/ultra-audit backend` → `dev/audit/backend-5/`) — weryfikacja K1-K2 z backend-4
+5. ~~**🟠 Re-audit #5**~~ ✅ KOMPLETNE (`dev/audit/backend-5/` — **PASS** bez warunków, commit `54b25af`)
 6. **🟠 Tests: AccountDeletionService (D13 backend-4) + GlobalIndexService** (RODO compliance)
 7. **🔴 Php-scaffold pozostały 1 task** (sprawdzić co)
 8. **📝 CLAUDE.md** + MEMORY.md update — Discovery, consent flow, Art. 18 restriction
@@ -280,16 +290,16 @@ Aktualnie tylko `FingerprintServiceTest` (24 testy). Brak testów dla:
 | **RODO compliance** | 🟢 | Account deletion, data export, audit log, opt-in cross-tree |
 | **Tree sharing** | 🟡 | Invitations + members działają, brak granular permissions |
 | **Relationship suggestions** | 🟢 | Fazy 1-4 kompletne, wszystkie issues z review naprawione |
-| **Font Awesome icons** | 🔴 | Plan gotowy, niezaimplementowane |
+| **Font Awesome icons** | 🟢 Production-ready | Fazy 1-8 kompletne; 141× render_icon(), 0 inline SVG; atrybucja w footerze |
 | **External registries** | 🔴 | Plan gotowy, wymaga API keys + decyzji |
 
 ---
 
-## 📊 Metryki projektu (2026-04-08, po backend-4)
+## 📊 Metryki projektu (2026-04-08, po backend-5)
 
 | Metryka | Wartość |
 |---|---|
-| **Testy** | **70** (70/70 green — +10 EmailService + FingerprintService już było) |
+| **Testy** | **71** (71/71 green — +1 EmailServiceTest tab injection z backend-5) |
 | **Phpstan** | level 5, 0 errors |
 | **Migracje** | **15** (001-015, wszystkie idempotentne 006+; 012-015 z backend-3/4) |
 | **Routes** | ~82 endpointów (+/privacy, /terms, /health, /settings/restrict) |
@@ -299,19 +309,22 @@ Aktualnie tylko `FingerprintServiceTest` (24 testy). Brak testów dla:
 | **Models** | 5 (User z `isRestricted` flag) |
 | **Atoms (UI)** | 10 |
 | **CI** | GitHub Actions (.github/workflows/ci.yml) — composer audit blokujący |
-| **Audyty bezpieczeństwa** | **4 iteracje** (backend, backend-2/3/4) — PASS WITH CONDITIONS |
-| **Backend-4 test coverage** | ~13% (70 testów / ~65 src files) |
+| **Audyty bezpieczeństwa** | **5 iteracji** (backend, backend-2/3/4/5) — **PASS** ✅ |
+| **Backend-5 test coverage** | ~13% (71 testów / ~65 src files) |
 
 ### Trend jakości audytów
 
-| Audit | KRYT | POW | DROB | Status |
-|-------|------|-----|------|--------|
-| #1 backend | 2 | 17 | 19 | 60/73 naprawione |
-| #2 backend-2 | 2 | 8 | 4 | 17/17 naprawione |
-| #3 backend-3 | 3 | 14 | 13 | 25/25 naprawione ✅ |
-| #4 backend-4 | 2 | 14 | 14 | 25/27 naprawione (D13, D14 odroczone) |
+| Audit | KRYT | POW | DROB | Pozytywne | Status |
+|-------|------|-----|------|-----------|--------|
+| #1 backend | 2 | 17 | 19 | 29 | 60/73 naprawione |
+| #2 backend-2 | 2 | 8 | 4 | — | 17/17 naprawione |
+| #3 backend-3 | 3 | 14 | 13 | 19 | 25/25 naprawione ✅ |
+| #4 backend-4 | 2 | 14 | 14 | 24 | 25/27 naprawione (D13, D14 odroczone) |
+| **#5 backend-5** | **1** | **4** | **3** | **26** | **4/4 naprawione ✅ PASS** |
 
-**Następny krok:** `/ultra-audit backend` → `dev/audit/backend-5/` dla weryfikacji K1-K2 z backend-4 + detekcja ewentualnych regresji.
+**Obserwacja:** Pierwszy raz poniżej 5 poważnych problemów. System gotowy do zewnętrznego pentesta.
+
+**Następne kroki:** DPO review + uzupełnienie env vars `COMPANY_*`, `DPO_EMAIL`. SCC z FamilySearch Inc. przed aktywacją external sources.
 
 ---
 
