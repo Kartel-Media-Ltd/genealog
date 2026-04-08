@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Core\EventDispatcher;
+use App\Core\Uuid;
 use App\Models\Person;
 use App\Repositories\PersonRepository;
 use App\Repositories\TreeRepository;
@@ -17,7 +19,7 @@ class PersonService
     public function create(string $treeId, string $createdBy, array $input): Person
     {
         $data = $this->validateAndBuildData($input);
-        $id   = $this->generateUuid();
+        $id   = Uuid::generate();
 
         $this->personRepo->create($id, $treeId, $createdBy, $data);
         $this->treeRepo->touchUpdatedAt($treeId);
@@ -26,6 +28,8 @@ class PersonService
         if ($person === null) {
             throw new \RuntimeException('Nie udało się utworzyć osoby.');
         }
+
+        EventDispatcher::emit('person.created', $person, $createdBy);
         return $person;
     }
 
@@ -40,8 +44,11 @@ class PersonService
         $this->personRepo->update($personId, $treeId, $data);
         $this->treeRepo->touchUpdatedAt($treeId);
 
-        return $this->personRepo->findById($personId, $treeId)
+        $updated = $this->personRepo->findById($personId, $treeId)
             ?? throw new \RuntimeException('Błąd po aktualizacji osoby.');
+
+        EventDispatcher::emit('person.updated', $updated, $userId);
+        return $updated;
     }
 
     public function delete(string $personId, string $treeId): void
@@ -52,6 +59,8 @@ class PersonService
         }
         $this->personRepo->delete($personId, $treeId);
         $this->treeRepo->touchUpdatedAt($treeId);
+
+        EventDispatcher::emit('person.deleted', $personId);
     }
 
     /** @return Person[] */
@@ -147,11 +156,4 @@ class PersonService
         return null;
     }
 
-    private function generateUuid(): string
-    {
-        $bytes = random_bytes(16);
-        $bytes[6] = chr((ord($bytes[6]) & 0x0f) | 0x40);
-        $bytes[8] = chr((ord($bytes[8]) & 0x3f) | 0x80);
-        return vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($bytes), 4));
-    }
 }

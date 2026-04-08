@@ -65,8 +65,11 @@ class TreeController
             $this->response
                 ->withFlash('success', 'Drzewo "' . $tree->name . '" zostało utworzone.')
                 ->redirect('/trees/' . $tree->id);
-        } catch (\Exception $e) {
+        } catch (\InvalidArgumentException $e) {
             $this->response->withFlash('error', $e->getMessage())->redirect('/trees/new');
+        } catch (\Throwable $e) {
+            error_log('Tree create failed: ' . $e->getMessage());
+            $this->response->withFlash('error', 'Nie udało się utworzyć drzewa. Spróbuj ponownie.')->redirect('/trees/new');
         }
     }
 
@@ -78,8 +81,11 @@ class TreeController
 
         try {
             $tree = $this->treeService->getForUser($treeId, $userId);
-        } catch (\Exception $e) {
+        } catch (\InvalidArgumentException $e) {
             $this->response->withFlash('error', $e->getMessage())->redirect('/trees');
+        } catch (\Throwable $e) {
+            error_log('Tree show failed: ' . $e->getMessage());
+            $this->response->withFlash('error', 'Nie można otworzyć drzewa.')->redirect('/trees');
         }
 
         $this->response->view('pages/trees/show', [
@@ -130,7 +136,7 @@ class TreeController
             $tree = $this->treeService->getForUser($treeId, $userId);
         } catch (\Throwable $e) {
             error_log('printView access error (tree=' . $treeId . '): ' . $e->getMessage());
-            $this->response->withFlash('error', $e->getMessage())->redirect('/trees');
+            $this->response->withFlash('error', 'Nie można otworzyć drzewa do druku.')->redirect('/trees');
         }
 
         $this->response->view('pages/trees/print', [
@@ -157,8 +163,11 @@ class TreeController
             $this->response
                 ->withFlash('success', 'Zmiany zostały zapisane.')
                 ->redirect('/trees/' . $treeId);
-        } catch (\Exception $e) {
+        } catch (\InvalidArgumentException $e) {
             $this->response->withFlash('error', $e->getMessage())->redirect("/trees/{$treeId}/edit");
+        } catch (\Throwable $e) {
+            error_log('Tree update failed: ' . $e->getMessage());
+            $this->response->withFlash('error', 'Nie udało się zapisać zmian.')->redirect("/trees/{$treeId}/edit");
         }
     }
 }

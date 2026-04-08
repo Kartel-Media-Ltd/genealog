@@ -1,0 +1,93 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - generic [ref=e3]:
+      - link "Genealog" [ref=e4] [cursor=pointer]:
+        - /url: /dashboard
+        - img [ref=e5]
+        - generic [ref=e9]: Genealog
+      - navigation "Główna nawigacja" [ref=e10]:
+        - link "Dashboard" [ref=e11] [cursor=pointer]:
+          - /url: /dashboard
+        - link "Moje drzewa" [ref=e12] [cursor=pointer]:
+          - /url: /trees
+        - link "Poszukiwania" [ref=e13] [cursor=pointer]:
+          - /url: /search
+      - 'button "Menu użytkownika: Arkadiusz Śnieżek" [ref=e16] [cursor=pointer]':
+        - img "Arkadiusz Śnieżek" [ref=e17]:
+          - generic [ref=e18]: AŚ
+        - img [ref=e19]
+  - main [ref=e21]:
+    - generic [ref=e23]:
+      - navigation "Nawigacja" [ref=e24]:
+        - link "Moje drzewa" [ref=e25] [cursor=pointer]:
+          - /url: /trees
+        - img [ref=e26]
+        - link "Rodzina Śnieżków" [ref=e28] [cursor=pointer]:
+          - /url: /trees/4630f0ab-d50d-4d72-ac6e-edfde9257ecf
+        - img [ref=e29]
+        - link "Osoby" [ref=e31] [cursor=pointer]:
+          - /url: /trees/4630f0ab-d50d-4d72-ac6e-edfde9257ecf/persons
+        - img [ref=e32]
+        - generic [ref=e34]: Nowa osoba
+      - generic [ref=e35]:
+        - heading "Dodaj osobę" [level=1] [ref=e37]
+        - generic [ref=e38]:
+          - group "Dane podstawowe" [ref=e39]:
+            - generic [ref=e40]: Dane podstawowe
+            - generic [ref=e41]:
+              - generic [ref=e42]:
+                - generic [ref=e43]: Imię *
+                - textbox "Imię" [ref=e44]
+              - generic [ref=e45]:
+                - generic [ref=e46]: Nazwisko *
+                - textbox "Nazwisko" [ref=e47]
+            - generic [ref=e48]:
+              - generic [ref=e49]: Nazwisko panieńskie (opcjonalnie)
+              - textbox "Nazwisko panieńskie (opcjonalnie)" [ref=e50]
+            - generic [ref=e51]:
+              - generic [ref=e52]: Płeć
+              - combobox "Płeć" [ref=e53]:
+                - option "Nieznana" [selected]
+                - option "Mężczyzna"
+                - option "Kobieta"
+          - group "Narodziny" [ref=e54]:
+            - generic [ref=e55]: Narodziny
+            - generic [ref=e56]:
+              - generic [ref=e57]:
+                - generic [ref=e58]: Data urodzenia (RRRR lub RRRR-MM-DD)
+                - textbox "Data urodzenia (RRRR lub RRRR-MM-DD)" [ref=e59]:
+                  - /placeholder: np. 1945 lub 1945-06-15
+              - generic [ref=e60]:
+                - generic [ref=e61]: Miejsce urodzenia
+                - textbox "Miejsce urodzenia" [ref=e62]
+          - group "Prywatność" [ref=e63]:
+            - generic [ref=e64]: Prywatność
+            - generic [ref=e65]:
+              - checkbox "Osoba żyjąca" [checked] [ref=e66]
+              - generic [ref=e67]:
+                - generic [ref=e68] [cursor=pointer]: Osoba żyjąca
+                - paragraph [ref=e69]: Żyjące osoby są chronione zgodnie z RODO.
+            - generic [ref=e70]:
+              - generic [ref=e71]: Widoczność
+              - combobox "Widoczność" [disabled] [ref=e72]:
+                - option "Prywatne (tylko Ty i zaproszeni)" [selected]
+                - option "Publiczne (widoczne w wyszukiwaniu)"
+                - option "Anonimowe (tylko w globalnym indeksie)"
+              - paragraph [ref=e73]: Żyjące osoby są zawsze prywatne (RODO).
+          - group [ref=e74]:
+            - generic [ref=e75]:
+              - generic [ref=e76]: Notatki (opcjonalnie)
+              - textbox "Notatki (opcjonalnie)" [ref=e77]:
+                - /placeholder: Dodatkowe informacje o osobie...
+          - generic [ref=e78]:
+            - link "Anuluj" [ref=e79] [cursor=pointer]:
+              - /url: /trees/4630f0ab-d50d-4d72-ac6e-edfde9257ecf/persons
+            - button "Dodaj osobę" [ref=e80] [cursor=pointer]
+  - contentinfo [ref=e81]:
+    - generic [ref=e83]:
+      - paragraph [ref=e84]: © 2026 Genealog. Wszelkie prawa zastrzeżone.
+      - navigation "Linki pomocnicze" [ref=e85]:
+        - link "Polityka prywatności" [ref=e86] [cursor=pointer]:
+          - /url: /privacy
+        - link "Regulamin" [ref=e87] [cursor=pointer]:
+          - /url: /terms

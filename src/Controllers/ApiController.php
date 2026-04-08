@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
+use App\Core\Database;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
@@ -115,6 +116,38 @@ class ApiController
 
         header('Content-Type: application/json');
         echo json_encode(['nodes' => $nodes, 'links' => $links], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+
+    /**
+     * GET /health — ZAD-4.7 (D8) health-check endpoint.
+     *
+     * Zwraca JSON z aktualnym statusem systemu: DB reachability + timestamp.
+     * Używany przez load-balancery, Kubernetes liveness/readiness probes,
+     * monitoring (Grafana, UptimeRobot, etc.). Brak auth — public endpoint.
+     *
+     * Status HTTP:
+     *   200 → wszystko OK
+     *   503 → DB nieosiągalne
+     */
+    public function health(): never
+    {
+        $status = ['status' => 'ok', 'ts' => date('c')];
+        $code   = 200;
+
+        try {
+            Database::getInstance()->fetchOne('SELECT 1 AS ping');
+            $status['db'] = 'ok';
+        } catch (\Throwable $e) {
+            error_log('Health check DB fail: ' . $e->getMessage());
+            $status = ['status' => 'fail', 'db' => 'fail', 'ts' => date('c')];
+            $code   = 503;
+        }
+
+        http_response_code($code);
+        header('Content-Type: application/json');
+        header('Cache-Control: no-store, max-age=0');
+        echo json_encode($status, JSON_UNESCAPED_UNICODE);
         exit;
     }
 

@@ -27,6 +27,7 @@ class NotificationRepository
     /** @return array[] */
     public function findRecent(string $userId, int $limit = 10): array
     {
+        // safe: $lim int-castowany + clamped [1, 50] — PDO nie wspiera bound LIMIT params
         $lim = max(1, min(50, $limit));
         return $this->db->fetchAll(
             "SELECT * FROM notifications
@@ -71,5 +72,22 @@ class NotificationRepository
             'SELECT * FROM notifications WHERE id = ? AND user_id = ?',
             [$id, $userId]
         );
+    }
+
+    /**
+     * Important #3: dedup dla powiadomień person_match.
+     * Sprawdza czy w ciągu ostatnich 24h istnieje już powiadomienie dla danego usera
+     * z linkiem do tej samej osoby — chroni przed spamem przy bulk GEDCOM imporcie.
+     */
+    public function existsRecentForLink(string $userId, string $type, string $link, int $hours = 24): bool
+    {
+        $row = $this->db->fetchOne(
+            'SELECT 1 FROM notifications
+             WHERE user_id = ? AND type = ? AND link = ?
+               AND created_at > NOW() - INTERVAL ? HOUR
+             LIMIT 1',
+            [$userId, $type, $link, $hours]
+        );
+        return $row !== null;
     }
 }

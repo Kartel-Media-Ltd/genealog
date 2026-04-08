@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Core\Uuid;
 use App\Repositories\NotificationRepository;
 
 /**
@@ -27,6 +28,13 @@ class NotificationService
         private readonly NotificationRepository $repo,
     ) {}
 
+    /**
+     * Wysyła powiadomienie z deduplikacją (Important #3).
+     *
+     * Jeśli `$link` jest podany i w ciągu ostatnich 24h istnieje już powiadomienie
+     * tego samego typu z tym samym linkiem dla tego samego usera — pomijamy.
+     * Chroni przed spamem przy bulk GEDCOM imporcie (1000 osób ≠ 1000 powiadomień).
+     */
     public function dispatch(
         string  $userId,
         string  $type,
@@ -34,7 +42,11 @@ class NotificationService
         ?string $body = null,
         ?string $link = null,
     ): void {
-        $this->repo->create($this->generateUuid(), $userId, $type, $title, $body, $link);
+        // Dedup po linku (zwykle wskazuje na konkretną osobę / drzewo)
+        if ($link !== null && $this->repo->existsRecentForLink($userId, $type, $link, 24)) {
+            return;
+        }
+        $this->repo->create(Uuid::generate(), $userId, $type, $title, $body, $link);
     }
 
     /**
@@ -105,11 +117,4 @@ class NotificationService
         );
     }
 
-    private function generateUuid(): string
-    {
-        $bytes = random_bytes(16);
-        $bytes[6] = chr((ord($bytes[6]) & 0x0f) | 0x40);
-        $bytes[8] = chr((ord($bytes[8]) & 0x3f) | 0x80);
-        return vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($bytes), 4));
-    }
 }

@@ -197,3 +197,40 @@
 - [x] 🟡 [N1] **`src/views/templates/AppLayout.php`** — `notificationBell` nasłuchuje `visibilitychange` — pauza polling gdy karta ukryta (oszczędność baterii mobile)
 - [x] 🟡 [N2] **`bin/reindex-all.php`** — usunięto 2 dodatkowe COUNT per osoba, jeden SELECT COUNT na końcu dla statystyki
 - [x] 🟡 [N3] **`src/Core/RateLimiter.php`** — wyekstrahowany jako service, używany przez `DiscoveryController` (i gotowy do refactoru `AuthService`)
+
+---
+
+## Do poprawy po review (2026-04-08)
+
+> Pełny raport: [`review-2026-04-08.md`](./review-2026-04-08.md)
+> Werdykt: **PASS WITH BLOCKING ISSUES** — 6 blocking, 10 important, 13 nit, 10 suggestions
+
+### 🔴 Blocking
+
+- [x] 🔴 [B1] **`src/Services/Discovery/MatchingService.php:89-153`** — `DiscoveryRepository::saveSuggestion()` nigdy nie wywołane → panel "Możliwe powiązania" w show.php zawsze pusty (DEAD CODE). Dodać `saveSuggestion()` w `findAndNotifyMatches` przed emit notyfikacji
+- [x] 🔴 [B2] **`src/views/pages/trees/persons/show.php:282-319`** — CSRF token rotation race: drugi accept/reject = 403. `importMatch`/`rejectMatch` muszą zwracać `['ok' => true, 'csrf' => Csrf::getToken()]` + frontend aktualizuje meta tag
+- [x] 🔴 [B3] **`src/Controllers/DiscoveryController.php:121-161`** — `importMatch` dla `source_type='local'` tworzy duplikat osoby zamiast relacji. Zablokować local lub zwalidować `sourceData`
+- [x] 🔴 [B4] **`src/Services/Discovery/PersonImportService.php:49`** — cross-tree import gubi region → birth_place. Zmapować `sourceData['region']` → `birth_place` gdy brak `birthPlace`
+- [x] 🔴 [B5] **`src/Services/Discovery/PersonImportService.php:87-95`** — race condition: catch `\RuntimeException` re-throw bez rollback. Ujednolicić catch — zawsze sprawdzać `inTransaction()`
+- [x] 🔴 [B6] **`src/Services/Discovery/Sources/CrossTreeMatchSource.php:53-73`** — soundex-only confidence 0.6 dla popularnych nazwisk = 20 fałszywych dopasowań z "60% średnie". Confidence dla soundex-only = 0.3, lub wymagać `earliest_birth_year BETWEEN`
+
+### 🟠 Important
+
+- [x] 🟠 **`src/Services/Discovery/PersonImportService.php:41-55`** — hardcoded `'is_living' => 0` dla wszystkich importów; przekazać `sourceData['is_living']` gdy dostępne
+- [x] 🟠 **`src/Controllers/DiscoveryController.php:186-189`** — `rejectMatch` over-engineered (dodatkowy SELECT na role); `findById($id, $userId)` już weryfikuje IDOR
+- [x] 🟠 **`src/Services/Discovery/MatchingService.php:147-152`** — komentarz mówi "dedup w NotificationService" ale nie istnieje. Bulk GEDCOM = 1000 phantom notyfikacji. Dodać `countRecentByPersonId` lub UNIQUE key
+- [x] 🟠 **`src/Services/Discovery/GlobalIndexService.php:179-185`** — `discovery_opt_in` przez surowy SQL; refactor na `UserRepository::isDiscoveryOptedIn()`
+- [x] 🟠 **`src/Services/Discovery/Sources/LocalTreeMatchSource.php:46-63`** — wyniki lokalne zawierają self-match z aktualnego drzewa; oznaczyć `treeId === currentTreeId` w UI lub wykluczyć przy edit mode
+- [x] 🟠 **`src/Services/Discovery/Sources/CrossTreeMatchSource.php:61`** — guard na pusty `userId` (gdy session wygasła w tle); `if ($context->currentUserId === '') return [];`
+- [x] 🟠 **`src/Controllers/DiscoveryController.php:275-282`** — `reindexTree` synchronicznie blokuje request; batchować lub background job
+- [x] 🟠 **`src/Services/Discovery/Sources/CrossTreeMatchSource.php:112`** — `treeRef` tylko 4 znaki hash → kolizje. 8 znaków + HMAC z user secret
+- [x] 🟠 **`src/views/pages/trees/persons/show.php:171`** — inline script `x-data="matchSuggestionsPanel(<?= json_encode(...) ?>)"` generuje 50KB+ attribute. Emitować jako `<script type="application/json">` i parsować w `init()`
+- [x] 🟠 **`src/Services/Discovery/GlobalIndexService.php:91-95`** — duplikacja query `treeRepo->findById` (2x SELECT trees per indexPerson); cache w metodzie
+
+### 🟡 Nit (opcjonalne)
+
+- [x] 🟡 **`FingerprintService.php:134`** — iconv order: `//IGNORE//TRANSLIT` nie `//TRANSLIT//IGNORE`
+- [x] 🟡 **`FingerprintService.php:61`** — `substr($combined, 0, 8)` na 8-znakowym = no-op
+- [x] 🟡 **`MatchResult.php:22`** — brak guard w konstruktorze (cross-tree z `birthPlace`)
+- [x] 🟡 **`migrations/008_discovery.sql:35`** — `name_soundex CHAR(8)` → `VARCHAR(8)`
+- [x] 🟡 **`show.php:268-275`** — `sourceLabel()` hardkoduje (duplikacja z backend); zwracać `sourceLabel` w MatchResult

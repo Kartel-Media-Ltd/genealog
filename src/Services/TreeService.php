@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Core\Uuid;
 use App\Models\Tree;
 use App\Repositories\TreeRepository;
 
@@ -18,7 +19,7 @@ class TreeService
             throw new \InvalidArgumentException('Nazwa drzewa musi mieć od 2 do 150 znaków.');
         }
 
-        $id = $this->generateUuid();
+        $id = Uuid::generate();
         $this->treeRepo->create($id, $ownerId, $name, $description ?: null, $isPublic);
 
         return $this->treeRepo->findById($id)
@@ -52,11 +53,4 @@ class TreeService
         return $tree;
     }
 
-    private function generateUuid(): string
-    {
-        $data    = random_bytes(16);
-        $data[6] = chr(ord($data[6]) & 0x0f | 0x40);
-        $data[8] = chr(ord($data[8]) & 0x3f | 0x80);
-        return vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($data), 4));
-    }
 }

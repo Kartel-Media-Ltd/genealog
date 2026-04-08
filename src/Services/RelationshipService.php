@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Core\Uuid;
 use App\Models\Relationship;
 use App\Repositories\PersonRepository;
 use App\Repositories\RelationshipRepository;
@@ -74,13 +75,13 @@ class RelationshipService
             }
         }
 
-        $id = $this->generateUuid();
+        $id = Uuid::generate();
         $this->relRepo->create($id, $treeId, $personAId, $personBId, $type, $startDate, $endDate, $notes);
 
         // Insert the inverse relationship
         $inverseType = $this->inverseType($type);
         if ($inverseType !== null && !$this->relRepo->exists($personBId, $personAId, $inverseType, $treeId)) {
-            $inverseId = $this->generateUuid();
+            $inverseId = Uuid::generate();
             $this->relRepo->create($inverseId, $treeId, $personBId, $personAId, $inverseType, $startDate, $endDate, $notes);
         }
 
@@ -127,11 +128,4 @@ class RelationshipService
         };
     }
 
-    private function generateUuid(): string
-    {
-        $bytes = random_bytes(16);
-        $bytes[6] = chr((ord($bytes[6]) & 0x0f) | 0x40);
-        $bytes[8] = chr((ord($bytes[8]) & 0x3f) | 0x80);
-        return vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($bytes), 4));
-    }
 }

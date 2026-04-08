@@ -11,6 +11,24 @@ class TreeRepository
     public function __construct(private readonly Database $db) {}
 
     /**
+     * Zwraca listę ID wszystkich drzew do których user ma dostęp
+     * (owner LUB member przez tree_members). Używane np. do cross-tree search.
+     *
+     * @return list<string>
+     */
+    public function findAccessibleIdsForUser(string $userId): array
+    {
+        $rows = $this->db->fetchAll(
+            'SELECT DISTINCT t.id
+             FROM trees t
+             LEFT JOIN tree_members tm ON tm.tree_id = t.id AND tm.user_id = :uid
+             WHERE t.owner_id = :uid2 OR tm.user_id IS NOT NULL',
+            [':uid' => $userId, ':uid2' => $userId]
+        );
+        return array_map(static fn(array $r): string => (string)$r['id'], $rows);
+    }
+
+    /**
      * Zwraca drzewa których właścicielem jest user.
      * @return Tree[]
      */
@@ -154,6 +172,7 @@ class TreeRepository
      */
     public function getRecentPersonActivity(string $userId, int $limit = 10): array
     {
+        // safe: $lim jest int-castowany przez max(1, (int)$limit) — PDO nie wspiera bound LIMIT params
         $lim  = max(1, (int)$limit);
         $rows = $this->db->fetchAll(
             "SELECT p.first_name, p.last_name, p.created_at, t.name AS tree_name, t.id AS tree_id, p.id AS person_id

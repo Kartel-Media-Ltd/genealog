@@ -1,0 +1,43 @@
+# Genealog — przykładowa konfiguracja cron
+# ===========================================
+# Skopiuj do: /etc/cron.d/genealog
+# Dostosuj ścieżki do środowiska docelowego (PATH, użytkownik, lokalizacja kodu).
+#
+# Format: m h dom mon dow user command
+# Standardowy format crontab systemowego (/etc/cron.d/).
+
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+SHELL=/bin/bash
+
+# ---------------------------------------------------------------------------
+# RODO Art. 5(1)(e) — ograniczenie przechowywania
+# Cleanup audit log (retencja: 3 lata) — codziennie o 3:00
+# ---------------------------------------------------------------------------
+0 3 * * * www-data /usr/bin/php /var/www/genealog/bin/cleanup-audit-log.php >> /var/log/genealog/cleanup-audit.log 2>&1
+
+# ---------------------------------------------------------------------------
+# Bezpieczeństwo — cleanup wygasłych tokenów resetu hasła (>24h)
+# Codziennie o 4:00
+# ---------------------------------------------------------------------------
+0 4 * * * www-data /usr/bin/php /var/www/genealog/bin/cleanup-password-resets.php >> /var/log/genealog/cleanup-password-resets.log 2>&1
+
+# ---------------------------------------------------------------------------
+# Person Discovery — przeliczenie globalnego indeksu (sole-owned trees)
+# Niedziela o 2:00 (poza godzinami szczytu)
+# Wymaga: bin/reindex-all.php
+# ---------------------------------------------------------------------------
+0 2 * * 0 www-data /usr/bin/php /var/www/genealog/bin/reindex-all.php >> /var/log/genealog/reindex.log 2>&1
+
+# ---------------------------------------------------------------------------
+# OPCJONALNIE: digest powiadomień email (raz dziennie o 8:00)
+# Wymaga: bin/send-notification-digest.php (nieistniejący — feature post-MVP)
+# ---------------------------------------------------------------------------
+# 0 8 * * * www-data /usr/bin/php /var/www/genealog/bin/send-notification-digest.php >> /var/log/genealog/digest.log 2>&1
+
+# ---------------------------------------------------------------------------
+# Setup wymagań:
+# ---------------------------------------------------------------------------
+# 1. mkdir -p /var/log/genealog && chown www-data:www-data /var/log/genealog
+# 2. Sprawdź uprawnienia: PHP musi mieć dostęp do .env.local i bazy danych
+# 3. logrotate dla /var/log/genealog/*.log (przykład w infrastructure/logrotate.example)
+# 4. Test: sudo -u www-data php /var/www/genealog/bin/cleanup-audit-log.php

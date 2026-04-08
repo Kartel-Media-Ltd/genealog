@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="<?= htmlspecialchars($pageDescription ?? 'Genealog — Twoje drzewo rodzinne') ?>">
+    <meta name="csrf-token" content="<?= htmlspecialchars(\App\Core\Csrf::getToken()) ?>">
     <link rel="icon" href="data:,">
     <title><?= htmlspecialchars(($pageTitle ?? 'Dashboard') . ' — Genealog') ?></title>
 
@@ -68,6 +69,16 @@
 <body class="min-h-dvh bg-[hsl(var(--background))] flex flex-col"
       x-data="{ mobileMenuOpen: false, userMenuOpen: false }">
 
+    <!-- ZAD-4.9 (D10) WCAG 2.4.1 — Skip link: przeskocz do głównej treści.
+         Widoczny tylko po :focus — pierwsza opcja Tab dla keyboard users. -->
+    <a href="#main-content"
+       class="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[100]
+              focus:bg-[hsl(var(--background))] focus:text-[hsl(var(--foreground))]
+              focus:px-4 focus:py-2 focus:rounded focus:shadow-lg
+              focus:ring-2 focus:ring-[hsl(var(--ring))]">
+        Przejdź do treści
+    </a>
+
     <!-- ================================================================
          HEADER
          ================================================================ -->
@@ -120,8 +131,71 @@
                 <?php endforeach; ?>
             </nav>
 
-            <!-- Prawa strona headera: Avatar + menu użytkownika -->
+            <!-- Prawa strona headera: Notification bell + Avatar + menu użytkownika -->
             <div class="flex items-center gap-3">
+
+                <!-- Notification bell -->
+                <div class="relative" x-data="notificationBell()" @click.outside="open = false">
+                    <button type="button"
+                            @click="toggle()"
+                            class="relative flex h-9 w-9 items-center justify-center rounded-md
+                                   text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--accent))]
+                                   focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))]"
+                            :aria-label="'Powiadomienia' + (count > 0 ? ', ' + count + ' nowych' : '')">
+                        <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none"
+                             viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                            <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                        </svg>
+                        <span x-show="count > 0" x-cloak
+                              class="absolute -top-1 -right-1 inline-flex h-4 min-w-4 items-center justify-center
+                                     rounded-full bg-[hsl(var(--destructive))] px-1 text-[10px] font-bold
+                                     text-[hsl(var(--destructive-foreground))]"
+                              x-text="count > 9 ? '9+' : count"></span>
+                    </button>
+
+                    <!-- Dropdown — ZAD-4.10 (D11) WCAG 4.1.3: aria-live dla ogłaszania nowych powiadomień -->
+                    <div x-show="open" x-cloak x-transition
+                         role="dialog"
+                         aria-label="Powiadomienia"
+                         aria-live="polite"
+                         aria-atomic="false"
+                         class="absolute right-0 mt-2 w-80 origin-top-right rounded-md border border-[hsl(var(--border))]
+                                bg-[hsl(var(--popover))] shadow-lg focus:outline-none z-50">
+                        <div class="flex items-center justify-between border-b border-[hsl(var(--border))] px-4 py-2.5">
+                            <h3 class="text-sm font-semibold text-[hsl(var(--foreground))]">Powiadomienia</h3>
+                            <button type="button" x-show="count > 0" @click="markAllRead()"
+                                    class="text-xs text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]">
+                                Oznacz wszystkie
+                            </button>
+                        </div>
+                        <div class="max-h-96 overflow-y-auto">
+                            <template x-if="loading">
+                                <div class="px-4 py-6 text-sm text-center text-[hsl(var(--muted-foreground))]">
+                                    Ładowanie…
+                                </div>
+                            </template>
+                            <template x-if="!loading && items.length === 0">
+                                <div class="px-4 py-6 text-sm text-center text-[hsl(var(--muted-foreground))]">
+                                    Brak nowych powiadomień
+                                </div>
+                            </template>
+                            <template x-for="n in items" :key="n.id">
+                                <a :href="n.link || '#'"
+                                   @click.prevent="clickNotification(n)"
+                                   class="block border-b border-[hsl(var(--border))] px-4 py-3 hover:bg-[hsl(var(--accent))] cursor-pointer"
+                                   :class="{ 'bg-[hsl(var(--accent)/0.3)]': !n.is_read }">
+                                    <div class="text-sm font-medium text-[hsl(var(--foreground))]"
+                                         x-text="n.title"></div>
+                                    <div x-show="n.body" class="mt-0.5 text-xs text-[hsl(var(--muted-foreground))] line-clamp-2"
+                                         x-text="n.body"></div>
+                                    <div class="mt-1 text-xs text-[hsl(var(--muted-foreground))]"
+                                         x-text="formatTime(n.created_at)"></div>
+                                </a>
+                            </template>
+                        </div>
+                    </div>
+                </div>
 
                 <!-- Przycisk hamburger — mobile -->
                 <button
@@ -293,7 +367,7 @@
     <!-- ================================================================
          MAIN CONTENT
          ================================================================ -->
-    <main class="flex-1">
+    <main id="main-content" class="flex-1" tabindex="-1">
         <div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
 
             <!-- Flash messages -->
@@ -365,5 +439,127 @@
         <div class="h-14"></div>
     <?php endif; ?>
 
+    <script>
+    function notificationBell() {
+        return {
+            count: 0,
+            items: [],
+            open: false,
+            loading: false,
+            pollTimer: null,
+
+            init() {
+                this.fetchCount();
+                this.startPolling();
+                // N1: pauza polling gdy karta jest ukryta (mobile battery)
+                document.addEventListener('visibilitychange', () => {
+                    if (document.hidden) {
+                        this.stopPolling();
+                    } else {
+                        this.fetchCount();
+                        this.startPolling();
+                    }
+                });
+            },
+
+            startPolling() {
+                if (this.pollTimer) return;
+                this.pollTimer = setInterval(() => this.fetchCount(), 30000);
+            },
+
+            stopPolling() {
+                if (this.pollTimer) {
+                    clearInterval(this.pollTimer);
+                    this.pollTimer = null;
+                }
+            },
+
+            async fetchCount() {
+                try {
+                    const r = await fetch('/api/notifications/count', {
+                        headers: { 'Accept': 'application/json' },
+                    });
+                    if (!r.ok) return;
+                    const data = await r.json();
+                    this.count = data.unread ?? 0;
+                } catch (e) { /* network offline, ignore */ }
+            },
+
+            async fetchList() {
+                this.loading = true;
+                try {
+                    const r = await fetch('/api/notifications', {
+                        headers: { 'Accept': 'application/json' },
+                    });
+                    if (!r.ok) throw new Error('HTTP ' + r.status);
+                    const data = await r.json();
+                    this.items = data.data ?? [];
+                    this.count = data.unread ?? this.count;
+                } catch (e) {
+                    console.warn('Notifications fetch failed:', e);
+                } finally {
+                    this.loading = false;
+                }
+            },
+
+            async toggle() {
+                this.open = !this.open;
+                if (this.open) await this.fetchList();
+            },
+
+            getCsrfToken() {
+                return document.querySelector('meta[name="csrf-token"]')?.content || '';
+            },
+
+            updateCsrfToken(data) {
+                if (data && data.csrf) {
+                    const meta = document.querySelector('meta[name="csrf-token"]');
+                    if (meta) meta.content = data.csrf;
+                }
+            },
+
+            async markAllRead() {
+                try {
+                    const r = await fetch('/api/notifications/read-all', {
+                        method: 'POST',
+                        headers: { 'Accept': 'application/json' },
+                        body: new URLSearchParams({ _csrf_token: this.getCsrfToken() }),
+                    });
+                    if (r.ok) {
+                        this.updateCsrfToken(await r.json());
+                        this.items = this.items.map(n => ({ ...n, is_read: 1 }));
+                        this.count = 0;
+                    }
+                } catch (e) { /* ignore */ }
+            },
+
+            async clickNotification(n) {
+                try {
+                    const r = await fetch('/api/notifications/' + encodeURIComponent(n.id) + '/read', {
+                        method: 'POST',
+                        headers: { 'Accept': 'application/json' },
+                        body: new URLSearchParams({ _csrf_token: this.getCsrfToken() }),
+                    });
+                    if (r.ok) this.updateCsrfToken(await r.json());
+                } catch (e) { /* ignore */ }
+                if (n.link) window.location.href = n.link;
+            },
+
+            formatTime(ts) {
+                if (!ts) return '';
+                const date = new Date(ts.replace(' ', 'T'));
+                const diffMs = Date.now() - date.getTime();
+                const diffMin = Math.floor(diffMs / 60000);
+                if (diffMin < 1) return 'przed chwilą';
+                if (diffMin < 60) return diffMin + ' min temu';
+                const diffH = Math.floor(diffMin / 60);
+                if (diffH < 24) return diffH + ' godz. temu';
+                const diffD = Math.floor(diffH / 24);
+                if (diffD < 7) return diffD + ' dni temu';
+                return date.toLocaleDateString('pl-PL');
+            },
+        };
+    }
+    </script>
 </body>
 </html>

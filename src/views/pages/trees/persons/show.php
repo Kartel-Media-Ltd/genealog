@@ -167,8 +167,14 @@ $suggestions ??= [];
         ?>
 
         <?php if (!empty($matchSuggestions) && $canEdit): ?>
+        <!-- Important #9: emit JSON jako script tag zamiast inline `x-data`
+             — chroni przed 50KB+ atrybutem przy bulk GEDCOM imporcie. -->
+        <script type="application/json" id="match-suggestions-data">
+            <?= json_encode($matchSuggestions, JSON_HEX_TAG | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE) ?>
+        </script>
+
         <!-- Discovery match suggestions — cross-tree / external / local fingerprint matches -->
-        <div x-data="matchSuggestionsPanel(<?= htmlspecialchars(json_encode($matchSuggestions), ENT_QUOTES) ?>)"
+        <div x-data="matchSuggestionsPanel()"
              class="rounded-lg border border-amber-300 bg-amber-50/60 shadow-sm">
             <div class="border-b border-amber-200 px-6 py-4 flex items-center gap-2">
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
@@ -190,13 +196,13 @@ $suggestions ??= [];
                                     <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium"
                                           :class="badgeClass(item.confidence)"
                                           x-text="confidenceLabel(item.confidence)"></span>
-                                    <span class="text-xs text-amber-700" x-text="sourceLabel(item.source_type)"></span>
+                                    <span class="text-xs text-amber-700" x-text="item.data.sourceLabel || item.source_type"></span>
                                 </div>
                                 <p class="mt-1 font-medium text-amber-950">
                                     <span x-text="(item.data.firstName || '?') + ' ' + (item.data.lastName || '?')"></span>
                                     <template x-if="item.data.birthYear">
                                         <span class="text-amber-700 text-sm">
-                                            (<span x-text="'ur. ' + item.data.birthYear"></span>)
+                                            (<span x-text="`ur. ${item.data.birthYear}`"></span>)
                                         </span>
                                     </template>
                                 </p>
@@ -241,7 +247,11 @@ $suggestions ??= [];
         </div>
 
         <script>
-        function matchSuggestionsPanel(initialItems) {
+        function matchSuggestionsPanel() {
+            // Important #9: parsuj JSON z osobnego script tag zamiast x-data attribute
+            const dataEl = document.getElementById('match-suggestions-data');
+            const initialItems = dataEl ? JSON.parse(dataEl.textContent || '[]') : [];
+
             return {
                 items: initialItems.map(item => ({
                     ...item,
@@ -265,30 +275,40 @@ $suggestions ??= [];
                     return pct + '% — niskie';
                 },
 
-                sourceLabel(sourceType) {
-                    return {
-                        'local':         'Twoje drzewo',
-                        'cross_tree':    'Inne drzewo (anonimizowane)',
-                        'familysearch':  'FamilySearch',
-                        'genetyka':      'Geneteka (PTG)',
-                        'external':      'Zewnętrzna baza',
-                    }[sourceType] || sourceType;
+                /**
+                 * Wykonuje POST z CSRF token + aktualizuje meta tag z nowym
+                 * tokenem zwróconym przez backend (Csrf::verify rotuje token).
+                 */
+                async _postWithCsrf(url) {
+                    const meta = document.querySelector('meta[name="csrf-token"]');
+                    const csrf = meta?.content || '';
+                    const r = await fetch(url, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                            'X-CSRF-TOKEN': csrf,
+                            'Accept': 'application/json',
+                        },
+                        body: '_csrf_token=' + encodeURIComponent(csrf),
+                    });
+                    let data = null;
+                    try { data = await r.json(); } catch (e) { /* ignore parse error */ }
+                    // B2: rotacja CSRF — backend zwraca nowy token, aktualizujemy meta
+                    if (data && data.csrf && meta) {
+                        meta.content = data.csrf;
+                    }
+                    if (!r.ok) {
+                        const msg = (data && data.message) || ('HTTP ' + r.status);
+                        throw new Error(msg);
+                    }
+                    return data;
                 },
 
                 async acceptMatch(item) {
                     if (this.processing[item.id]) return;
                     this.processing[item.id] = true;
                     try {
-                        const csrf = document.querySelector('meta[name="csrf-token"]')?.content || '';
-                        const r = await fetch('/api/discovery/match/' + item.id + '/import', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/x-www-form-urlencoded',
-                                'X-CSRF-TOKEN': csrf,
-                            },
-                            body: '_csrf_token=' + encodeURIComponent(csrf),
-                        });
-                        if (!r.ok) throw new Error('HTTP ' + r.status);
+                        await this._postWithCsrf('/api/discovery/match/' + item.id + '/import');
                         this.hidden[item.id] = true;
                     } catch (e) {
                         alert('Nie udało się zaakceptować dopasowania: ' + e.message);
@@ -301,16 +321,7 @@ $suggestions ??= [];
                     if (this.processing[item.id]) return;
                     this.processing[item.id] = true;
                     try {
-                        const csrf = document.querySelector('meta[name="csrf-token"]')?.content || '';
-                        const r = await fetch('/api/discovery/match/' + item.id + '/reject', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/x-www-form-urlencoded',
-                                'X-CSRF-TOKEN': csrf,
-                            },
-                            body: '_csrf_token=' + encodeURIComponent(csrf),
-                        });
-                        if (!r.ok) throw new Error('HTTP ' + r.status);
+                        await this._postWithCsrf('/api/discovery/match/' + item.id + '/reject');
                         this.hidden[item.id] = true;
                     } catch (e) {
                         alert('Nie udało się odrzucić dopasowania: ' + e.message);

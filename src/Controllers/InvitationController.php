@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
+use App\Core\RateLimiter;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
@@ -18,6 +19,7 @@ class InvitationController
         private readonly TreeRepository        $treeRepo,
         private readonly InvitationRepository  $invRepo,
         private readonly InvitationService     $invService,
+        private readonly RateLimiter           $rateLimiter,
     ) {}
 
     /** GET /trees/{id}/members */
@@ -80,6 +82,14 @@ class InvitationController
     public function showAccept(): never
     {
         $token = $this->request->getRouteParam('token');
+        $ip    = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+
+        // Rate limit — chroni przed brute-force enumeracji tokenów (audyt R3/STRIDE Spoofing)
+        if ($this->rateLimiter->isLimited($ip, 'invite_token', 20, 3600)) {
+            $this->response->withFlash('error', 'Zbyt wiele prób. Spróbuj ponownie za godzinę.')
+                ->redirect('/login');
+        }
+        $this->rateLimiter->record($ip, 'invite_token');
 
         $inv = $this->invService->findValidByToken($token);
         if ($inv === null) {
@@ -92,7 +102,9 @@ class InvitationController
         $isLoggedIn  = Session::has('user_id');
 
         // Save token in session for post-login redirect
-        if (!$isLoggedIn) {
+        // ZAD-4.2 (D2): walidacja formatu tokenu przed zapisem — defense-in-depth,
+        // zapobiega zanieczyszczeniu sesji wartościami spoza oczekiwanego formatu.
+        if (!$isLoggedIn && $this->isValidTokenFormat($token)) {
             Session::set('pending_invitation', $token);
         }
 
@@ -115,7 +127,9 @@ class InvitationController
         $userId = Session::get('user_id');
 
         if (!$userId) {
-            Session::set('pending_invitation', $token);
+            if ($this->isValidTokenFormat($token)) {
+                Session::set('pending_invitation', $token);
+            }
             $this->response->redirect('/login');
         }
 
@@ -195,5 +209,15 @@ class InvitationController
             'email'  => Session::get('user_email', ''),
             'avatar' => '',
         ];
+    }
+
+    /**
+     * ZAD-4.2 (D2): walidacja formatu tokena zaproszenia (64 hex chars).
+     * Token jest generowany przez bin2hex(random_bytes(32)) — zawsze 64 hex chars.
+     * Defense-in-depth: chroni przed zapisem do sesji wartości craftowanych przez usera.
+     */
+    private function isValidTokenFormat(?string $token): bool
+    {
+        return $token !== null && strlen($token) === 64 && ctype_xdigit($token);
     }
 }

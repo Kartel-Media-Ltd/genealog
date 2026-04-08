@@ -91,6 +91,18 @@ class PersonRepository
         );
     }
 
+    /**
+     * Aktualizuje fingerprint_hash i name_soundex — używane przez Discovery listener
+     * po person.created/updated. Nie dotyka updated_at żeby nie wywołać kaskady hooków.
+     */
+    public function updateFingerprint(string $id, ?string $hash, ?string $soundex): void
+    {
+        $this->db->execute(
+            'UPDATE persons SET fingerprint_hash = ?, name_soundex = ? WHERE id = ?',
+            [$hash, $soundex, $id]
+        );
+    }
+
     public function findByXref(string $treeId, string $xref): ?Person
     {
         $row = $this->db->fetchOne(

@@ -19,15 +19,16 @@
 
 require_once __DIR__ . '/../atoms/alert.php';
 
+use App\Core\Session;
+
 function render_flash_messages(): void {
-    if (session_status() === PHP_SESSION_NONE) {
-        session_start();
-    }
+    // ZAD-4.6 (D6): dostęp przez Session API, nie bezpośrednio przez $_SESSION.
+    // Konsystencja z resztą projektu (controller, middleware używają Session::).
 
     // Obsługa jednego flash
-    if (!empty($_SESSION['flash'])) {
-        $flash = $_SESSION['flash'];
-        unset($_SESSION['flash']);
+    $flash = Session::get('flash');
+    if (!empty($flash) && is_array($flash)) {
+        Session::delete('flash');
 
         $type    = $flash['type']    ?? 'info';
         $message = $flash['message'] ?? '';
@@ -49,9 +50,9 @@ function render_flash_messages(): void {
     }
 
     // Obsługa wielu flash (tablica)
-    if (!empty($_SESSION['flashes']) && is_array($_SESSION['flashes'])) {
-        $flashes = $_SESSION['flashes'];
-        unset($_SESSION['flashes']);
+    $flashes = Session::get('flashes');
+    if (!empty($flashes) && is_array($flashes)) {
+        Session::delete('flashes');
 
         echo '<div class="mb-6 flex flex-col gap-3">';
         foreach ($flashes as $flash) {
@@ -75,25 +76,20 @@ function render_flash_messages(): void {
 }
 
 /**
- * Helper — ustaw flash (do użycia w kontrolerach)
- *
- * Przykład:
- *   flash_set('success', 'Zarejestrowano pomyślnie!');
- *   flash_set('error', 'Nieprawidłowe hasło.', 'Błąd logowania');
+ * Helper — ustaw flash (do użycia w kontrolerach, rzadko — preferuj Response::withFlash).
  */
 function flash_set(string $type, string $message, string $title = ''): void {
-    if (session_status() === PHP_SESSION_NONE) {
-        session_start();
-    }
-    $_SESSION['flash'] = compact('type', 'message', 'title');
+    Session::set('flash', compact('type', 'message', 'title'));
 }
 
 /**
- * Helper — dodaj do tablicy flash (wiele komunikatów naraz)
+ * Helper — dodaj do tablicy flash (wiele komunikatów naraz).
  */
 function flash_add(string $type, string $message, string $title = ''): void {
-    if (session_status() === PHP_SESSION_NONE) {
-        session_start();
+    $flashes = Session::get('flashes', []);
+    if (!is_array($flashes)) {
+        $flashes = [];
     }
-    $_SESSION['flashes'][] = compact('type', 'message', 'title');
+    $flashes[] = compact('type', 'message', 'title');
+    Session::set('flashes', $flashes);
 }

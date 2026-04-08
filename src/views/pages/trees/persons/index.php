@@ -216,7 +216,8 @@ unset($entry);
                     ?>
                         <tr
                             class="border-b border-border last:border-0 hover:bg-muted/30 transition-colors"
-                            x-show="search === '' || '<?= addslashes(strtolower($person->fullName())) ?>'.includes(search.toLowerCase())"
+                            data-search-name="<?= htmlspecialchars(strtolower($person->fullName()), ENT_QUOTES, 'UTF-8') ?>"
+                            x-show="search === '' || $el.dataset.searchName.includes(search.toLowerCase())"
                         >
                             <td class="px-6 py-3">
                                 <div class="flex items-center gap-3"

@@ -49,7 +49,7 @@ class AuthServiceTest extends TestCase
             ->method('findById')
             ->willReturn($expectedUser);
 
-        $user = $this->authService->register('Jan Kowalski', 'jan@test.pl', 'password123');
+        $user = $this->authService->register('Jan Kowalski', 'jan@test.pl', 'StrongPass123!');
 
         $this->assertSame('jan@test.pl', $user->email);
     }
@@ -59,7 +59,7 @@ class AuthServiceTest extends TestCase
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('Imię musi mieć od 2 do 100 znaków');
 
-        $this->authService->register('J', 'jan@test.pl', 'password123');
+        $this->authService->register('J', 'jan@test.pl', 'StrongPass123!');
     }
 
     public function testRegisterThrowsOnInvalidEmail(): void
@@ -67,13 +67,13 @@ class AuthServiceTest extends TestCase
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('Nieprawidłowy adres e-mail');
 
-        $this->authService->register('Jan', 'not-an-email', 'password123');
+        $this->authService->register('Jan', 'not-an-email', 'StrongPass123!');
     }
 
     public function testRegisterThrowsOnShortPassword(): void
     {
         $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('Hasło musi mieć co najmniej 8 znaków');
+        $this->expectExceptionMessage('Hasło musi mieć co najmniej 12 znaków');
 
         $this->authService->register('Jan', 'jan@test.pl', 'short');
     }
@@ -85,14 +85,14 @@ class AuthServiceTest extends TestCase
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('Konto z tym adresem e-mail już istnieje');
 
-        $this->authService->register('Jan', 'jan@test.pl', 'password123');
+        $this->authService->register('Jan', 'jan@test.pl', 'StrongPass123!');
     }
 
     // ─── login ───────────────────────────────────────────────────────────────
 
     public function testLoginSuccess(): void
     {
-        $hash = password_hash('password123', PASSWORD_BCRYPT, ['cost' => BCRYPT_COST]);
+        $hash = password_hash('StrongPass123!', PASSWORD_BCRYPT, ['cost' => BCRYPT_COST]);
 
         // Brak rate limitów
         $this->db->method('fetchOne')
@@ -104,7 +104,7 @@ class AuthServiceTest extends TestCase
         ];
         $this->userRepo->method('findByEmailWithHash')->willReturn($row);
 
-        $user = $this->authService->login('jan@test.pl', 'password123', '127.0.0.1');
+        $user = $this->authService->login('jan@test.pl', 'StrongPass123!', '127.0.0.1');
 
         $this->assertSame('jan@test.pl', $user->email);
     }

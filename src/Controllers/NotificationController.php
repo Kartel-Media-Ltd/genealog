@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
+use App\Core\Csrf;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
@@ -16,10 +17,11 @@ class NotificationController
         private readonly NotificationRepository $repo,
     ) {}
 
-    /** GET /api/notifications/count — JSON polling endpoint */
+    /** GET /api/notifications/count — JSON polling endpoint. Cache 25s żeby polling co 30s nie dobił DB (audit P1). */
     public function count(): never
     {
         $userId = (string)Session::get('user_id');
+        header('Cache-Control: private, max-age=25');
         $this->response->json([
             'unread' => $this->repo->countUnread($userId),
         ]);
@@ -43,7 +45,8 @@ class NotificationController
         $userId = (string)Session::get('user_id');
         $id     = (string)$this->request->getRouteParam('id');
         $this->repo->markAsRead($id, $userId);
-        $this->response->json(['ok' => true]);
+        // Csrf::verify rotuje token — zwracamy nowy żeby JS mógł zaktualizować meta tag
+        $this->response->json(['ok' => true, 'csrf' => Csrf::getToken()]);
     }
 
     /** POST /api/notifications/read-all */
@@ -52,6 +55,6 @@ class NotificationController
         $this->request->verifyCsrf();
         $userId = (string)Session::get('user_id');
         $this->repo->markAllAsRead($userId);
-        $this->response->json(['ok' => true]);
+        $this->response->json(['ok' => true, 'csrf' => Csrf::getToken()]);
     }
 }

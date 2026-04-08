@@ -1,0 +1,222 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - generic [ref=e3]:
+      - link "Genealog" [ref=e4] [cursor=pointer]:
+        - /url: /dashboard
+        - img [ref=e5]
+        - generic [ref=e9]: Genealog
+      - navigation "Główna nawigacja" [ref=e10]:
+        - link "Dashboard" [ref=e11] [cursor=pointer]:
+          - /url: /dashboard
+        - link "Moje drzewa" [ref=e12] [cursor=pointer]:
+          - /url: /trees
+        - link "Poszukiwania" [ref=e13] [cursor=pointer]:
+          - /url: /search
+      - generic [ref=e14]:
+        - button "Powiadomienia" [ref=e16] [cursor=pointer]:
+          - img [ref=e17]
+        - 'button "Menu użytkownika: Arkadiusz Śnieżek" [ref=e21] [cursor=pointer]':
+          - img "Arkadiusz Śnieżek" [ref=e22]:
+            - generic [ref=e23]: AŚ
+          - img [ref=e24]
+  - main [ref=e26]:
+    - generic [ref=e27]:
+      - navigation "Nawigacja" [ref=e28]:
+        - link "Moje drzewa" [ref=e29] [cursor=pointer]:
+          - /url: /trees
+        - img [ref=e30]
+        - generic [ref=e32]: Rodzina Śnieżków
+      - generic [ref=e33]:
+        - generic [ref=e34]:
+          - generic [ref=e35]:
+            - heading "Rodzina Śnieżków" [level=1] [ref=e36]
+            - generic [ref=e37]: Prywatne
+          - paragraph [ref=e38]: 26 osób · Zaktualizowano 8 Apr 2026
+        - generic [ref=e39]:
+          - link "Drukuj drzewo" [ref=e40] [cursor=pointer]:
+            - /url: /trees/4630f0ab-d50d-4d72-ac6e-edfde9257ecf/print
+            - img [ref=e41]
+            - generic [ref=e45]: Drukuj drzewo
+          - link "Dodaj osobę" [ref=e46] [cursor=pointer]:
+            - /url: /trees/4630f0ab-d50d-4d72-ac6e-edfde9257ecf/persons/new
+            - img [ref=e47]
+            - generic [ref=e48]: Dodaj osobę
+          - link "Lista osób" [ref=e49] [cursor=pointer]:
+            - /url: /trees/4630f0ab-d50d-4d72-ac6e-edfde9257ecf/persons
+            - img [ref=e50]
+            - generic [ref=e55]: Osoby
+          - link "Import / eksport GEDCOM" [ref=e56] [cursor=pointer]:
+            - /url: /trees/4630f0ab-d50d-4d72-ac6e-edfde9257ecf/gedcom
+            - img [ref=e57]
+            - generic [ref=e60]: Import/Export
+          - link "Zarządzaj dostępem" [ref=e61] [cursor=pointer]:
+            - /url: /trees/4630f0ab-d50d-4d72-ac6e-edfde9257ecf/members
+            - img [ref=e62]
+            - generic [ref=e67]: Dostęp
+          - link "Odkrywanie (cross-tree)" [ref=e68] [cursor=pointer]:
+            - /url: /trees/4630f0ab-d50d-4d72-ac6e-edfde9257ecf/settings/discovery
+            - img [ref=e69]
+            - generic [ref=e72]: Odkrywanie
+          - link "Ustawienia drzewa" [ref=e73] [cursor=pointer]:
+            - /url: /trees/4630f0ab-d50d-4d72-ac6e-edfde9257ecf/edit
+            - img [ref=e74]
+            - generic [ref=e77]: Ustawienia
+      - generic [ref=e78]:
+        - generic [ref=e79]:
+          - heading "Wizualizacja drzewa" [level=2] [ref=e80]
+          - generic [ref=e81]:
+            - button "Powiększ" [ref=e82] [cursor=pointer]:
+              - img [ref=e83]
+            - button "Pomniejsz" [ref=e86] [cursor=pointer]:
+              - img [ref=e87]
+            - button "Pełny ekran" [ref=e90] [cursor=pointer]:
+              - img [ref=e91]
+              - generic [ref=e96]: Pełny ekran
+        - generic "Wizualizacja drzewa genealogicznego" [ref=e97]:
+          - img [ref=e98]:
+            - generic [ref=e137]:
+              - generic [ref=e139]:
+                - generic [ref=e140]: HB
+                - generic [ref=e141]:
+                  - generic [ref=e142]: Helena
+                  - generic [ref=e143]: Biały
+              - generic [ref=e145]:
+                - generic [ref=e146]: JC
+                - generic [ref=e147]:
+                  - generic [ref=e148]: Józefa
+                  - generic [ref=e149]: Czech
+              - generic [ref=e151]:
+                - generic [ref=e152]: JK
+                - generic [ref=e153]:
+                  - generic [ref=e154]: Jadwiga
+                  - generic [ref=e155]: Korzec
+              - generic [ref=e158]:
+                - generic [ref=e159]: Dominika
+                - generic [ref=e160]: Kułaj
+                - text: ur. 1984
+              - generic [ref=e162]:
+                - generic [ref=e163]: KN
+                - generic [ref=e164]:
+                  - generic [ref=e165]: Krzysztof
+                  - generic [ref=e166]: Nogaj
+              - generic [ref=e168]:
+                - generic [ref=e169]: MN
+                - generic [ref=e170]:
+                  - generic [ref=e171]: Marta
+                  - generic [ref=e172]: Nogaj
+              - generic [ref=e174]:
+                - generic [ref=e175]: AP
+                - generic [ref=e176]:
+                  - generic [ref=e177]: Agnieszka
+                  - generic [ref=e178]: Piotrowska
+                  - text: ur. 1976
+              - generic [ref=e181]:
+                - generic [ref=e182]: Martyna
+                - generic [ref=e183]: Piotrowska
+                - text: ur. 2007
+              - generic [ref=e185]:
+                - generic [ref=e186]: BP
+                - generic [ref=e187]:
+                  - generic [ref=e188]: Bartosz
+                  - generic [ref=e189]: Piotrowski
+                  - text: ur. 2014
+              - generic [ref=e191]:
+                - generic [ref=e192]: BP
+                - generic [ref=e193]:
+                  - generic [ref=e194]: Bogdan
+                  - generic [ref=e195]: Piotrowski
+              - generic [ref=e197]:
+                - generic [ref=e198]: HP
+                - generic [ref=e199]:
+                  - generic [ref=e200]: Hubert
+                  - generic [ref=e201]: Piotrowski
+                  - text: ur. 2003
+              - generic [ref=e203]:
+                - generic [ref=e204]: AR
+                - generic [ref=e205]:
+                  - generic [ref=e206]: Angelika
+                  - generic [ref=e207]: Rosłoniec
+                  - text: ur. 1992
+              - generic [ref=e209]:
+                - generic [ref=e210]: KR
+                - generic [ref=e211]:
+                  - generic [ref=e212]: Kamil
+                  - generic [ref=e213]: Rosłoniec
+                  - text: ur. 1983
+              - generic [ref=e215]:
+                - generic [ref=e216]: MR
+                - generic [ref=e217]:
+                  - generic [ref=e218]: Mikołaj
+                  - generic [ref=e219]: Rosłoniec
+                  - text: ur. 2026
+              - generic [ref=e222]:
+                - generic [ref=e223]: Arkadiusz
+                - generic [ref=e224]: Śnieżek
+                - text: ur. 1986
+              - generic [ref=e226]:
+                - generic [ref=e227]: EŚ
+                - generic [ref=e228]:
+                  - generic [ref=e229]: Edward
+                  - generic [ref=e230]: Śnieżek
+              - generic [ref=e232]:
+                - generic [ref=e233]: JŚ
+                - generic [ref=e234]:
+                  - generic [ref=e235]: Józef
+                  - generic [ref=e236]: Śnieżek
+                  - text: ur. 1951
+              - generic [ref=e238]:
+                - generic [ref=e239]: JŚ
+                - generic [ref=e240]:
+                  - generic [ref=e241]: Józef
+                  - generic [ref=e242]: Śnieżek
+              - generic [ref=e244]:
+                - generic [ref=e245]: KŚ
+                - generic [ref=e246]:
+                  - generic [ref=e247]: Kaziemierz
+                  - generic [ref=e248]: Śnieżek
+              - generic [ref=e250]:
+                - generic [ref=e251]: LŚ
+                - generic [ref=e252]:
+                  - generic [ref=e253]: Ludwika
+                  - generic [ref=e254]: Śnieżek
+              - generic [ref=e256]:
+                - generic [ref=e257]: MŚ
+                - generic [ref=e258]:
+                  - generic [ref=e259]: Mieczysław
+                  - generic [ref=e260]: Śnieżek
+              - generic [ref=e262]:
+                - generic [ref=e263]: SŚ
+                - generic [ref=e264]:
+                  - generic [ref=e265]: Stanisława
+                  - generic [ref=e266]: Śnieżek
+                  - text: ur. 1932
+              - generic [ref=e269]:
+                - generic [ref=e270]: Tomasz
+                - generic [ref=e271]: Śnieżek
+                - text: ur. 2018
+              - generic [ref=e273]:
+                - generic [ref=e274]: UŚ
+                - generic [ref=e275]:
+                  - generic [ref=e276]: Urszula
+                  - generic [ref=e277]: Śnieżek
+                  - text: ur. 1955
+              - generic [ref=e279]:
+                - generic [ref=e280]: WŚ
+                - generic [ref=e281]:
+                  - generic [ref=e282]: Władysław
+                  - generic [ref=e283]: Śnieżek
+                  - text: ur. 1927
+              - generic [ref=e285]:
+                - generic [ref=e286]: WŚ
+                - generic [ref=e287]:
+                  - generic [ref=e288]: Władysław
+                  - generic [ref=e289]: Śnieżek
+                  - text: ur. 1949
+  - contentinfo [ref=e290]:
+    - generic [ref=e292]:
+      - paragraph [ref=e293]: © 2026 Genealog. Wszelkie prawa zastrzeżone.
+      - navigation "Linki pomocnicze" [ref=e294]:
+        - link "Polityka prywatności" [ref=e295] [cursor=pointer]:
+          - /url: /privacy
+        - link "Regulamin" [ref=e296] [cursor=pointer]:
+          - /url: /terms

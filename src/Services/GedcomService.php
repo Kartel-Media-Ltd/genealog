@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Core\Uuid;
 use App\Repositories\PersonRepository;
 use App\Repositories\RelationshipRepository;
 
@@ -248,7 +249,7 @@ class GedcomService
                     continue;
                 }
 
-                $newId = $this->generateUuid();
+                $newId = Uuid::generate();
                 $this->personRepo->create($newId, $treeId, $userId, $data);
                 $xrefMap[$xref] = $newId;
                 $personsCount++;
@@ -393,10 +394,10 @@ class GedcomService
                             : null;
                     }
                     $this->relationshipRepo->create(
-                        $this->generateUuid(), $treeId, $aId, $bId, 'spouse', $startDate
+                        Uuid::generate(), $treeId, $aId, $bId, 'spouse', $startDate
                     );
                     $this->relationshipRepo->create(
-                        $this->generateUuid(), $treeId, $bId, $aId, 'spouse', $startDate
+                        Uuid::generate(), $treeId, $bId, $aId, 'spouse', $startDate
                     );
                     $count += 2;
                 }
@@ -419,14 +420,14 @@ class GedcomService
                     // child has husb as parent
                     if (!$this->relationshipRepo->exists($childId, $husbId, 'parent', $treeId)) {
                         $this->relationshipRepo->create(
-                            $this->generateUuid(), $treeId, $childId, $husbId, 'parent'
+                            Uuid::generate(), $treeId, $childId, $husbId, 'parent'
                         );
                         $count++;
                     }
                     // husb has child as child
                     if (!$this->relationshipRepo->exists($husbId, $childId, 'child', $treeId)) {
                         $this->relationshipRepo->create(
-                            $this->generateUuid(), $treeId, $husbId, $childId, 'child'
+                            Uuid::generate(), $treeId, $husbId, $childId, 'child'
                         );
                         $count++;
                     }
@@ -436,14 +437,14 @@ class GedcomService
                     // child has wife as parent
                     if (!$this->relationshipRepo->exists($childId, $wifeId, 'parent', $treeId)) {
                         $this->relationshipRepo->create(
-                            $this->generateUuid(), $treeId, $childId, $wifeId, 'parent'
+                            Uuid::generate(), $treeId, $childId, $wifeId, 'parent'
                         );
                         $count++;
                     }
                     // wife has child as child
                     if (!$this->relationshipRepo->exists($wifeId, $childId, 'child', $treeId)) {
                         $this->relationshipRepo->create(
-                            $this->generateUuid(), $treeId, $wifeId, $childId, 'child'
+                            Uuid::generate(), $treeId, $wifeId, $childId, 'child'
                         );
                         $count++;
                     }
@@ -582,24 +583,30 @@ class GedcomService
         $lines[] = "2 GIVN {$person->firstName}";
         $lines[] = "2 SURN {$person->lastName}";
 
-        if (!empty($person->maidenName)) {
+        // RODO Art. 25 — żyjące osoby: minimum danych w eksporcie (tylko imię/nazwisko + rok ur).
+        // Maiden name, miejsce urodzenia/zgonu, data zgonu, NOTES — pomijane.
+        // Dla zmarłych — pełne dane bez ograniczeń.
+        if (!$person->isLiving && !empty($person->maidenName)) {
             $lines[] = "2 _MARN {$person->maidenName}";
         }
 
         $lines[] = "1 SEX {$sex}";
 
-        // BIRT
+        // BIRT — dla żyjących TYLKO rok, bez miejsca
         if ($person->birthDate || $person->birthPlace) {
             $lines[] = '1 BIRT';
             if ($person->birthDate) {
-                $lines[] = '2 DATE ' . $this->formatGedcomDate($person->birthDate);
+                $dateOut = $person->isLiving
+                    ? substr($person->birthDate, 0, 4)            // tylko rok
+                    : $this->formatGedcomDate($person->birthDate); // pełna data
+                $lines[] = '2 DATE ' . $dateOut;
             }
-            if ($person->birthPlace) {
+            if ($person->birthPlace && !$person->isLiving) {
                 $lines[] = "2 PLAC {$person->birthPlace}";
             }
         }
 
-        // DEAT
+        // DEAT — pełne dane (zmarłe osoby nie są chronione przez RODO Art. 2(2)(b))
         if (!$person->isLiving) {
             $lines[] = '1 DEAT Y';
             if ($person->deathDate) {
@@ -610,8 +617,8 @@ class GedcomService
             }
         }
 
-        // NOTE — wrap at 248 chars
-        if (!empty($person->notes)) {
+        // NOTE — pomijane dla żyjących osób (RODO Art. 25)
+        if (!empty($person->notes) && !$person->isLiving) {
             $noteLines = explode("\n", $person->notes);
             $first     = true;
             foreach ($noteLines as $noteLine) {
@@ -765,11 +772,4 @@ class GedcomService
         return $chars ?: [$str];
     }
 
-    private function generateUuid(): string
-    {
-        $bytes = random_bytes(16);
-        $bytes[6] = chr((ord($bytes[6]) & 0x0f) | 0x40); // version 4
-        $bytes[8] = chr((ord($bytes[8]) & 0x3f) | 0x80); // variant RFC 4122
-        return vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($bytes), 4));
-    }
 }

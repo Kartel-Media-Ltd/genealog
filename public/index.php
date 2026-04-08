@@ -120,7 +120,7 @@ $adminMw     = new AdminMiddleware($response, $userRepo);
 
 // Discovery — fingerprint + global index + MatchSourceRegistry + EventDispatcher hooks
 $fingerprintSvc  = new FingerprintService();
-$globalIndexSvc  = new GlobalIndexService($db, $fingerprintSvc, $personRepo, $treeRepo);
+$globalIndexSvc  = new GlobalIndexService($db, $fingerprintSvc, $personRepo, $treeRepo, $userRepo);
 $discoveryRepo   = new DiscoveryRepository($db);
 $notifRepo       = new NotificationRepository($db);
 $notifSvc        = new NotificationService($notifRepo);
@@ -130,7 +130,7 @@ $matchRegistry->register(new CrossTreeMatchSource($db, $fingerprintSvc));
 // External sources — rejestrowane warunkowo, isAvailable() pilnuje samo wyłączenia
 $matchRegistry->register(new FamilySearchMatchSource(getenv('FAMILYSEARCH_CLIENT_ID') ?: null));
 $matchRegistry->register(new GenetykaMatchSource(getenv('GENETEKA_LOCAL_DB') ?: null));
-$matchingSvc     = new MatchingService($matchRegistry, $notifSvc, $treeRepo);
+$matchingSvc     = new MatchingService($matchRegistry, $notifSvc, $treeRepo, $discoveryRepo);
 $personImportSvc = new PersonImportService($db, $discoveryRepo, $personSvc);
 
 EventDispatcher::on('person.created', static function ($person, $userId) use ($globalIndexSvc, $matchingSvc) {
@@ -152,6 +152,13 @@ $router = new Router();
 
 // Publiczne trasy
 $router->get('/',                  fn() => $response->redirect('/login'));
+
+// ZAD-4.7 (D8): health-check endpoint — load balancer / k8s probes
+$router->get('/health', function () use ($request, $response, $treeRepo, $personRepo, $relRepo) {
+    $apiCtrl = new ApiController($request, $response, $treeRepo, $personRepo, $relRepo);
+    $apiCtrl->health();
+});
+
 $authCtrl = new AuthController($request, $response, $authSvc, $invRepo, $passwordResetSvc);
 $router->get('/login',             [$authCtrl, 'showLogin']);
 $router->post('/login',            [$authCtrl, 'processLogin']);
@@ -162,6 +169,14 @@ $router->get('/forgot-password',   [$authCtrl, 'showForgot']);
 $router->post('/forgot-password',  [$authCtrl, 'processForgot']);
 $router->get('/reset-password/{token}',  [$authCtrl, 'showReset']);
 $router->post('/reset-password/{token}', [$authCtrl, 'processReset']);
+
+// ZAD-1.3 (K3): Privacy Policy + Terms of Service — wymagane RODO Art. 13-14
+$router->get('/privacy', function () use ($response) {
+    $response->view('pages/privacy', ['title' => 'Polityka prywatności'], 'templates/AuthLayout');
+});
+$router->get('/terms', function () use ($response) {
+    $response->view('pages/terms', ['title' => 'Regulamin'], 'templates/AuthLayout');
+});
 
 // Publiczne trasy zaproszeń
 // Public invitation controller — needs rateLimiter from outer scope
@@ -200,6 +215,7 @@ $router->group('/settings', $mw, function (Router $r) use (
     $r->post('/notifications',   [$ctrl, 'updateNotifications']);
     $r->post('/locale',          [$ctrl, 'updateLocale']);
     $r->post('/delete',          [$ctrl, 'deleteAccount']);
+    $r->post('/restrict',        [$ctrl, 'restrictAccount']); // RODO Art. 18 (ZAD-3.2)
     $r->post('/export-data',     [$ctrl, 'exportData']); // RODO Art. 20 — POST + CSRF (ZAD-2.1)
 });
 

@@ -1,0 +1,96 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - generic [ref=e3]:
+      - link "Genealog" [ref=e4] [cursor=pointer]:
+        - /url: /dashboard
+        - img [ref=e5]
+        - generic [ref=e9]: Genealog
+      - navigation "Główna nawigacja" [ref=e10]:
+        - link "Dashboard" [ref=e11] [cursor=pointer]:
+          - /url: /dashboard
+        - link "Moje drzewa" [ref=e12] [cursor=pointer]:
+          - /url: /trees
+        - link "Poszukiwania" [ref=e13] [cursor=pointer]:
+          - /url: /search
+      - generic [ref=e14]:
+        - button "Powiadomienia" [ref=e16] [cursor=pointer]:
+          - img [ref=e17]
+        - 'button "Menu użytkownika: Arkadiusz Śnieżek" [ref=e21] [cursor=pointer]':
+          - img "Arkadiusz Śnieżek" [ref=e22]:
+            - generic [ref=e23]: AŚ
+          - img [ref=e24]
+  - main [ref=e26]:
+    - generic [ref=e28]:
+      - navigation "Nawigacja" [ref=e29]:
+        - link "Moje drzewa" [ref=e30] [cursor=pointer]:
+          - /url: /trees
+        - img [ref=e31]
+        - link "Rodzina Śnieżków" [ref=e33] [cursor=pointer]:
+          - /url: /trees/4630f0ab-d50d-4d72-ac6e-edfde9257ecf
+        - img [ref=e34]
+        - link "Osoby" [ref=e36] [cursor=pointer]:
+          - /url: /trees/4630f0ab-d50d-4d72-ac6e-edfde9257ecf/persons
+        - img [ref=e37]
+        - generic [ref=e39]: Nowa osoba
+      - generic [ref=e40]:
+        - heading "Dodaj osobę" [level=1] [ref=e42]
+        - generic [ref=e43]:
+          - group "Dane podstawowe" [ref=e44]:
+            - generic [ref=e45]: Dane podstawowe
+            - generic [ref=e46]:
+              - generic [ref=e47]:
+                - generic [ref=e48]: Imię *
+                - textbox "Imię" [ref=e49]
+              - generic [ref=e50]:
+                - generic [ref=e51]: Nazwisko *
+                - textbox "Nazwisko" [ref=e52]
+            - generic [ref=e53]:
+              - generic [ref=e54]: Nazwisko panieńskie (opcjonalnie)
+              - textbox "Nazwisko panieńskie (opcjonalnie)" [ref=e55]
+            - generic [ref=e56]:
+              - generic [ref=e57]: Płeć
+              - combobox "Płeć" [ref=e58]:
+                - option "Nieznana" [selected]
+                - option "Mężczyzna"
+                - option "Kobieta"
+          - group "Narodziny" [ref=e59]:
+            - generic [ref=e60]: Narodziny
+            - generic [ref=e61]:
+              - generic [ref=e62]:
+                - generic [ref=e63]: Data urodzenia (RRRR lub RRRR-MM-DD)
+                - textbox "Data urodzenia (RRRR lub RRRR-MM-DD)" [ref=e64]:
+                  - /placeholder: np. 1945 lub 1945-06-15
+              - generic [ref=e65]:
+                - generic [ref=e66]: Miejsce urodzenia
+                - textbox "Miejsce urodzenia" [ref=e67]
+          - group "Prywatność" [ref=e68]:
+            - generic [ref=e69]: Prywatność
+            - generic [ref=e70]:
+              - checkbox "Osoba żyjąca" [checked] [ref=e71]
+              - generic [ref=e72]:
+                - generic [ref=e73] [cursor=pointer]: Osoba żyjąca
+                - paragraph [ref=e74]: Żyjące osoby są chronione zgodnie z RODO.
+            - generic [ref=e75]:
+              - generic [ref=e76]: Widoczność
+              - combobox "Widoczność" [disabled] [ref=e77]:
+                - option "Prywatne (tylko Ty i zaproszeni)" [selected]
+                - option "Publiczne (widoczne w wyszukiwaniu)"
+                - option "Anonimowe (tylko w globalnym indeksie)"
+              - paragraph [ref=e78]: Żyjące osoby są zawsze prywatne (RODO).
+          - group [ref=e79]:
+            - generic [ref=e80]:
+              - generic [ref=e81]: Notatki (opcjonalnie)
+              - textbox "Notatki (opcjonalnie)" [ref=e82]:
+                - /placeholder: Dodatkowe informacje o osobie...
+          - generic [ref=e83]:
+            - link "Anuluj" [ref=e84] [cursor=pointer]:
+              - /url: /trees/4630f0ab-d50d-4d72-ac6e-edfde9257ecf/persons
+            - button "Dodaj osobę" [ref=e85] [cursor=pointer]
+  - contentinfo [ref=e86]:
+    - generic [ref=e88]:
+      - paragraph [ref=e89]: © 2026 Genealog. Wszelkie prawa zastrzeżone.
+      - navigation "Linki pomocnicze" [ref=e90]:
+        - link "Polityka prywatności" [ref=e91] [cursor=pointer]:
+          - /url: /privacy
+        - link "Regulamin" [ref=e92] [cursor=pointer]:
+          - /url: /terms

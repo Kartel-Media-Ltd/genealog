@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Core\Session;
+use App\Core\Uuid;
 use App\Models\User;
 use App\Repositories\AdminRepository;
 use App\Repositories\UserRepository;
@@ -209,16 +210,9 @@ class AdminService
         ?string $targetId   = null,
         array   $meta       = [],
     ): void {
-        $id       = $this->generateUuid();
+        $id       = Uuid::generate();
         $metaJson = empty($meta) ? null : json_encode($meta, JSON_UNESCAPED_UNICODE);
         $this->adminRepo->createLog($id, $adminId, $action, $targetType, $targetId, $metaJson);
     }
 
-    private function generateUuid(): string
-    {
-        $bytes = random_bytes(16);
-        $bytes[6] = chr((ord($bytes[6]) & 0x0f) | 0x40);
-        $bytes[8] = chr((ord($bytes[8]) & 0x3f) | 0x80);
-        return vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($bytes), 4));
-    }
 }

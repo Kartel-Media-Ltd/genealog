@@ -1,0 +1,70 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - generic [ref=e3]:
+      - link "Genealog" [ref=e4] [cursor=pointer]:
+        - /url: /dashboard
+        - img [ref=e5]
+        - generic [ref=e9]: Genealog
+      - navigation "Główna nawigacja" [ref=e10]:
+        - link "Dashboard" [ref=e11] [cursor=pointer]:
+          - /url: /dashboard
+        - link "Moje drzewa" [ref=e12] [cursor=pointer]:
+          - /url: /trees
+        - link "Poszukiwania" [ref=e13] [cursor=pointer]:
+          - /url: /search
+      - 'button "Menu użytkownika: Arkadiusz Śnieżek" [ref=e16] [cursor=pointer]':
+        - img "Arkadiusz Śnieżek" [ref=e17]:
+          - generic [ref=e18]: AŚ
+        - img [ref=e19]
+  - main [ref=e21]:
+    - generic [ref=e23]:
+      - navigation "Nawigacja" [ref=e24]:
+        - link "Rodzina Śnieżków" [ref=e25] [cursor=pointer]:
+          - /url: /trees/4630f0ab-d50d-4d72-ac6e-edfde9257ecf
+        - img [ref=e26]
+        - generic [ref=e28]: Odkrywanie / Cross-tree
+      - generic [ref=e29]:
+        - generic [ref=e30]:
+          - heading "Ustawienia odkrywania (cross-tree)" [level=1] [ref=e31]
+          - paragraph [ref=e32]:
+            - text: "Drzewo:"
+            - strong [ref=e33]: Rodzina Śnieżków
+        - generic [ref=e34]:
+          - generic [ref=e35]:
+            - heading "Jak to działa?" [level=2] [ref=e36]
+            - paragraph [ref=e37]:
+              - text: Gdy włączysz odkrywanie, Twoje
+              - strong [ref=e38]: osoby historyczne
+              - text: (zmarłe lub urodzone ponad 100 lat temu, bez statusu „prywatne") trafią do anonimowego globalnego indeksu. Inni użytkownicy mogą dopasować swoje osoby do Twoich i znaleźć potencjalne powiązania rodzinne.
+            - list [ref=e39]:
+              - listitem [ref=e40]:
+                - strong [ref=e41]: Żyjące osoby nigdy
+                - text: nie są udostępniane (RODO)
+              - listitem [ref=e42]:
+                - text: Inni widzą tylko
+                - strong [ref=e43]: rok urodzenia i województwo
+                - text: — bez daty, bez miejsca, bez zdjęć
+              - listitem [ref=e44]: Nazwa Twojego drzewa nie jest ujawniana — tylko anonimowy identyfikator
+              - listitem [ref=e45]: Możesz w każdej chwili wyłączyć odkrywanie — wpisy zostaną natychmiast usunięte
+          - generic [ref=e47] [cursor=pointer]:
+            - 'checkbox "Zgoda konta: wyrażam zgodę na udział w globalnym indeksie odkrywania (RODO Art. 6(1)(f) — uzasadniony interes genealogiczny). Bez tej zgody żadne drzewo nie będzie indeksowane." [ref=e48]'
+            - generic [ref=e49]:
+              - strong [ref=e50]: "Zgoda konta:"
+              - text: wyrażam zgodę na udział w globalnym indeksie odkrywania (RODO Art. 6(1)(f) — uzasadniony interes genealogiczny). Bez tej zgody żadne drzewo nie będzie indeksowane.
+          - generic [ref=e52] [cursor=pointer]:
+            - 'checkbox "Udostępnij to drzewo: włącz globalny indeks dla drzewa „Rodzina Śnieżków\". Po zapisaniu kwalifikujące się osoby zostaną natychmiast zaindeksowane." [ref=e53]'
+            - generic [ref=e54]:
+              - strong [ref=e55]: "Udostępnij to drzewo:"
+              - text: włącz globalny indeks dla drzewa „Rodzina Śnieżków". Po zapisaniu kwalifikujące się osoby zostaną natychmiast zaindeksowane.
+          - generic [ref=e56]:
+            - link "Anuluj" [ref=e57] [cursor=pointer]:
+              - /url: /trees/4630f0ab-d50d-4d72-ac6e-edfde9257ecf
+            - button "Zapisz ustawienia" [ref=e58] [cursor=pointer]
+  - contentinfo [ref=e59]:
+    - generic [ref=e61]:
+      - paragraph [ref=e62]: © 2026 Genealog. Wszelkie prawa zastrzeżone.
+      - navigation "Linki pomocnicze" [ref=e63]:
+        - link "Polityka prywatności" [ref=e64] [cursor=pointer]:
+          - /url: /privacy
+        - link "Regulamin" [ref=e65] [cursor=pointer]:
+          - /url: /terms

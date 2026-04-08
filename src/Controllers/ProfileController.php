@@ -7,6 +7,7 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\UserRepository;
+use App\Services\AuthService;
 
 class ProfileController
 {
@@ -14,6 +15,7 @@ class ProfileController
         private readonly Request        $request,
         private readonly Response       $response,
         private readonly UserRepository $userRepo,
+        private readonly AuthService    $authService,
     ) {}
 
     /** GET /profile */
@@ -64,8 +66,11 @@ class ProfileController
                 ->redirect('/profile?tab=password');
         }
 
-        if (mb_strlen($newPassword) < 8) {
-            $this->response->withFlash('error', 'Hasło musi mieć co najmniej 8 znaków.')
+        // ZAD-1.3: spójna walidacja siły hasła z register/reset (12 chars + cyfra/special)
+        try {
+            $this->authService->validatePasswordStrength($newPassword);
+        } catch (\InvalidArgumentException $e) {
+            $this->response->withFlash('error', $e->getMessage())
                 ->redirect('/profile?tab=password');
         }
 
@@ -75,7 +80,15 @@ class ProfileController
                 ->redirect('/profile?tab=password');
         }
 
-        $this->userRepo->updatePassword($userId, password_hash($newPassword, PASSWORD_BCRYPT, ['cost' => 12]));
+        $this->userRepo->updatePassword($userId, password_hash($newPassword, PASSWORD_BCRYPT, ['cost' => BCRYPT_COST]));
+
+        // ZAD-1.5 + ZAD-2.6 (P7 fix regresji): unieważnij wszystkie inne aktywne sesje.
+        // Kluczowe: OTD odczytujemy rzeczywistą wartość z DB po inkrementacji, zamiast
+        // robić lokalne `+1`. Lokalny increment rozjeżdża się z DB przy concurrent requests
+        // lub po impersonacji (gdzie session_version w sesji ≠ DB).
+        $this->userRepo->incrementSessionVersion($userId);
+        Session::set('session_version', $this->userRepo->getSessionVersion($userId) ?? 0);
+
         $this->response->withFlash('success', 'Hasło zostało zmienione.')->redirect('/profile');
     }
 
@@ -106,6 +119,11 @@ class ProfileController
 
         $this->userRepo->updateEmail($userId, $newEmail);
         Session::set('user_email', $newEmail);
+
+        // ZAD-2.6 + P7 fix: zmiana e-mail = zmiana credential → unieważnij inne sesje.
+        // Odczyt z DB po inkrementacji — patrz changePassword dla uzasadnienia.
+        $this->userRepo->incrementSessionVersion($userId);
+        Session::set('session_version', $this->userRepo->getSessionVersion($userId) ?? 0);
 
         $this->response->withFlash('success', 'Adres email został zaktualizowany.')->redirect('/profile');
     }

@@ -106,8 +106,13 @@ class AdminController
         try {
             $this->adminService->block($adminId, $uid);
             $this->response->withFlash('success', 'Konto zostało zablokowane.')->redirect('/admin/users/' . $uid);
-        } catch (\Exception $e) {
+        } catch (\InvalidArgumentException | \RuntimeException $e) {
+            // Domenowe wyjątki — komunikat bezpieczny dla użytkownika (Polish, walidacja stanu)
             $this->response->withFlash('error', $e->getMessage())->redirect('/admin/users/' . $uid);
+        } catch (\Throwable $e) {
+            // ZAD-1.6: nie ujawniaj szczegółów SQL/systemowych w UI — log + generic message
+            error_log('AdminController error: ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine());
+            $this->response->withFlash('error', 'Wystąpił błąd serwera. Spróbuj ponownie.')->redirect('/admin/users/' . $uid);
         }
     }
 
@@ -121,8 +126,13 @@ class AdminController
         try {
             $this->adminService->unblock($adminId, $uid);
             $this->response->withFlash('success', 'Konto zostało odblokowane.')->redirect('/admin/users/' . $uid);
-        } catch (\Exception $e) {
+        } catch (\InvalidArgumentException | \RuntimeException $e) {
+            // Domenowe wyjątki — komunikat bezpieczny dla użytkownika (Polish, walidacja stanu)
             $this->response->withFlash('error', $e->getMessage())->redirect('/admin/users/' . $uid);
+        } catch (\Throwable $e) {
+            // ZAD-1.6: nie ujawniaj szczegółów SQL/systemowych w UI — log + generic message
+            error_log('AdminController error: ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine());
+            $this->response->withFlash('error', 'Wystąpił błąd serwera. Spróbuj ponownie.')->redirect('/admin/users/' . $uid);
         }
     }
 
@@ -136,8 +146,13 @@ class AdminController
         try {
             $this->adminService->promote($adminId, $uid);
             $this->response->withFlash('success', 'Użytkownik został mianowany administratorem.')->redirect('/admin/users/' . $uid);
-        } catch (\Exception $e) {
+        } catch (\InvalidArgumentException | \RuntimeException $e) {
+            // Domenowe wyjątki — komunikat bezpieczny dla użytkownika (Polish, walidacja stanu)
             $this->response->withFlash('error', $e->getMessage())->redirect('/admin/users/' . $uid);
+        } catch (\Throwable $e) {
+            // ZAD-1.6: nie ujawniaj szczegółów SQL/systemowych w UI — log + generic message
+            error_log('AdminController error: ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine());
+            $this->response->withFlash('error', 'Wystąpił błąd serwera. Spróbuj ponownie.')->redirect('/admin/users/' . $uid);
         }
     }
 
@@ -151,8 +166,13 @@ class AdminController
         try {
             $this->adminService->demote($adminId, $uid);
             $this->response->withFlash('success', 'Uprawnienia administratora zostały cofnięte.')->redirect('/admin/users/' . $uid);
-        } catch (\Exception $e) {
+        } catch (\InvalidArgumentException | \RuntimeException $e) {
+            // Domenowe wyjątki — komunikat bezpieczny dla użytkownika (Polish, walidacja stanu)
             $this->response->withFlash('error', $e->getMessage())->redirect('/admin/users/' . $uid);
+        } catch (\Throwable $e) {
+            // ZAD-1.6: nie ujawniaj szczegółów SQL/systemowych w UI — log + generic message
+            error_log('AdminController error: ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine());
+            $this->response->withFlash('error', 'Wystąpił błąd serwera. Spróbuj ponownie.')->redirect('/admin/users/' . $uid);
         }
     }
 
@@ -194,8 +214,13 @@ class AdminController
             Session::regenerate(true);
 
             $this->response->withFlash('info', 'Impersonujesz konto: ' . $target->name)->redirect('/dashboard');
-        } catch (\Exception $e) {
+        } catch (\InvalidArgumentException | \RuntimeException $e) {
+            // Domenowe wyjątki — komunikat bezpieczny dla użytkownika (Polish, walidacja stanu)
             $this->response->withFlash('error', $e->getMessage())->redirect('/admin/users/' . $uid);
+        } catch (\Throwable $e) {
+            // ZAD-1.6: nie ujawniaj szczegółów SQL/systemowych w UI — log + generic message
+            error_log('AdminController error: ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine());
+            $this->response->withFlash('error', 'Wystąpił błąd serwera. Spróbuj ponownie.')->redirect('/admin/users/' . $uid);
         }
     }
 
@@ -244,9 +269,10 @@ class AdminController
             $this->response->withFlash('success', 'Zakończyłeś impersonację.')->redirect('/admin');
         } catch (\Throwable $e) {
             // Admin lost privileges during impersonation OR critical error → destroy session
+            error_log('Admin exitImpersonate failed: ' . $e->getMessage());
             Session::destroy();
             $this->response->withFlash('error',
-                'Sesja administratora wygasła: ' . $e->getMessage() . ' Zaloguj się ponownie.'
+                'Sesja administratora wygasła. Zaloguj się ponownie.'
             )->redirect('/login');
         }
     }

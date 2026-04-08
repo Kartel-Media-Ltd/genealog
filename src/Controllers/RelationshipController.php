@@ -106,8 +106,12 @@ class RelationshipController
             $this->response
                 ->withFlash('success', 'Relacja została usunięta.')
                 ->redirect('/trees/' . $treeId . '/persons/' . $personId);
-        } catch (\Exception $e) {
+        } catch (\InvalidArgumentException $e) {
             $this->response->withFlash('error', $e->getMessage())
+                ->redirect('/trees/' . $treeId . '/persons/' . $personId);
+        } catch (\Throwable $e) {
+            error_log('Relationship delete failed: ' . $e->getMessage());
+            $this->response->withFlash('error', 'Nie udało się usunąć relacji.')
                 ->redirect('/trees/' . $treeId . '/persons/' . $personId);
         }
     }

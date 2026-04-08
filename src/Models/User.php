@@ -16,6 +16,7 @@ class User
         public readonly bool   $isBlocked,
         public readonly string $createdAt,
         public readonly int    $sessionVersion = 0,
+        public readonly bool   $isRestricted   = false, // ZAD-3.2 (P11) — RODO Art. 18
     ) {}
 
     public static function fromArray(array $data): self
@@ -29,6 +30,7 @@ class User
             emailNotifications: (bool)($data['email_notifications'] ?? true),
             isAdmin:            (bool)($data['is_admin']    ?? false),
             isBlocked:          (bool)($data['is_blocked']  ?? false),
+            isRestricted:       (bool)($data['is_restricted'] ?? false),
             createdAt:          $data['created_at']          ?? '',
             sessionVersion:     (int)($data['session_version'] ?? 0),
         );

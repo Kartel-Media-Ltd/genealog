@@ -55,6 +55,13 @@ class PersonController
     }
 
     /**
+     * Max depth dla rekurencyjnego DFS — ZAD-2.8 (P9).
+     * 20 pokoleń (~500 lat) to znacznie więcej niż jakiekolwiek realne drzewo genealogiczne.
+     * Zabezpiecza przed stack overflow / timeout dla drzew z patologiczną strukturą cykli.
+     */
+    private const MAX_HIERARCHY_DEPTH = 20;
+
+    /**
      * Builds a flat list with depth info for hierarchical display.
      * Persons sorted by first_name ASC; children grouped under their parents.
      *
@@ -97,9 +104,15 @@ class PersonController
         $flatten = null;
         // $path = ancestors in current DFS path — prevents cycles, NOT duplicates.
         // A child with two parents will appear once under each parent (correct behaviour).
+        // ZAD-2.8 (P9): depth cap chroni przed patologicznymi drzewami (1000+ pokoleń
+        // przez cykle lub import GEDCOM ze zgniłymi FK).
         $flatten = function (string $pid, int $depth, array $path = []) use (
             &$flatten, &$result, &$shown, &$byId, &$parentToChildren
         ): void {
+            if ($depth >= self::MAX_HIERARCHY_DEPTH) {
+                error_log("PersonController::buildPersonHierarchy: depth limit reached at person={$pid}");
+                return;
+            }
             if (!isset($byId[$pid]) || isset($path[$pid])) {
                 return; // unknown person or cycle in current branch
             }

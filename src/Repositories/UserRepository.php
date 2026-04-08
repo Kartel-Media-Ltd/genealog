@@ -60,6 +60,24 @@ class UserRepository
     }
 
     /**
+     * ZAD-3.2 (P11): RODO Art. 18 — right to restriction of processing.
+     * Restricted account = blokada logowania bez pełnej anonimizacji danych.
+     * Użytkownik może wycofać ograniczenie po zalogowaniu (confirm flow).
+     * Session invalidation przez session_version++ — natychmiast wylogowuje.
+     */
+    public function setRestricted(string $id, bool $isRestricted): void
+    {
+        $this->db->execute(
+            'UPDATE users
+             SET is_restricted = ?,
+                 restricted_at = ?,
+                 session_version = session_version + 1
+             WHERE id = ?',
+            [(int)$isRestricted, $isRestricted ? date('Y-m-d H:i:s') : null, $id]
+        );
+    }
+
+    /**
      * Inkrementuje session_version użytkownika — wszystkie istniejące sesje stają się nieważne.
      * Używaj przy zmianie hasła, podejrzeniu kompromitacji konta, etc.
      */
@@ -113,5 +131,34 @@ class UserRepository
     public function deactivate(string $id): void
     {
         $this->db->execute('UPDATE users SET is_active = 0 WHERE id = ?', [$id]);
+    }
+
+    /**
+     * Important #4: dedykowana metoda zamiast surowego SQL w GlobalIndexService.
+     * Zwraca true gdy user wyraził zgodę na cross-tree discovery (RODO Art. 7 — opt-in).
+     */
+    public function isDiscoveryOptedIn(string $id): bool
+    {
+        $row = $this->db->fetchOne(
+            'SELECT discovery_opt_in FROM users WHERE id = ? AND is_active = 1',
+            [$id]
+        );
+        return $row !== null && (int)$row['discovery_opt_in'] === 1;
+    }
+
+    /**
+     * RODO Art. 17 — anonimizacja konta. Zastępuje email i imię pseudo-wartościami,
+     * nullifikuje password_hash, ustawia is_active=0 i deleted_at=NOW().
+     * UNIQUE constraint na email zachowany przez pełny `deleted-{uuid}@deleted.local`
+     * (F-02: substr(0,8) generował kolizje dla userów z identyczną pierwszą grupą hex).
+     */
+    public function anonymize(string $id): void
+    {
+        $this->db->execute(
+            'UPDATE users
+             SET email = ?, name = ?, password_hash = ?, is_active = 0, deleted_at = NOW()
+             WHERE id = ?',
+            ["deleted-{$id}@deleted.local", '[Usunięto]', '', $id]
+        );
     }
 }

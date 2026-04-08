@@ -4,9 +4,11 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Controllers\Concerns\RequiresTreeAccess;
+use App\Core\RateLimiter;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
+use App\Repositories\DiscoveryRepository;
 use App\Repositories\PersonRepository;
 use App\Repositories\RelationshipRepository;
 use App\Repositories\TreeRepository;
@@ -17,7 +19,11 @@ class GedcomController
     use RequiresTreeAccess;
 
     private const MAX_UPLOAD_BYTES = 50 * 1024 * 1024; // 50 MB
-    private const ALLOWED_MIME     = ['text/plain', 'text/x-gedcom', 'application/octet-stream'];
+    // ZAD-2.2 (P2): usunięto 'application/octet-stream' — generyczny binary blob.
+    // finfo zwraca ten typ dla niemal wszystkich nierozpoznanych plików, więc
+    // akceptacja go niweczy walidację MIME. GEDCOM jest tekstowy — text/plain
+    // lub text/x-gedcom pokrywa prawidłowe pliki.
+    private const ALLOWED_MIME     = ['text/plain', 'text/x-gedcom'];
 
     public function __construct(
         private readonly Request                $request,
@@ -25,6 +31,8 @@ class GedcomController
         private readonly TreeRepository         $treeRepo,
         private readonly PersonRepository       $personRepo,
         private readonly RelationshipRepository $relRepo,
+        private readonly RateLimiter            $rateLimiter,
+        private readonly DiscoveryRepository    $discoveryRepo,
     ) {}
 
     /** GET /trees/{id}/gedcom */
@@ -52,9 +60,20 @@ class GedcomController
     {
         $treeId = $this->request->getRouteParam('id');
         $userId = Session::get('user_id');
+        $ip     = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
 
         $this->requireTreeAccess($treeId, $userId, ['owner', 'editor']);
         $this->request->verifyCsrf();
+
+        // Rate limit: max 5 importów/godzinę per IP (audyt P5 — DoS / wyczerpanie storage)
+        if ($this->rateLimiter->isLimited($ip, 'gedcom_import', 5, 3600)) {
+            $this->response->withFlash('error', 'Zbyt wiele importów GEDCOM. Spróbuj ponownie za godzinę.')
+                ->redirect('/trees/' . $treeId . '/gedcom');
+        }
+        $this->rateLimiter->record($ip, 'gedcom_import');
+
+        // Wydłuż limit czasu — duże pliki GEDCOM wymagają więcej niż domyślne 30s.
+        @set_time_limit(300);
 
         $file = $_FILES['gedcom_file'] ?? null;
 
@@ -102,6 +121,23 @@ class GedcomController
                 ->redirect('/trees/' . $treeId . '/gedcom');
         }
 
+        // ZAD-2.5 (P6): cleanup tmpPath przy każdym zakończeniu skryptu — także przy exit w redirect.
+        // `finally` nie wystarcza, bo `Response::redirect()` wywołuje `exit` co pomija finally
+        // w PHP 8.3+. `register_shutdown_function` działa zawsze.
+        register_shutdown_function(static function () use ($tmpPath): void {
+            if (is_file($tmpPath)) {
+                @unlink($tmpPath);
+            }
+        });
+
+        // ZAD-2.2 (P2): walidacja zawartości — prawidłowy plik GEDCOM zaczyna się od `0 HEAD`.
+        // To uniemożliwia upload dowolnego tekstu (jako "text/plain") udającego GEDCOM.
+        $firstBytes = @file_get_contents($tmpPath, false, null, 0, 512) ?: '';
+        if (!str_starts_with(ltrim($firstBytes), '0 HEAD')) {
+            $this->response->withFlash('error', 'Plik nie jest prawidłowym plikiem GEDCOM (brak nagłówka HEAD).')
+                ->redirect('/trees/' . $treeId . '/gedcom');
+        }
+
         // Set conflict strategy from form
         $strategy = $this->request->getParam('conflict_strategy', 'skip');
         if (!in_array($strategy, ['skip', 'update'], true)) {
@@ -131,6 +167,17 @@ class GedcomController
                 Session::delete('gedcom_import_errors');
             }
 
+            // RODO Art. 30 — audit log dla importu GEDCOM
+            $this->discoveryRepo->logAudit(
+                userId:         $userId,
+                action:         'gedcom_import',
+                sourceType:     'gedcom_file',
+                sourceId:       $originalName,
+                targetPersonId: null,
+                targetTreeId:   $treeId,
+                ip:             $ip,
+            );
+
             $this->response->withFlash('success', $msg)
                 ->redirect('/trees/' . $treeId . '/persons');
         } catch (\Throwable $e) {
@@ -138,6 +185,7 @@ class GedcomController
             $this->response->withFlash('error', 'Nie udało się zaimportować pliku GEDCOM. Sprawdź czy plik jest prawidłowy i spróbuj ponownie.')
                 ->redirect('/trees/' . $treeId . '/gedcom');
         }
+        // cleanup tmpPath — patrz register_shutdown_function wyżej (działa także przy exit w redirect)
     }
 
     /** GET /trees/{id}/gedcom/export */

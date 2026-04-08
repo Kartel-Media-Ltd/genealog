@@ -4,6 +4,8 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Core\Database;
+use App\Core\RateLimiter;
+use App\Core\Uuid;
 use App\Models\User;
 use App\Repositories\UserRepository;
 
@@ -12,6 +14,7 @@ class AuthService
     public function __construct(
         private readonly UserRepository $userRepo,
         private readonly Database       $db,
+        private readonly ?RateLimiter   $rateLimiter = null,
     ) {}
 
     /**
@@ -21,7 +24,9 @@ class AuthService
      */
     public function register(string $name, string $email, string $password, ?string $ip = null): User
     {
-        // Rate limit chroni przed spam-rejestracją (sprawdzony PRZED walidacją)
+        // ZAD-2.4 (P4): rate limit chroni przed spam-rejestracją (sprawdzony PRZED walidacją).
+        // Brak tego wcześniej pozwalał botom tworzyć tysiące kont + rozsyłać zaproszenia
+        // (amplifikacja SMTP, reputation damage).
         if ($ip !== null && $this->isRateLimited($ip, 'register')) {
             throw new \RuntimeException('Zbyt wiele prób rejestracji. Spróbuj za 15 minut.');
         }
@@ -32,9 +37,7 @@ class AuthService
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
             throw new \InvalidArgumentException('Nieprawidłowy adres e-mail.');
         }
-        if (strlen($password) < 8) {
-            throw new \InvalidArgumentException('Hasło musi mieć co najmniej 8 znaków.');
-        }
+        $this->validatePasswordStrength($password);
         if ($this->userRepo->emailExists($email)) {
             // Loguj próbę żeby attacker nie mógł użyć /register jako enumeration
             if ($ip !== null) {
@@ -43,7 +46,7 @@ class AuthService
             throw new \InvalidArgumentException('Konto z tym adresem e-mail już istnieje.');
         }
 
-        $id   = $this->generateUuid();
+        $id   = Uuid::generate();
         $hash = password_hash($password, PASSWORD_BCRYPT, ['cost' => BCRYPT_COST]);
 
         $this->userRepo->create($id, $email, $hash, $name);
@@ -73,8 +76,40 @@ class AuthService
         return User::fromArray($row);
     }
 
+    /**
+     * ZAD-3.2 (P11): wycofanie zawieszenia konta (RODO Art. 18).
+     * Wywoływane przez AuthController::processLogin po udanym logowaniu na zawieszonym koncie.
+     */
+    public function clearRestriction(string $userId): void
+    {
+        $this->userRepo->setRestricted($userId, false);
+    }
+
+    /**
+     * Walidacja siły hasła zgodnie z NIST SP 800-63B (audit D1):
+     * - Minimum 12 znaków
+     * - Co najmniej jedna cyfra LUB znak specjalny (entropy boost)
+     */
+    public function validatePasswordStrength(string $password): void
+    {
+        if (strlen($password) < 12) {
+            throw new \InvalidArgumentException('Hasło musi mieć co najmniej 12 znaków.');
+        }
+        if (!preg_match('/[0-9]/', $password) && !preg_match('/[^A-Za-z0-9]/', $password)) {
+            throw new \InvalidArgumentException('Hasło musi zawierać co najmniej jedną cyfrę lub znak specjalny.');
+        }
+    }
+
+    /**
+     * Backward-compat — wewnątrz deleguje do `RateLimiter` (jeśli wstrzyknięty).
+     * Zachowuje stary API używany przez testy.
+     */
     public function isRateLimited(string $ip, string $endpoint): bool
     {
+        if ($this->rateLimiter !== null) {
+            return $this->rateLimiter->isLimited($ip, $endpoint, RATE_LIMIT_ATTEMPTS, RATE_LIMIT_WINDOW);
+        }
+        // Fallback gdy RateLimiter nie wstrzyknięty (np. testy unit)
         $row = $this->db->fetchOne(
             'SELECT SUM(attempts) as total FROM rate_limits
              WHERE ip = :ip AND endpoint = :endpoint
@@ -86,6 +121,10 @@ class AuthService
 
     public function recordAttempt(string $ip, string $endpoint): void
     {
+        if ($this->rateLimiter !== null) {
+            $this->rateLimiter->record($ip, $endpoint);
+            return;
+        }
         $this->db->execute(
             'INSERT INTO rate_limits (ip, endpoint, attempts) VALUES (:ip, :endpoint, 1)
              ON DUPLICATE KEY UPDATE attempts = attempts + 1',
@@ -93,11 +132,4 @@ class AuthService
         );
     }
 
-    private function generateUuid(): string
-    {
-        $data    = random_bytes(16);
-        $data[6] = chr(ord($data[6]) & 0x0f | 0x40);
-        $data[8] = chr(ord($data[8]) & 0x3f | 0x80);
-        return vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($data), 4));
-    }
 }

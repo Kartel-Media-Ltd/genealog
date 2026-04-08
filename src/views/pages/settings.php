@@ -46,6 +46,15 @@ $localeLabels = ['pl' => 'Polski', 'en' => 'English', 'de' => 'Deutsch', 'uk' =>
             Język
         </button>
         <button type="button" role="tab"
+                :aria-selected="tab === 'data'"
+                @click="tab = 'data'"
+                :class="tab === 'data'
+                    ? 'border-b-2 border-foreground text-foreground font-medium'
+                    : 'text-muted-foreground hover:text-foreground'"
+                class="-mb-px pb-3 pt-1 px-4 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-t">
+            Moje dane
+        </button>
+        <button type="button" role="tab"
                 :aria-selected="tab === 'danger'"
                 @click="tab = 'danger'"
                 :class="tab === 'danger'
@@ -93,6 +102,12 @@ $localeLabels = ['pl' => 'Polski', 'en' => 'English', 'de' => 'Deutsch', 'uk' =>
                         </span>
                     </div>
                 </label>
+
+                <!-- ZAD-4.11 (D12): informacja o RODO Art. 21 — prawo sprzeciwu -->
+                <p class="mt-4 text-xs text-muted-foreground">
+                    Wyłączenie powiadomień to realizacja Twojego prawa do sprzeciwu wobec
+                    marketingu (art. 21 RODO). Możesz w każdej chwili ponownie włączyć powiadomienia.
+                </p>
 
                 <div class="mt-6 flex justify-end">
                     <button type="submit"
@@ -145,9 +160,100 @@ $localeLabels = ['pl' => 'Polski', 'en' => 'English', 'de' => 'Deutsch', 'uk' =>
         </div>
     </div>
 
+    <!-- Tab: Moje dane (RODO Art. 20 — prawo do przenoszenia) -->
+    <div x-show="tab === 'data'" role="tabpanel">
+        <div class="rounded-lg border border-border bg-card shadow-sm">
+            <div class="border-b border-border px-6 py-4">
+                <h2 class="text-base font-semibold text-card-foreground">Eksport moich danych</h2>
+                <p class="mt-0.5 text-sm text-muted-foreground">
+                    Pobierz wszystkie swoje dane (profil, drzewa w formacie GEDCOM) jako archiwum ZIP.
+                    To Twoje prawo wynikające z art. 20 RODO.
+                </p>
+            </div>
+            <form method="POST" action="/settings/export-data" class="p-6 space-y-4">
+                <?= Csrf::hiddenInput() ?>
+
+                <div class="rounded-md bg-muted/50 border border-border px-4 py-3 text-sm text-muted-foreground">
+                    <p class="font-medium text-foreground mb-1">Co zawiera eksport?</p>
+                    <ul class="list-disc list-inside space-y-0.5">
+                        <li><code>account.json</code> — dane konta (imię, email, data rejestracji)</li>
+                        <li><code>tree-{id}.ged</code> — każde Twoje drzewo w formacie GEDCOM 5.5.1</li>
+                    </ul>
+                    <p class="mt-2 text-xs">Limit: 1 eksport na 24 godziny.</p>
+                </div>
+
+                <div class="flex justify-end">
+                    <button type="submit"
+                            class="inline-flex h-10 items-center rounded-md px-5 text-sm font-medium
+                                   bg-primary text-primary-foreground hover:bg-primary/90 transition-colors
+                                   focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                        Pobierz moje dane (ZIP)
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- Tab: Strefa niebezpieczna -->
     <div x-show="tab === 'danger'" role="tabpanel"
-         x-data="{ confirm: false }">
+         x-data="{ confirm: false, restrictConfirm: false }">
+
+        <!-- ZAD-3.2 (P11): RODO Art. 18 — Right to restriction -->
+        <div class="rounded-lg border border-yellow-300 bg-card shadow-sm mb-6">
+            <div class="border-b border-yellow-300 bg-yellow-50 px-6 py-4 rounded-t-lg">
+                <h2 class="text-base font-semibold text-yellow-900">Zawieś konto tymczasowo</h2>
+                <p class="mt-0.5 text-sm text-yellow-800">
+                    Zawieszenie oznacza blokadę logowania bez utraty danych.
+                    Konto zostanie automatycznie przywrócone gdy zalogujesz się ponownie
+                    (zgodnie z art. 18 RODO — prawo do ograniczenia przetwarzania).
+                </p>
+            </div>
+            <div class="p-6" x-show="!restrictConfirm">
+                <p class="text-sm text-muted-foreground mb-4">
+                    W przeciwieństwie do usunięcia konta, zawieszenie jest odwracalne:
+                    Twoje dane zostają nienaruszone, ale nikt (włącznie z Tobą) nie może się
+                    zalogować dopóki ponownie się nie zalogujesz.
+                </p>
+                <button type="button"
+                        @click="restrictConfirm = true"
+                        class="inline-flex h-10 items-center rounded-md px-5 text-sm font-medium
+                               border border-yellow-400 text-yellow-900 hover:bg-yellow-50 transition-colors
+                               focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-500">
+                    Zawieś moje konto
+                </button>
+            </div>
+            <div x-show="restrictConfirm" x-cloak>
+                <form method="POST" action="/settings/restrict" class="p-6 space-y-4">
+                    <?= Csrf::hiddenInput() ?>
+                    <div class="space-y-1.5">
+                        <label for="restrict_password" class="block text-sm font-medium text-foreground">
+                            Potwierdź hasłem <span class="text-destructive" aria-hidden="true">*</span>
+                        </label>
+                        <input
+                            type="password" id="restrict_password" name="password"
+                            required
+                            class="w-full h-10 px-3 rounded-md border border-border bg-background
+                                   text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-yellow-500
+                                   focus:border-transparent"
+                            autocomplete="current-password"
+                        >
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <button type="button" @click="restrictConfirm = false"
+                                class="text-sm text-muted-foreground hover:text-foreground">
+                            Anuluj
+                        </button>
+                        <button type="submit"
+                                class="inline-flex h-10 items-center rounded-md px-5 text-sm font-medium
+                                       bg-yellow-500 text-white hover:bg-yellow-600 transition-colors
+                                       focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-500">
+                            Zawieś konto
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
         <div class="rounded-lg border border-red-200 bg-card shadow-sm">
             <div class="border-b border-red-200 bg-red-50 px-6 py-4 rounded-t-lg">
                 <h2 class="text-base font-semibold text-red-800">Usuń konto</h2>

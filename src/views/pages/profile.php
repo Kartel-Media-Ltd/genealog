@@ -169,7 +169,7 @@ $activeTab = $_GET['tab'] ?? 'profile';
         <div class="rounded-lg border border-border bg-card shadow-sm">
             <div class="border-b border-border px-6 py-4">
                 <h2 class="text-base font-semibold text-card-foreground">Zmień hasło</h2>
-                <p class="mt-0.5 text-sm text-muted-foreground">Hasło musi mieć co najmniej 8 znaków.</p>
+                <p class="mt-0.5 text-sm text-muted-foreground">Hasło musi mieć co najmniej 12 znaków, w tym dużą i małą literę oraz cyfrę lub znak specjalny.</p>
             </div>
             <form method="POST" action="/profile/password" class="p-6 space-y-5" novalidate>
                 <?= Csrf::hiddenInput() ?>
@@ -194,7 +194,7 @@ $activeTab = $_GET['tab'] ?? 'profile';
                     </label>
                     <input
                         type="password" id="new_password" name="new_password"
-                        required minlength="8"
+                        required minlength="12"
                         class="w-full h-10 px-3 rounded-md border border-border bg-background
                                text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring
                                focus:border-transparent"
@@ -208,7 +208,7 @@ $activeTab = $_GET['tab'] ?? 'profile';
                     </label>
                     <input
                         type="password" id="confirm_password" name="confirm_password"
-                        required minlength="8"
+                        required minlength="12"
                         class="w-full h-10 px-3 rounded-md border border-border bg-background
                                text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring
                                focus:border-transparent"

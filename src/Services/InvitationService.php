@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Core\Uuid;
 use App\Repositories\InvitationRepository;
 use App\Repositories\TreeRepository;
 use App\Repositories\UserRepository;
@@ -48,7 +49,7 @@ class InvitationService
 
         $token     = bin2hex(random_bytes(32));
         $expiresAt = date('Y-m-d H:i:s', strtotime('+7 days'));
-        $id        = $this->generateUuid();
+        $id        = Uuid::generate();
 
         $this->invRepo->create($id, $treeId, $inviterId, $email, $token, $role, $expiresAt);
 
@@ -83,6 +84,17 @@ class InvitationService
         $inv = $this->findValidByToken($token);
         if ($inv === null) {
             throw new \RuntimeException('Link zaproszenia wygasł lub jest nieprawidłowy.');
+        }
+
+        // ZAD-2.3 (P3): weryfikuj że zalogowany user ma email zgodny z invited_email.
+        // Wcześniej: każdy zalogowany z tokenem dołączał do drzewa — wektor
+        // przejęcia zaproszenia przy wycieku URL (history, log proxy, referer).
+        $user = $this->userRepo->findById($userId);
+        if ($user === null) {
+            throw new \RuntimeException('Konto użytkownika nie istnieje.');
+        }
+        if (strtolower($user->email) !== strtolower((string)$inv['invited_email'])) {
+            throw new \RuntimeException('To zaproszenie nie jest przeznaczone dla tego konta. Zaloguj się na adres, na który zostało wysłane zaproszenie.');
         }
 
         $treeId = $inv['tree_id'];
@@ -136,11 +148,4 @@ class InvitationService
         $this->invRepo->updateMemberRole($treeId, $targetUserId, $newRole);
     }
 
-    private function generateUuid(): string
-    {
-        $data    = random_bytes(16);
-        $data[6] = chr(ord($data[6]) & 0x0f | 0x40);
-        $data[8] = chr(ord($data[8]) & 0x3f | 0x80);
-        return vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($data), 4));
-    }
 }

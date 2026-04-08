@@ -19,29 +19,37 @@ $canEdit = in_array($userRole, ['owner', 'editor'], true);
 </nav>
 
 <!-- Nagłówek drzewa -->
-<div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-    <div>
-        <div class="flex items-center gap-2">
-            <h1 class="text-2xl font-bold tracking-tight text-foreground">
-                <?= htmlspecialchars($tree->name) ?>
-            </h1>
-            <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium
-                   <?= $tree->isPublic ? 'bg-green-100 text-green-800' : 'bg-muted text-muted-foreground' ?>">
-                <?= $tree->isPublic ? 'Publiczne' : 'Prywatne' ?>
-            </span>
-        </div>
-        <?php if ($tree->description): ?>
-            <p class="mt-1 text-sm text-muted-foreground"><?= htmlspecialchars($tree->description) ?></p>
-        <?php endif; ?>
-        <p class="mt-1 text-xs text-muted-foreground">
-            <?= $tree->personsCount ?> osób · Zaktualizowano <?= date('j M Y', strtotime($tree->updatedAt)) ?>
-        </p>
+<div class="mb-4">
+    <div class="flex items-center gap-2">
+        <h1 class="text-2xl font-bold tracking-tight text-foreground">
+            <?= htmlspecialchars($tree->name) ?>
+        </h1>
+        <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium
+               <?= $tree->isPublic ? 'bg-green-100 text-green-800' : 'bg-muted text-muted-foreground' ?>">
+            <?= $tree->isPublic ? 'Publiczne' : 'Prywatne' ?>
+        </span>
     </div>
-    <div class="flex gap-2">
+    <?php if ($tree->description): ?>
+        <p class="mt-1 text-sm text-muted-foreground"><?= htmlspecialchars($tree->description) ?></p>
+    <?php endif; ?>
+    <p class="mt-1 text-xs text-muted-foreground">
+        <?= $tree->personsCount ?> osób · Zaktualizowano <?= date('j M Y', strtotime($tree->updatedAt)) ?>
+    </p>
+</div>
+
+<!--
+  Toolbar drzewa — osobny wiersz pod nagłówkiem (full-width), wyrównany do prawej.
+  Kolejność: Drukuj → Dodaj osobę → Osoby → Import/Export → Dostęp → Odkrywanie → Ustawienia
+  Na ekranach <md (< 768px) pokazujemy tylko ikony (md:inline dla labeli).
+-->
+<div class="mb-6">
+    <div class="flex flex-wrap justify-end gap-2">
         <a href="/trees/<?= htmlspecialchars($tree->id) ?>/print"
            target="_blank"
            rel="noopener noreferrer"
-           class="inline-flex h-10 items-center gap-2 rounded-md border border-input px-4
+           title="Drukuj drzewo"
+           aria-label="Drukuj drzewo"
+           class="inline-flex h-10 w-10 md:w-auto items-center justify-center md:justify-start gap-2 rounded-md border border-input md:px-4
                   text-sm font-medium text-foreground hover:bg-accent transition-colors
                   focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
@@ -50,13 +58,48 @@ $canEdit = in_array($userRole, ['owner', 'editor'], true);
                 <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
                 <rect x="6" y="14" width="12" height="8"/>
             </svg>
-            Drukuj drzewo
+            <span class="hidden md:inline">Drukuj drzewo</span>
         </a>
+
         <?php if ($canEdit): ?>
+            <!-- 1. Dodaj osobę (primary CTA) -->
+            <a href="/trees/<?= htmlspecialchars($tree->id) ?>/persons/new"
+               title="Dodaj osobę"
+               aria-label="Dodaj osobę"
+               class="inline-flex h-10 w-10 md:w-auto items-center justify-center md:justify-start gap-2 rounded-md md:px-4
+                      text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors
+                      focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                     fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <line x1="12" y1="5" x2="12" y2="19"/>
+                    <line x1="5" y1="12" x2="19" y2="12"/>
+                </svg>
+                <span class="hidden md:inline">Dodaj osobę</span>
+            </a>
+
+            <!-- 2. Osoby (lista) -->
+            <a href="/trees/<?= htmlspecialchars($tree->id) ?>/persons"
+               title="Lista osób"
+               aria-label="Lista osób"
+               class="inline-flex h-10 w-10 md:w-auto items-center justify-center md:justify-start gap-2 rounded-md border border-input md:px-4
+                      text-sm font-medium text-foreground hover:bg-accent transition-colors
+                      focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                     fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                    <circle cx="9" cy="7" r="4"/>
+                    <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                </svg>
+                <span class="hidden md:inline">Osoby</span>
+            </a>
+
+            <!-- 3. Import/Export (GEDCOM) -->
             <a href="/trees/<?= htmlspecialchars($tree->id) ?>/gedcom"
                title="Import / eksport GEDCOM"
-               class="inline-flex h-10 w-10 items-center justify-center rounded-md border border-input
-                      text-foreground hover:bg-accent transition-colors
+               aria-label="Import / eksport GEDCOM"
+               class="inline-flex h-10 w-10 md:w-auto items-center justify-center md:justify-start gap-2 rounded-md border border-input md:px-4
+                      text-sm font-medium text-foreground hover:bg-accent transition-colors
                       focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
                      fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
@@ -65,13 +108,16 @@ $canEdit = in_array($userRole, ['owner', 'editor'], true);
                     <line x1="12" y1="12" x2="12" y2="18"/>
                     <line x1="9" y1="15" x2="15" y2="15"/>
                 </svg>
-                <span class="sr-only">GEDCOM</span>
+                <span class="hidden md:inline">Import/Export</span>
             </a>
         <?php endif; ?>
 
         <?php if ($userRole === 'owner'): ?>
+            <!-- 4. Dostęp (members) -->
             <a href="/trees/<?= htmlspecialchars($tree->id) ?>/members"
-               class="inline-flex h-10 items-center gap-2 rounded-md border border-input px-4
+               title="Zarządzaj dostępem"
+               aria-label="Zarządzaj dostępem"
+               class="inline-flex h-10 w-10 md:w-auto items-center justify-center md:justify-start gap-2 rounded-md border border-input md:px-4
                       text-sm font-medium text-foreground hover:bg-accent transition-colors
                       focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
@@ -81,32 +127,39 @@ $canEdit = in_array($userRole, ['owner', 'editor'], true);
                     <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
                     <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
                 </svg>
-                Dostęp
+                <span class="hidden md:inline">Dostęp</span>
             </a>
-        <?php endif; ?>
-        <?php if ($canEdit): ?>
-            <a href="/trees/<?= htmlspecialchars($tree->id) ?>/persons/new"
-               class="inline-flex h-10 items-center gap-2 rounded-md px-4 text-sm font-medium
-                      bg-primary text-primary-foreground hover:bg-primary/90 transition-colors
+
+            <!-- 5. Odkrywanie (cross-tree discovery) -->
+            <a href="/trees/<?= htmlspecialchars($tree->id) ?>/settings/discovery"
+               title="Odkrywanie (cross-tree)"
+               aria-label="Odkrywanie (cross-tree)"
+               class="inline-flex h-10 w-10 md:w-auto items-center justify-center md:justify-start gap-2 rounded-md border border-input md:px-4
+                      text-sm font-medium text-foreground hover:bg-accent transition-colors
                       focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
                      fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                    <line x1="12" y1="5" x2="12" y2="19"/>
-                    <line x1="5" y1="12" x2="19" y2="12"/>
+                    <circle cx="11" cy="11" r="8"/>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"/>
                 </svg>
-                Dodaj osobę
+                <span class="hidden md:inline">Odkrywanie</span>
             </a>
-            <a href="/trees/<?= htmlspecialchars($tree->id) ?>/persons"
-               class="inline-flex h-10 items-center gap-2 rounded-md border border-input px-4
-                      text-sm font-medium text-foreground hover:bg-accent transition-colors
-                      focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-                Osoby
-            </a>
+        <?php endif; ?>
+
+        <?php if ($canEdit): ?>
+            <!-- 6. Ustawienia (zawsze ikona, nigdy nie pokazuje label na mobile, ale md pokazuje) -->
             <a href="/trees/<?= htmlspecialchars($tree->id) ?>/edit"
-               class="inline-flex h-10 items-center gap-2 rounded-md border border-input px-4
+               title="Ustawienia drzewa"
+               aria-label="Ustawienia drzewa"
+               class="inline-flex h-10 w-10 md:w-auto items-center justify-center md:justify-start gap-2 rounded-md border border-input md:px-4
                       text-sm font-medium text-foreground hover:bg-accent transition-colors
                       focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-                Ustawienia
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                     fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
+                    <circle cx="12" cy="12" r="3"/>
+                </svg>
+                <span class="hidden md:inline">Ustawienia</span>
             </a>
         <?php endif; ?>
     </div>

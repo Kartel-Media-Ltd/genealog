@@ -21,11 +21,12 @@ class HomeController
         $userId = Session::get('user_id');
         $trees  = [];
 
-        // TreeRepository::findByOwner wymaga tabeli trees (faza 2 feature'u)
-        // Na razie placeholder — tabela trees zostanie dodana w kolejnej migracji
+        // TreeRepository::findByOwner — fail-safe (np. brak tabeli przed migracją)
+        // ZAD-2.8: nie połykaj cicho — log do error_log dla observability
         try {
             $trees = $this->treeRepo->findByOwner($userId);
-        } catch (\Exception) {
+        } catch (\Exception $e) {
+            error_log('HomeController::index findByOwner failed: ' . $e->getMessage());
             $trees = [];
         }
 
@@ -34,7 +35,8 @@ class HomeController
         $recentActivity = [];
         try {
             $recentActivity = $this->treeRepo->getRecentPersonActivity($userId);
-        } catch (\Exception) {
+        } catch (\Exception $e) {
+            error_log('HomeController::index getRecentPersonActivity failed: ' . $e->getMessage());
             $recentActivity = [];
         }
 

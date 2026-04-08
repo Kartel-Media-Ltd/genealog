@@ -98,6 +98,33 @@ Wszystkie endpointy Discovery muszą stosować ten sam pattern: nie pobierać re
 
 ---
 
+## Code review 2026-04-07
+
+Przeprowadzony formalny `/dev-docs-review` po ukończeniu 8 faz implementacji. Pełny raport: [`review-2026-04-07.md`](./review-2026-04-07.md).
+
+**Werdykt początkowy:** PASS WITH CONDITIONS — 2 blocking, 3 important, 3 nit.
+**Status po fixach:** **wszystkie 8 problemów naprawione** (user poprosił „również nit").
+
+### Kluczowe wnioski z review
+
+1. **Race condition w indeksowaniu** (B4) — ręczny SELECT+INSERT/UPDATE był podatny przy concurrent emit z EventDispatcher. Zamiana na `INSERT...ON DUPLICATE KEY UPDATE` eliminuje race przez UNIQUE constraint.
+2. **Transakcja w imporcie** (B5) — brakowało rollback przy partial failure. Dodana `beginTransaction/commit/rollback`. W `Database.php` dodano też `inTransaction()` helper.
+3. **RODO violation w settings** (I7) — refactor `updateSettings` porównuje `$wasEligible vs $nowEligible` (oba flagi). Wycofanie którejkolwiek zgody unindeksuje drzewo — zgodne z RODO Art. 7(3).
+4. **Immutable names w global_person_index** (I9) — migracja 009 dodała `first_name`/`last_name` do `global_person_index`. `CrossTreeMatchSource` nie JOINuje już mutowalnej tabeli `persons`.
+5. **RateLimiter jako serwis** (N3) — wyekstrahowany z `DiscoveryController` do `App\Core\RateLimiter`. Gotowy do refactoru `AuthService`.
+6. **Bell icon `visibilitychange`** (N1) — polling zatrzymuje się gdy karta ukryta (mobile battery).
+7. **reindex-all.php** (N2) — usunięto 2 zbędne SELECT per osoba; jedno `SELECT COUNT` na końcu.
+8. **Guard clause dla pustego userId** (I8) — `DiscoveryController::search` zwraca 401 zamiast kontynuować z pustym user_id.
+
+### Follow-up (nie wykonane, na osobny iteracja)
+
+- **Panel sugestii w `persons/show.php`** (S2) — endpointy import/reject działają, brak UI
+- **External adapters FamilySearch/Geneteka** — stuby są, pełna implementacja wymaga planu `registries`
+- **AuthService refactor do RateLimiter** — AuthService nadal ma swoje `isRateLimited`/`recordAttempt`. Można zrefaktorować żeby używał wspólnego serwisu
+- **CLAUDE.md update** — sekcja "Person Discovery" jeszcze nie dodana do głównego CLAUDE.md
+
+---
+
 ## Co NIE jest w scope
 
 | Temat | Powód wyłączenia |

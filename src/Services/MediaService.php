@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Core\Uuid;
 use App\Repositories\PersonRepository;
 
 class MediaService
@@ -50,8 +51,8 @@ class MediaService
         // 5. Load image via GD
         $srcImage = $this->loadImage($uploadedFile['tmp_name'], $mimeType);
 
-        // 6. UUID filename
-        $uuid = bin2hex(random_bytes(16));
+        // 6. UUID filename — używamy Uuid::generate() (RFC 4122 v4) zamiast bin2hex(random_bytes)
+        $uuid = Uuid::generate();
 
         // 7. Full-size WebP (max 800px, maintain aspect ratio)
         $full = $this->resizeImage($srcImage, self::MAX_DIMENSION);
