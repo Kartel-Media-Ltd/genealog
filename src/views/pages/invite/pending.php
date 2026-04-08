@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 use App\Core\Csrf;
+require_once __DIR__ . '/../../atoms/icon.php';
 
 /** @var array[] $invitations */
 $invitations ??= [];
@@ -11,13 +12,7 @@ $invitations ??= [];
     <!-- Nagłówek -->
     <div class="mb-8 text-center">
         <div class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-blue-100">
-            <svg class="h-8 w-8 text-blue-600" xmlns="http://www.w3.org/2000/svg"
-                 viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
-                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                <circle cx="9" cy="7" r="4"/>
-                <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-                <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-            </svg>
+            <?php render_icon('users', 'solid', 'h-8 w-8 text-blue-600') ?>
         </div>
         <h1 class="text-2xl font-bold tracking-tight text-foreground">Oczekujące zaproszenia</h1>
         <p class="mt-2 text-sm text-muted-foreground">

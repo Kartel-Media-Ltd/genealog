@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 // Variables: $users (array[]), $search (string), $page (int), $total (int), $limit (int)
+require_once __DIR__ . '/../../atoms/icon.php';
 $totalPages = (int)ceil($total / $limit);
 ?>
 <div>
@@ -9,11 +10,7 @@ $totalPages = (int)ceil($total / $limit);
     <div class="flex flex-col sm:flex-row gap-3 mb-6">
         <form method="GET" action="/admin/users" class="flex-1">
             <div class="relative max-w-sm">
-                <svg class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400"
-                     xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
-                     stroke="currentColor" stroke-width="2">
-                    <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-                </svg>
+                <?php render_icon('magnifying-glass', 'solid', 'pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400') ?>
                 <input
                     type="search"
                     name="q"

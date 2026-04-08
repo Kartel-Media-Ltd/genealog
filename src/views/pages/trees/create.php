@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 use App\Core\Csrf;
+require_once __DIR__ . '/../../atoms/icon.php';
 ?>
 
 <div class="mx-auto max-w-xl">
@@ -8,10 +9,7 @@ use App\Core\Csrf;
     <!-- Breadcrumb -->
     <nav class="mb-6 flex items-center gap-2 text-sm text-muted-foreground" aria-label="Nawigacja">
         <a href="/trees" class="hover:text-foreground transition-colors">Moje drzewa</a>
-        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
-             fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-            <polyline points="9 18 15 12 9 6"/>
-        </svg>
+        <?php render_icon('chevron-right', 'solid', 'h-3.5 w-3.5') ?>
         <span class="text-foreground font-medium">Nowe drzewo</span>
     </nav>
 

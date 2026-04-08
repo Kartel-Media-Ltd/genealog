@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 use App\Core\Csrf;
+require_once __DIR__ . '/../../atoms/icon.php';
 
 /** @var \App\Models\Tree $tree */
 /** @var array $members */
@@ -52,18 +53,12 @@ function days_until(string $expiresAt): int {
 <!-- Breadcrumb -->
 <nav class="mb-6 flex items-center gap-2 text-sm text-muted-foreground" aria-label="Nawigacja">
     <a href="/trees" class="hover:text-foreground transition-colors">Moje drzewa</a>
-    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
-         fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-        <polyline points="9 18 15 12 9 6"/>
-    </svg>
+    <?php render_icon('chevron-right', 'solid', 'h-3.5 w-3.5') ?>
     <a href="/trees/<?= htmlspecialchars((string)$tree->id) ?>"
        class="hover:text-foreground transition-colors">
         <?= htmlspecialchars($tree->name) ?>
     </a>
-    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
-         fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-        <polyline points="9 18 15 12 9 6"/>
-    </svg>
+    <?php render_icon('chevron-right', 'solid', 'h-3.5 w-3.5') ?>
     <span class="text-foreground font-medium">Zarządzaj dostępem</span>
 </nav>
 
@@ -82,14 +77,7 @@ function days_until(string $expiresAt): int {
      ================================================================ -->
 <div class="mb-6 rounded-lg border border-border bg-card shadow-sm">
     <div class="border-b border-border px-6 py-4 flex items-center gap-2">
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
-             fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"
-             class="text-muted-foreground">
-            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-            <circle cx="9" cy="7" r="4"/>
-            <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-        </svg>
+        <?php render_icon('users', 'solid', 'h-4.5 w-4.5 text-muted-foreground') ?>
         <h2 class="text-base font-semibold text-card-foreground">
             Aktualni członkowie
         </h2>
@@ -164,13 +152,7 @@ function days_until(string $expiresAt): int {
                                 <span class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5
                                              text-xs font-medium <?= role_badge_classes($role) ?>">
                                     <?php if ($isOwner): ?>
-                                        <!-- Crown icon dla właściciela -->
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11"
-                                             viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                             stroke-width="2.5" aria-hidden="true">
-                                            <path d="M2 20h20"/>
-                                            <path d="m2 10 5 7 5-9 5 9 5-7"/>
-                                        </svg>
+                                        <?php render_icon('crown', 'solid', 'h-2.5 w-2.5') ?>
                                     <?php endif; ?>
                                     <?= role_label($role) ?>
                                 </span>
@@ -197,11 +179,7 @@ function days_until(string $expiresAt): int {
                                                 aria-haspopup="true"
                                                 :aria-expanded="roleDropdownOpen">
                                                 Zmień rolę
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12"
-                                                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                                     stroke-width="2" aria-hidden="true">
-                                                    <polyline points="6 9 12 15 18 9"/>
-                                                </svg>
+                                                <?php render_icon('chevron-down', 'solid', 'h-3 w-3') ?>
                                             </button>
 
                                             <!-- Dropdown menu -->
@@ -226,19 +204,9 @@ function days_until(string $expiresAt): int {
                                                                     class="w-full px-4 py-2.5 text-left text-sm text-foreground
                                                                            hover:bg-accent transition-colors flex items-center gap-2">
                                                                 <?php if ($newRole === 'editor'): ?>
-                                                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"
-                                                                         viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                                                         stroke-width="2" aria-hidden="true">
-                                                                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                                                                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                                                                    </svg>
+                                                                    <?php render_icon('pen-to-square', 'solid', 'h-3.5 w-3.5') ?>
                                                                 <?php else: ?>
-                                                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"
-                                                                         viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                                                         stroke-width="2" aria-hidden="true">
-                                                                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                                                                        <circle cx="12" cy="12" r="3"/>
-                                                                    </svg>
+                                                                    <?php render_icon('eye', 'solid', 'h-3.5 w-3.5') ?>
                                                                 <?php endif; ?>
                                                                 <?= htmlspecialchars($newLabel) ?>
                                                             </button>
@@ -257,14 +225,7 @@ function days_until(string $expiresAt): int {
                                                        px-3 text-xs font-medium text-destructive
                                                        hover:bg-destructive/10 transition-colors
                                                        focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12"
-                                                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                                     stroke-width="2" aria-hidden="true">
-                                                    <polyline points="3 6 5 6 21 6"/>
-                                                    <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
-                                                    <path d="M10 11v6"/>
-                                                    <path d="M14 11v6"/>
-                                                </svg>
+                                                <?php render_icon('trash', 'solid', 'h-3 w-3') ?>
                                                 Usuń
                                             </button>
                                         </div>
@@ -312,12 +273,7 @@ function days_until(string $expiresAt): int {
 <?php if (!empty($pendingInvitations)): ?>
 <div class="mb-6 rounded-lg border border-border bg-card shadow-sm">
     <div class="border-b border-border px-6 py-4 flex items-center gap-2">
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
-             fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"
-             class="text-muted-foreground">
-            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
-            <polyline points="22,6 12,13 2,6"/>
-        </svg>
+        <?php render_icon('envelope', 'solid', 'h-4.5 w-4.5 text-muted-foreground') ?>
         <h2 class="text-base font-semibold text-card-foreground">
             Oczekujące zaproszenia
         </h2>
@@ -388,13 +344,7 @@ function days_until(string $expiresAt): int {
      ================================================================ -->
 <div class="rounded-lg border border-border bg-card shadow-sm">
     <div class="border-b border-border px-6 py-4 flex items-center gap-2">
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
-             fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"
-             class="text-muted-foreground">
-            <circle cx="12" cy="12" r="10"/>
-            <line x1="12" y1="8" x2="12" y2="16"/>
-            <line x1="8" y1="12" x2="16" y2="12"/>
-        </svg>
+        <?php render_icon('user-plus', 'solid', 'h-4.5 w-4.5 text-muted-foreground') ?>
         <h2 class="text-base font-semibold text-card-foreground">Zaproś osobę</h2>
     </div>
 
@@ -458,20 +408,9 @@ function days_until(string $expiresAt): int {
                        disabled:pointer-events-none disabled:opacity-50 shrink-0">
                 <!-- Spinner podczas wysyłania -->
                 <template x-if="loading">
-                    <svg class="h-4 w-4 animate-spin" xmlns="http://www.w3.org/2000/svg"
-                         fill="none" viewBox="0 0 24 24" aria-hidden="true">
-                        <circle class="opacity-25" cx="12" cy="12" r="10"
-                                stroke="currentColor" stroke-width="4"></circle>
-                        <path class="opacity-75" fill="currentColor"
-                              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
-                    </svg>
+                    <?php render_icon('spinner', 'solid', 'fa-spin h-4 w-4') ?>
                 </template>
-                <svg x-show="!loading" xmlns="http://www.w3.org/2000/svg" width="16" height="16"
-                     viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                     aria-hidden="true">
-                    <line x1="22" y1="2" x2="11" y2="13"/>
-                    <polygon points="22 2 15 22 11 13 2 9 22 2"/>
-                </svg>
+                <span x-show="!loading"><?php render_icon('paper-plane', 'solid', 'h-4 w-4') ?></span>
                 <span x-text="loading ? 'Wysyłanie...' : 'Zaproś'">Zaproś</span>
             </button>
 

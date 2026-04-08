@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
 use App\Core\Csrf;
+use App\Core\DateHelper;
+require_once __DIR__ . '/../../../atoms/icon.php';
 
 /** @var \App\Models\Tree $tree */
 /** @var \App\Models\Person $person */
@@ -13,22 +15,13 @@ $suggestions ??= [];
 <!-- Breadcrumb -->
 <nav class="mb-6 flex items-center gap-2 text-sm text-muted-foreground" aria-label="Nawigacja">
     <a href="/trees" class="hover:text-foreground transition-colors">Moje drzewa</a>
-    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
-         fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-        <polyline points="9 18 15 12 9 6"/>
-    </svg>
+    <?php render_icon('chevron-right', 'solid', 'h-3.5 w-3.5') ?>
     <a href="/trees/<?= htmlspecialchars($tree->id) ?>"
        class="hover:text-foreground transition-colors"><?= htmlspecialchars($tree->name) ?></a>
-    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
-         fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-        <polyline points="9 18 15 12 9 6"/>
-    </svg>
+    <?php render_icon('chevron-right', 'solid', 'h-3.5 w-3.5') ?>
     <a href="/trees/<?= htmlspecialchars($tree->id) ?>/persons"
        class="hover:text-foreground transition-colors">Osoby</a>
-    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
-         fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-        <polyline points="9 18 15 12 9 6"/>
-    </svg>
+    <?php render_icon('chevron-right', 'solid', 'h-3.5 w-3.5') ?>
     <span class="text-foreground font-medium"><?php if (!$person->isLiving): ?><span class="text-muted-foreground mr-0.5" aria-hidden="true">†</span><?php endif; ?><?= htmlspecialchars($person->fullName()) ?></span>
 </nav>
 
@@ -54,7 +47,11 @@ $suggestions ??= [];
             <div class="p-5 space-y-4">
                 <!-- Name + badges -->
                 <div>
-                    <h1 class="text-xl font-bold text-card-foreground"><?php if (!$person->isLiving): ?><span class="text-muted-foreground mr-0.5" aria-hidden="true">†</span><?php endif; ?><?= htmlspecialchars($person->fullName()) ?></h1>
+                    <h1 class="text-xl font-bold text-card-foreground"><?php if (!$person->isLiving): ?><span class="text-muted-foreground mr-0.5" aria-hidden="true">†</span><?php endif; ?><?= htmlspecialchars($person->fullName()) ?><?php
+                        $birthYear = $person->birthDate ? (int) substr($person->birthDate, 0, 4) : null;
+                        $age       = DateHelper::ageInYears($person->birthDate, $person->deathDate);
+                        if ($age !== null || $birthYear !== null):
+                    ?> <span class="text-muted-foreground font-normal text-sm">(<?php if ($age !== null): ?>l.&nbsp;<?= $age ?><?php endif; ?><?php if ($age !== null && $birthYear !== null): ?>, <?php endif; ?><?php if ($birthYear !== null): ?>ur.&nbsp;<?= $birthYear ?><?php endif; ?>)</span><?php endif; ?></h1>
                     <?php if ($person->maidenName): ?>
                         <p class="text-sm text-muted-foreground">z d. <?= htmlspecialchars($person->maidenName) ?></p>
                     <?php endif; ?>
@@ -125,12 +122,7 @@ $suggestions ??= [];
                     <a href="/trees/<?= htmlspecialchars($tree->id) ?>/persons/<?= htmlspecialchars($person->id) ?>/register"
                        class="inline-flex h-9 w-full items-center justify-center gap-1.5 rounded-md border border-input px-4
                               text-sm font-medium text-foreground hover:bg-accent transition-colors">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
-                             fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                            <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/>
-                            <line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/>
-                            <line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>
-                        </svg>
+                        <?php render_icon('list', 'solid', 'h-3.5 w-3.5') ?>
                         Rejestr potomków
                     </a>
                 </div>
@@ -177,10 +169,7 @@ $suggestions ??= [];
         <div x-data="matchSuggestionsPanel()"
              class="rounded-lg border border-amber-300 bg-amber-50/60 shadow-sm">
             <div class="border-b border-amber-200 px-6 py-4 flex items-center gap-2">
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
-                     fill="none" stroke="currentColor" stroke-width="2" class="text-amber-600" aria-hidden="true">
-                    <path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 1 1 7.072 0l-.548.547A3.374 3.374 0 0 0 14 18.469V19a2 2 0 1 1-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
-                </svg>
+                <?php render_icon('lightbulb', 'solid', 'h-4.5 w-4.5 text-amber-600') ?>
                 <h2 class="text-base font-semibold text-amber-900">
                     Możliwe powiązania
                     <span class="ml-1 text-xs font-normal text-amber-700" x-text="'(' + items.length + ')'"></span>
@@ -219,19 +208,14 @@ $suggestions ??= [];
                                         @click="acceptMatch(item)"
                                         :disabled="processing[item.id]"
                                         class="inline-flex items-center gap-1 rounded-md bg-amber-600 px-3 py-1 text-xs font-medium text-white hover:bg-amber-700 disabled:opacity-50">
-                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
-                                        <polyline points="20 6 9 17 4 12"/>
-                                    </svg>
+                                    <?php render_icon('check', 'solid', 'h-3 w-3') ?>
                                     Akceptuj
                                 </button>
                                 <button type="button"
                                         @click="rejectMatch(item)"
                                         :disabled="processing[item.id]"
                                         class="inline-flex items-center gap-1 rounded-md border border-amber-300 bg-white px-3 py-1 text-xs font-medium text-amber-700 hover:bg-amber-50 disabled:opacity-50">
-                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
-                                        <line x1="18" y1="6" x2="6" y2="18"/>
-                                        <line x1="6" y1="6" x2="18" y2="18"/>
-                                    </svg>
+                                    <?php render_icon('xmark', 'solid', 'h-3 w-3') ?>
                                     Odrzuć
                                 </button>
                             </div>
@@ -338,12 +322,7 @@ $suggestions ??= [];
         <!-- Suggestions panel -->
         <div class="rounded-lg border border-primary/40 bg-primary/5 shadow-sm">
             <div class="border-b border-primary/20 px-6 py-4 flex items-center gap-2">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
-                     fill="none" stroke="currentColor" stroke-width="2" class="text-primary" aria-hidden="true">
-                    <circle cx="12" cy="12" r="10"/>
-                    <line x1="12" y1="8" x2="12" y2="12"/>
-                    <line x1="12" y1="16" x2="12.01" y2="16"/>
-                </svg>
+                <?php render_icon('circle-info', 'solid', 'h-4 w-4 text-primary') ?>
                 <h2 class="text-base font-semibold text-foreground">Sugerowane relacje do dodania</h2>
                 <span class="ml-auto text-xs text-muted-foreground">Na podstawie już istniejących powiązań</span>
             </div>
@@ -415,10 +394,7 @@ $suggestions ??= [];
                     <button type="submit"
                             class="inline-flex h-9 items-center gap-2 rounded-md px-4 text-sm font-medium
                                    bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
-                             fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                            <polyline points="20 6 9 17 4 12"/>
-                        </svg>
+                        <?php render_icon('check', 'solid', 'h-3.5 w-3.5') ?>
                         Dodaj zaznaczone
                     </button>
                     <a href="/trees/<?= htmlspecialchars($tree->id) ?>/persons/<?= htmlspecialchars($person->id) ?>"
@@ -440,21 +416,13 @@ $suggestions ??= [];
                            class="inline-flex h-8 items-center gap-1.5 rounded-md px-3
                                   text-xs font-medium bg-primary text-primary-foreground
                                   hover:bg-primary/90 transition-colors">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24"
-                                 fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                                <line x1="12" y1="5" x2="12" y2="19"/>
-                                <line x1="5" y1="12" x2="19" y2="12"/>
-                            </svg>
+                            <?php render_icon('plus', 'solid', 'h-3 w-3') ?>
                             Dodaj osobę
                         </a>
                         <a href="/trees/<?= htmlspecialchars($tree->id) ?>/persons/<?= htmlspecialchars($person->id) ?>/relationships/new"
                            class="inline-flex h-8 items-center gap-1.5 rounded-md border border-input px-3
                                   text-xs font-medium text-foreground hover:bg-accent transition-colors">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24"
-                                 fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                                <line x1="12" y1="5" x2="12" y2="19"/>
-                                <line x1="5" y1="12" x2="19" y2="12"/>
-                            </svg>
+                            <?php render_icon('plus', 'solid', 'h-3 w-3') ?>
                             Dodaj relację
                         </a>
                     </div>

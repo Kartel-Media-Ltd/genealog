@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 use App\Core\DateHelper;
+require_once __DIR__ . '/../../../atoms/icon.php';
 
 /** @var \App\Models\Tree $tree */
 /** @var \App\Models\Person[] $persons */
@@ -14,16 +15,10 @@ $canEdit = in_array($userRole, ['owner', 'editor'], true);
 <!-- Breadcrumb -->
 <nav class="mb-6 flex items-center gap-2 text-sm text-muted-foreground" aria-label="Nawigacja">
     <a href="/trees" class="hover:text-foreground transition-colors">Moje drzewa</a>
-    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
-         fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-        <polyline points="9 18 15 12 9 6"/>
-    </svg>
+    <?php render_icon('chevron-right', 'solid', 'h-3.5 w-3.5') ?>
     <a href="/trees/<?= htmlspecialchars($tree->id) ?>"
        class="hover:text-foreground transition-colors"><?= htmlspecialchars($tree->name) ?></a>
-    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
-         fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-        <polyline points="9 18 15 12 9 6"/>
-    </svg>
+    <?php render_icon('chevron-right', 'solid', 'h-3.5 w-3.5') ?>
     <span class="text-foreground font-medium">Osoby</span>
 </nav>
 
@@ -48,17 +43,9 @@ $rootPersons = array_values(array_filter($personsTree, fn($e) => $e['depth'] ===
                     class="inline-flex h-10 items-center gap-2 rounded-md border border-input px-4
                            text-sm font-medium text-foreground hover:bg-accent transition-colors
                            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-                <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24"
-                     fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
-                    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
-                </svg>
+                <?php render_icon('file', 'solid', 'h-3.5 w-3.5') ?>
                 Rejestr drzewa
-                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24"
-                     fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"
-                     :class="open ? 'rotate-180' : ''" class="transition-transform">
-                    <polyline points="6 9 12 15 18 9"/>
-                </svg>
+                <?php render_icon('chevron-down', 'solid', 'h-3 w-3 transition-transform') ?>
             </button>
 
             <div x-show="open" x-cloak
@@ -91,12 +78,7 @@ $rootPersons = array_values(array_filter($personsTree, fn($e) => $e['depth'] ===
            class="inline-flex h-10 items-center gap-2 rounded-md border border-input px-4
                   text-sm font-medium text-foreground hover:bg-accent transition-colors
                   focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
-                 fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                <polyline points="6 9 6 2 18 2 18 9"/>
-                <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
-                <rect x="6" y="14" width="12" height="8"/>
-            </svg>
+            <?php render_icon('print', 'solid', 'h-4 w-4') ?>
             Drukuj listę
         </a>
         <?php if ($canEdit): ?>
@@ -104,11 +86,7 @@ $rootPersons = array_values(array_filter($personsTree, fn($e) => $e['depth'] ===
                class="inline-flex h-10 items-center gap-2 rounded-md px-4 text-sm font-medium
                       bg-primary text-primary-foreground hover:bg-primary/90 transition-colors
                       focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
-                     fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                    <line x1="12" y1="5" x2="12" y2="19"/>
-                    <line x1="5" y1="12" x2="19" y2="12"/>
-                </svg>
+                <?php render_icon('plus', 'solid', 'h-4 w-4') ?>
                 Dodaj osobę
             </a>
         <?php endif; ?>
@@ -139,11 +117,7 @@ unset($entry);
     <div class="rounded-lg border border-border bg-card shadow-sm">
         <div class="flex flex-col items-center justify-center py-20 text-center">
             <div class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted">
-                <svg class="h-8 w-8 text-muted-foreground" xmlns="http://www.w3.org/2000/svg"
-                     viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                    <circle cx="9" cy="7" r="4"/>
-                </svg>
+                <?php render_icon('users', 'solid', 'h-8 w-8 text-muted-foreground') ?>
             </div>
             <h3 class="mb-2 text-sm font-medium text-foreground">Brak osób w drzewie</h3>
             <p class="mb-6 max-w-xs text-sm text-muted-foreground">
@@ -163,12 +137,7 @@ unset($entry);
     <div class="rounded-lg border border-border bg-card shadow-sm">
         <div class="border-b border-border px-6 py-4 flex items-center gap-3 flex-wrap">
             <div class="relative flex-1 max-w-sm">
-                <svg class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground"
-                     xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
-                     stroke="currentColor" stroke-width="2" aria-hidden="true">
-                    <circle cx="11" cy="11" r="8"/>
-                    <line x1="21" y1="21" x2="16.65" y2="16.65"/>
-                </svg>
+                <?php render_icon('magnifying-glass', 'solid', 'absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground') ?>
                 <input
                     type="search"
                     x-model="search"
@@ -282,12 +251,7 @@ unset($entry);
                                        title="Rejestr potomków"
                                        class="inline-flex h-8 w-8 items-center justify-center rounded-md border border-input
                                               text-muted-foreground hover:bg-accent hover:text-foreground transition-colors">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13"
-                                             viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                             stroke-width="2" aria-hidden="true">
-                                            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
-                                            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
-                                        </svg>
+                                        <?php render_icon('file', 'solid', 'h-3.5 w-3.5') ?>
                                         <span class="sr-only">Rejestr potomków</span>
                                     </a>
                                     <?php if ($canEdit): ?>

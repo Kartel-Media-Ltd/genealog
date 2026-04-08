@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 use App\Core\Csrf;
+require_once __DIR__ . '/../../../atoms/icon.php';
 
 /** @var \App\Models\Tree $tree */
 /** @var \App\Models\Person $person */
@@ -15,10 +16,7 @@ $suggestions ??= [];
     <nav class="mb-6 flex items-center gap-2 text-sm text-muted-foreground" aria-label="Nawigacja">
         <a href="/trees/<?= htmlspecialchars($tree->id) ?>/persons/<?= htmlspecialchars($person->id) ?>"
            class="hover:text-foreground transition-colors"><?= htmlspecialchars($person->fullName()) ?></a>
-        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
-             fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-            <polyline points="9 18 15 12 9 6"/>
-        </svg>
+        <?php render_icon('chevron-right', 'solid', 'h-3.5 w-3.5') ?>
         <span class="text-foreground font-medium">Nowa relacja</span>
     </nav>
 
@@ -113,12 +111,7 @@ $suggestions ??= [];
                                    transition-colors">
                         <span :class="selected ? 'text-foreground' : 'text-muted-foreground'"
                               x-text="selectedLabel || '— wybierz osobę —'"></span>
-                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"
-                             viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                             :class="open ? 'rotate-180' : ''"
-                             class="flex-shrink-0 transition-transform" aria-hidden="true">
-                            <polyline points="6 9 12 15 18 9"/>
-                        </svg>
+                        <?php render_icon('chevron-down', 'solid', 'flex-shrink-0 h-3.5 w-3.5 transition-transform') ?>
                     </button>
 
                     <!-- Dropdown panel -->
@@ -179,12 +172,7 @@ $suggestions ??= [];
     <?php if (!empty($suggestions)): ?>
     <div class="mt-4 rounded-lg border border-primary/40 bg-primary/5 shadow-sm">
         <div class="border-b border-primary/20 px-6 py-4 flex items-center gap-2">
-            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24"
-                 fill="none" stroke="currentColor" stroke-width="2" class="text-primary flex-shrink-0" aria-hidden="true">
-                <circle cx="12" cy="12" r="10"/>
-                <line x1="12" y1="8" x2="12" y2="12"/>
-                <line x1="12" y1="16" x2="12.01" y2="16"/>
-            </svg>
+            <?php render_icon('circle-info', 'solid', 'h-4 w-4 text-primary flex-shrink-0') ?>
             <h2 class="text-sm font-semibold text-foreground">Inne sugerowane relacje</h2>
             <span class="ml-auto text-xs text-muted-foreground">Na podstawie istniejących powiązań</span>
         </div>
@@ -239,10 +227,7 @@ $suggestions ??= [];
                 <button type="submit"
                         class="inline-flex h-9 items-center gap-2 rounded-md px-4 text-sm font-medium
                                bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24"
-                         fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                        <polyline points="20 6 9 17 4 12"/>
-                    </svg>
+                    <?php render_icon('check', 'solid', 'h-3.5 w-3.5') ?>
                     Dodaj zaznaczone
                 </button>
             </div>

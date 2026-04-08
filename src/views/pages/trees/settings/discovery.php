@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 use App\Core\Csrf;
+require_once __DIR__ . '/../../../atoms/icon.php';
 
 /** @var \App\Models\Tree $tree */
 /** @var bool $ownerOptIn */
@@ -11,10 +12,7 @@ use App\Core\Csrf;
         <a href="/trees/<?= htmlspecialchars($tree->id) ?>" class="hover:text-foreground transition-colors">
             <?= htmlspecialchars($tree->name) ?>
         </a>
-        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
-             fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-            <polyline points="9 18 15 12 9 6"/>
-        </svg>
+        <?php render_icon('chevron-right', 'solid', 'h-3.5 w-3.5') ?>
         <span class="text-foreground font-medium">Odkrywanie / Cross-tree</span>
     </nav>
 

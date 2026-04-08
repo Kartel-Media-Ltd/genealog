@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 use App\Core\Csrf;
+require_once __DIR__ . '/../../atoms/icon.php';
 
 /** @var \App\Models\Tree[] $trees */
 $trees       ??= [];
@@ -17,11 +18,7 @@ $sharedTrees ??= [];
        class="mt-4 inline-flex h-10 items-center gap-2 rounded-md px-4 text-sm font-medium
               bg-primary text-primary-foreground hover:bg-primary/90 transition-colors
               focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:mt-0">
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
-             fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-            <line x1="12" y1="5" x2="12" y2="19"/>
-            <line x1="5" y1="12" x2="19" y2="12"/>
-        </svg>
+        <?php render_icon('plus', 'solid', 'h-4 w-4') ?>
         Nowe drzewo
     </a>
 </div>
@@ -127,13 +124,7 @@ $sharedTrees ??= [];
                                   hover:bg-accent transition-colors
                                   focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                            title="Zarządzaj dostępem">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
-                                 fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                                <circle cx="9" cy="7" r="4"/>
-                                <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-                                <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-                            </svg>
+                            <?php render_icon('users', 'solid', 'h-3.5 w-3.5') ?>
                         </a>
                     </div>
                 </article>
@@ -159,14 +150,7 @@ $sharedTrees ??= [];
                         <div class="flex items-center gap-2.5">
                             <div class="flex h-9 w-9 shrink-0 items-center justify-center
                                         rounded-md bg-blue-500/10">
-                                <svg class="h-5 w-5 text-blue-600" xmlns="http://www.w3.org/2000/svg"
-                                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                     stroke-width="1.5" aria-hidden="true">
-                                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                                    <circle cx="9" cy="7" r="4"/>
-                                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-                                    <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-                                </svg>
+                                <?php render_icon('users', 'solid', 'h-5 w-5 text-blue-600') ?>
                             </div>
                             <div class="min-w-0">
                                 <h3 class="truncate text-sm font-semibold leading-tight text-foreground">
