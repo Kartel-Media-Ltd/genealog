@@ -19,6 +19,8 @@ $pageTitle  = $pageTitle ?? 'Druk — Genealog';
     <title><?= htmlspecialchars($pageTitle) ?></title>
     <script src="/vendor/tailwind.js"></script>
     <link rel="stylesheet" href="/css/globals.css">
+    <!-- Font Awesome 6 Free (lokalny vendor) -->
+    <link rel="stylesheet" href="/vendor/fontawesome/css/all.min.css">
     <style>
         /* Per-page size — wartość z whitelist, pozostałe reguły @media print w globals.css */
         @page {

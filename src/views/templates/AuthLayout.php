@@ -12,6 +12,11 @@
     <!-- Globalne style (tokeny shadcn, animacje) -->
     <link rel="stylesheet" href="/css/globals.css">
 
+    <!-- Font Awesome 6 Free (lokalny vendor) -->
+    <link rel="preload" href="/vendor/fontawesome/webfonts/fa-solid-900.woff2"
+          as="font" type="font/woff2" crossorigin>
+    <link rel="stylesheet" href="/vendor/fontawesome/css/all.min.css">
+
     <!-- Alpine.js (lokalny vendor) -->
     <script defer src="/vendor/alpine.min.js"></script>
 

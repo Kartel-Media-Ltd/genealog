@@ -1,4 +1,7 @@
 vendor/
+!public/vendor/
+public/vendor/*
+!public/vendor/fontawesome/
 .env.local
 .env.*.local
 storage/media/

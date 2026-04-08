@@ -20,6 +20,10 @@ function admin_nav_class(string $path, string $current): string {
     <title><?= htmlspecialchars($title ?? 'Admin') ?> — Genealog Admin</title>
     <link rel="icon" href="data:,">
     <script src="/vendor/tailwind.js"></script>
+    <!-- Font Awesome 6 Free (lokalny vendor) -->
+    <link rel="preload" href="/vendor/fontawesome/webfonts/fa-solid-900.woff2"
+          as="font" type="font/woff2" crossorigin>
+    <link rel="stylesheet" href="/vendor/fontawesome/css/all.min.css">
     <style>
         :root {
             --background: 0 0% 100%; --foreground: 240 10% 3.9%;
