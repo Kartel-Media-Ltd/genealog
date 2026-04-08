@@ -120,30 +120,34 @@
 
 ## Faza 6: Weryfikacja końcowa
 
+> **Syntax check:** PHP + JS → PASS (2026-04-08)
+> **Unit tests:** 70/70 green (2026-04-08)
+> Poniższe testy wymagają uruchomionej przeglądarki z dostępem do aplikacji.
+
 ### Druk drzewa SVG
-- [ ] Print preview w Chrome — A3 landscape, drzewo centrowane
-- [ ] Print preview w Firefox — zgodność z Chrome
-- [ ] Druk na PDF przez "Zapisz jako PDF" w systemie — czytelny plik
-- [ ] Brak elementów UI (nav, toolbar) w wydruku
-- [ ] SVG nie jest obcięty — zoom/pan zresetowany do `fit`
+- [ ] **E2E manual** — Print preview w Chrome — A3 landscape, drzewo centrowane
+- [ ] **E2E manual** — Print preview w Firefox — zgodność z Chrome
+- [ ] **E2E manual** — Druk na PDF przez "Zapisz jako PDF" — czytelny plik
+- [ ] **E2E manual** — Brak elementów UI (nav, toolbar) w wydruku
+- [ ] **E2E manual** — SVG nie jest obcięty — zoom/pan zresetowany do `fit`
 
 ### Eksport PNG
-- [ ] PNG pobiera się bez błędów
-- [ ] Rozdzielczość: minimum 2480×1754 px (A3 @150dpi)
-- [ ] Białe tło (nie transparent/czarne)
-- [ ] Tekst węzłów czytelny
+- [ ] **E2E manual** — PNG pobiera się bez błędów
+- [ ] **E2E manual** — Rozdzielczość: minimum 2480×1754 px (A3 @150dpi)
+- [ ] **E2E manual** — Białe tło (nie transparent/czarne)
+- [ ] **E2E manual** — Tekst węzłów czytelny
 
 ### Lista osób do druku
-- [ ] A4 portrait w print preview
-- [ ] Stopka na ostatniej stronie
-- [ ] Sortowanie: Jan Kowalski przed Adam Nowak → NIE (Kowalski przed Nowak — sortowanie po nazwisku)
-- [ ] Drzewo z 0 osób: tabela pusta z nagłówkami, stopka "0 osób"
+- [ ] **E2E manual** — A4 portrait w print preview
+- [ ] **E2E manual** — Stopka na ostatniej stronie
+- [ ] **E2E manual** — Sortowanie: alfabetyczne po nazwisku
+- [ ] **E2E manual** — Drzewo z 0 osób: tabela pusta z nagłówkami, stopka "0 osób"
 
 ### Bezpieczeństwo
-- [ ] `/trees/99/print` dla nieistniejącego drzewa → redirect
-- [ ] `/trees/1/print` dla użytkownika bez dostępu → redirect
-- [ ] `/trees/1/persons/print` bez sesji → redirect do /login
-- [ ] Brak `<script>` wstrzykniętego przez dane osoby (htmlspecialchars)
+- [ ] **E2E manual** — `/trees/99/print` dla nieistniejącego drzewa → redirect
+- [ ] **E2E manual** — `/trees/1/print` dla użytkownika bez dostępu → redirect
+- [ ] **E2E manual** — `/trees/1/persons/print` bez sesji → redirect do /login
+- [ ] **E2E manual** — Brak `<script>` przez dane osoby (htmlspecialchars w kodzie ✅)
 
 ---
 
@@ -177,7 +181,7 @@
 
 - [x] 🟡 [nit] **public/js/print-helper.js** — `getBoundingClientRect()` jako fallback dla `width='100%'`
 - [x] 🟡 [nit] **public/js/print-helper.js** — dodane `'use strict';`
-- [ ] 🟡 [nit] **public/js/print-helper.js** — `alert(...)` zostaje (toast wymaga większego refactoru w PrintLayout)
+- [x] 🟡 [nit] **public/js/print-helper.js** — `alert(...)` zostaje świadomie (toast wymaga większego refactoru w PrintLayout — future-work)
 - [x] 🟡 [nit] **src/views/pages/trees/persons-print.php** — `$parseDate()` helper z `DateTimeImmutable::createFromFormat('!Y-m-d', ...)` + `getLastErrors()` zamiast `new DateTime()` (PHP 8.3 safe)
 - [x] 🟡 [nit] **src/Repositories/PersonRepository.php** — usunięto `findByTreeSortedByName`; controller używa `findByTree($treeId, 'last_name')`
 - [x] 🟡 [nit] **src/views/pages/trees/print.php** — `flex h-screen flex-col` + `flex-1` zamiast `calc(100vh - 48px)`

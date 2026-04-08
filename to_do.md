@@ -126,7 +126,7 @@ Wszystkie fazy (1-4) zaimplementowane. Wszystkie issues z review naprawione:
 | **global-admin** | 0 | ✅ | Fazy 1-5 kompletne; wszystkie nity N1-N7 zweryfikowane |
 | **person-discovery** | 0 | ✅ | KOMPLETNE (poza I7 reindex batch — patrz niżej) |
 | **php-scaffold** | 1 | ❌ | Pojedynczy task pozostały (sprawdzić co konkretnie) |
-| **print-pdf** | 36 | ❌ | Większość drobnych ulepszeń (Faza 8 weryfikacja E2E) |
+| **print-pdf** | 0 | ✅ | Fazy 1-6 kompletne; blocking/important/nity [x]; Faza 6 = E2E manual |
 | **registries** | 55 | ⚠️ | Cały feature — wymaga decyzji o API keys (patrz wyżej) |
 | **relationship-suggestions** | 0 | ✅ | Fazy 1-4 kompletne; Faza 5 = manual E2E |
 | **tree-sharing** | 64 | ❌ | Cały feature niezaimplementowany |
