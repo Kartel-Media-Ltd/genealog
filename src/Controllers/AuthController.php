@@ -57,6 +57,12 @@ class AuthController
             Session::set('is_admin',        $user->isAdmin);
             Session::set('session_version', $user->sessionVersion);
 
+            $pendingToken = Session::get('pending_invitation');
+            if ($pendingToken !== null) {
+                Session::delete('pending_invitation');
+                $this->response->redirect('/invite/' . $pendingToken);
+            }
+
             if ($this->hasPendingInvitations($user->email)) {
                 $this->response->redirect('/invitations');
             }
@@ -108,6 +114,12 @@ class AuthController
             Session::set('user_email',      $user->email);
             Session::set('is_admin',        $user->isAdmin);
             Session::set('session_version', $user->sessionVersion);
+
+            $pendingToken = Session::get('pending_invitation');
+            if ($pendingToken !== null) {
+                Session::delete('pending_invitation');
+                $this->response->withFlash('success', 'Konto zostało utworzone. Witaj!')->redirect('/invite/' . $pendingToken);
+            }
 
             if ($this->hasPendingInvitations($user->email)) {
                 $this->response->withFlash('success', 'Konto zostało utworzone. Masz oczekujące zaproszenia!')->redirect('/invitations');

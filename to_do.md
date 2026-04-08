@@ -129,7 +129,7 @@ Wszystkie fazy (1-4) zaimplementowane. Wszystkie issues z review naprawione:
 | **print-pdf** | 0 | ✅ | Fazy 1-6 kompletne; blocking/important/nity [x]; Faza 6 = E2E manual |
 | **registries** | 55 | ⚠️ | Cały feature — wymaga decyzji o API keys (patrz wyżej) |
 | **relationship-suggestions** | 0 | ✅ | Fazy 1-4 kompletne; Faza 5 = manual E2E |
-| **tree-sharing** | 64 | ❌ | Cały feature niezaimplementowany |
+| **tree-sharing** | 0 | ✅ | Fazy 1-8 kompletne; Faza 9 = manual E2E |
 
 ---
 

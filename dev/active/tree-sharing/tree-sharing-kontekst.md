@@ -1,7 +1,17 @@
 # Tree Sharing — Kontekst i decyzje architektoniczne
 
 **Feature:** Zaproszenia + zarządzanie rolami  
-**Data:** 2026-04-07
+**Data:** 2026-04-07  
+**Ostatnia aktualizacja:** 2026-04-08
+
+## Zmiany w Fazie 6 (2026-04-08)
+
+Dodano obsługę `pending_invitation` w `AuthController`:
+- `processLogin()` i `processRegister()` teraz sprawdzają `Session::get('pending_invitation')` po zalogowaniu
+- Jeśli token istnieje → `Session::delete('pending_invitation')` → redirect do `/invite/{token}`
+- Sprawdzenie następuje przed istniejącym `hasPendingInvitations()` — token z sesji ma priorytet
+
+---
 
 ---
 
