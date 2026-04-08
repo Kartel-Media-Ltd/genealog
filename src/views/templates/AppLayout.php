@@ -277,6 +277,17 @@
                             Ustawienia
                         </a>
 
+                        <?php if (\App\Core\Session::get('is_admin')): ?>
+                        <div class="border-t border-[hsl(var(--border))] my-1"></div>
+                        <a href="/admin" role="menuitem"
+                           class="flex items-center gap-2 rounded-md px-3 py-2 text-sm
+                                  text-[hsl(var(--foreground))] hover:bg-[hsl(var(--accent))]
+                                  focus-visible:outline-none focus-visible:bg-[hsl(var(--accent))]">
+                            <?php render_icon('shield-halved', 'solid', 'h-4 w-4') ?>
+                            Panel admina
+                        </a>
+                        <?php endif; ?>
+
                         <div class="border-t border-[hsl(var(--border))] my-1"></div>
 
                         <form method="POST" action="/logout">
@@ -329,6 +340,13 @@
                 <a href="/profile" class="rounded-md px-3 py-2.5 text-sm text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--accent))]">
                     Mój profil
                 </a>
+
+                <?php if (\App\Core\Session::get('is_admin')): ?>
+                <a href="/admin" class="flex items-center gap-2 rounded-md px-3 py-2.5 text-sm text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--accent))]">
+                    <?php render_icon('shield-halved', 'solid', 'h-4 w-4') ?>
+                    Panel admina
+                </a>
+                <?php endif; ?>
 
                 <form method="POST" action="/logout" class="mt-1">
                     <?= \App\Core\Csrf::hiddenInput() ?>
