@@ -148,7 +148,10 @@
                             class="relative flex h-9 w-9 items-center justify-center rounded-md
                                    text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--accent))]
                                    focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))]"
-                            :aria-label="'Powiadomienia' + (count > 0 ? ', ' + count + ' nowych' : '')">
+                            aria-label="Powiadomienia"
+                            :aria-label="'Powiadomienia' + (count > 0 ? ', ' + count + ' nowych' : '')"
+                            aria-haspopup="true"
+                            :aria-expanded="open">
                         <?php render_icon('bell', 'solid', 'h-5 w-5') ?>
                         <span x-show="count > 0" x-cloak
                               class="absolute -top-1 -right-1 inline-flex h-4 min-w-4 items-center justify-center

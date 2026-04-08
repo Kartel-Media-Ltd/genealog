@@ -54,19 +54,19 @@ require_once __DIR__ . '/../atoms/icon.php';
         <!-- Nav -->
         <nav class="flex-1 px-3 py-4 space-y-1">
             <a href="/admin" class="<?= $currentPath === '/admin' ? 'flex items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium bg-white/10 text-white' : 'flex items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium text-slate-300 hover:bg-white/10 hover:text-white transition-colors' ?>">
-                <?php render_icon('gauge-high', 'solid', 'fa-fw h-4 w-4') ?>
+                <?php render_icon('gauge-high', 'solid', 'h-4 w-4') ?>
                 Dashboard
             </a>
             <a href="/admin/users" class="<?= str_starts_with($currentPath, '/admin/users') ? 'flex items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium bg-white/10 text-white' : 'flex items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium text-slate-300 hover:bg-white/10 hover:text-white transition-colors' ?>">
-                <?php render_icon('users', 'solid', 'fa-fw h-4 w-4') ?>
+                <?php render_icon('users', 'solid', 'h-4 w-4') ?>
                 Użytkownicy
             </a>
             <a href="/admin/trees" class="<?= str_starts_with($currentPath, '/admin/trees') ? 'flex items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium bg-white/10 text-white' : 'flex items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium text-slate-300 hover:bg-white/10 hover:text-white transition-colors' ?>">
-                <?php render_icon('tree', 'solid', 'fa-fw h-4 w-4') ?>
+                <?php render_icon('tree', 'solid', 'h-4 w-4') ?>
                 Drzewa
             </a>
             <a href="/admin/logs" class="<?= str_starts_with($currentPath, '/admin/logs') ? 'flex items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium bg-white/10 text-white' : 'flex items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium text-slate-300 hover:bg-white/10 hover:text-white transition-colors' ?>">
-                <?php render_icon('list-ul', 'solid', 'fa-fw h-4 w-4') ?>
+                <?php render_icon('list-ul', 'solid', 'h-4 w-4') ?>
                 Logi
             </a>
         </nav>
