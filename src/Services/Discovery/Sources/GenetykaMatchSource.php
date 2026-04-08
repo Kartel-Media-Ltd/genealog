@@ -24,9 +24,35 @@ use App\Services\Discovery\MatchSourceInterface;
  */
 final class GenetykaMatchSource implements MatchSourceInterface
 {
-    public function __construct(
-        private readonly ?string $localDbPath = null,
-    ) {}
+    private readonly ?string $localDbPath;
+
+    public function __construct(?string $localDbPath = null)
+    {
+        // ZAD-2.11 (P11): walidacja path żeby uniknąć path traversal przy pełnej implementacji.
+        // Dopuszczalne są tylko ścieżki w STORAGE_PATH/geneteka/ — wszystko inne jest
+        // ignorowane (source zostaje wyłączona przez isAvailable() → false).
+        if ($localDbPath === null || $localDbPath === '') {
+            $this->localDbPath = null;
+            return;
+        }
+
+        $real = realpath($localDbPath);
+        $storageRoot = defined('STORAGE_PATH')
+            ? STORAGE_PATH
+            : dirname(__DIR__, 4) . '/storage';
+        $allowed = realpath($storageRoot . '/geneteka');
+
+        if ($real === false
+            || $allowed === false
+            || (!str_starts_with($real, $allowed . DIRECTORY_SEPARATOR) && $real !== $allowed)
+        ) {
+            error_log('[GenetykaMatchSource] invalid or unauthorized path — source disabled: ' . $localDbPath);
+            $this->localDbPath = null;
+            return;
+        }
+
+        $this->localDbPath = $real;
+    }
 
     public function getName(): string
     {
@@ -35,7 +61,13 @@ final class GenetykaMatchSource implements MatchSourceInterface
 
     public function isAvailable(): bool
     {
-        return $this->localDbPath !== null && $this->localDbPath !== '';
+        return $this->localDbPath !== null && is_readable($this->localDbPath);
+    }
+
+    public function getTimeoutSeconds(): int
+    {
+        // Geneteka to lokalne pliki CSV/SQLite — szybsze niż HTTP, ale wolniejsze niż in-memory DB
+        return 8;
     }
 
     /**
@@ -46,6 +78,7 @@ final class GenetykaMatchSource implements MatchSourceInterface
         // TODO: wywołać GenetykaService::search($criteria->toArray()) z planu registries,
         // transformować wyniki do MatchResult[] z sourceType='external' i confidence
         // bazowaną na match_score z rejestru (fallback 0.6).
+        // UWAGA (ZAD-2.7 P7): przy implementacji dodaj audit log (Art. 30) przed return.
         return [];
     }
 }
