@@ -1,6 +1,6 @@
 # Genealog — TO DO
 
-> **Stan:** 2026-04-08 (po 4 audytach bezpieczeństwa — backend, backend-2, backend-3, backend-4; łącznie ~130+ zadań naprawczych zrealizowanych)
+> **Stan:** 2026-04-08 (po 5 audytach bezpieczeństwa — backend, backend-2, backend-3, backend-4, backend-5; łącznie ~134+ zadań naprawczych zrealizowanych)
 >
 > Dokument zbiera wszystko co pozostało do rozpatrzenia / implementacji w projekcie.
 >
@@ -9,6 +9,7 @@
 > - ✅ `/ultra-audit backend-2` → 21 zadań, 17 zrealizowanych (Faza 3 architektury świadomie odroczona)
 > - ✅ `/ultra-audit backend-3` → 25 zadań, **25/25 zrealizowane**
 > - ✅ `/ultra-audit backend-4` → 27 zadań, **25/27 zrealizowane** (D13, D14 odroczone)
+> - ✅ `/ultra-audit backend-5` → 4 zadania, **4/4 zrealizowane** — system osiąga status **PASS** (bez warunków)
 
 ---
 
@@ -68,7 +69,7 @@ ARCHIVES_API_KEY=...            # NIEDOSTĘPNE — szukajwarchiwach.gov.pl nie m
 
 ---
 
-## ✅ Audyty bezpieczeństwa backend-3 + backend-4 — KOMPLETNE (2026-04-08)
+## ✅ Audyty bezpieczeństwa backend-3 + backend-4 + backend-5 — KOMPLETNE (2026-04-08)
 
 **Backend-3** (`dev/audit/backend-3/`) — 25/25 zadań:
 - ✅ **K1** SMTP header injection — `EmailService::sanitizeHeader()` + MIME boundary `bin2hex(random_bytes)`
@@ -121,7 +122,7 @@ Wszystkie fazy (1-4) zaimplementowane. Wszystkie issues z review naprawione:
 
 | Feature | Pending | Blocker? | Komentarz |
 |---|---|---|---|
-| **font-awesome** | 109 | ❌ | Cały feature niezaimplementowany — `/ultra-workaholic font-awesome` |
+| **font-awesome** | 0 | ✅ | Fazy 1-8 kompletne; 141× render_icon(), 0 inline SVG; atrybucja w footerze |
 | **gedcom** | 0 | ✅ | Fazy 1-5 kompletne; blocking/important/nity zweryfikowane; E2E = manual |
 | **global-admin** | 0 | ✅ | Fazy 1-5 kompletne; wszystkie nity N1-N7 zweryfikowane |
 | **person-discovery** | 0 | ✅ | KOMPLETNE (poza I7 reindex batch — patrz niżej) |
@@ -148,11 +149,10 @@ Wszystkie fazy (1-4) zaimplementowane. Wszystkie issues z review naprawione:
 - **Fix:** Zrefactorować `public/index.php` żeby używał Container — nowe serwisy = 1 linia rejestracji zamiast modyfikacji konstruktora
 - Korzyść: czystszy bootstrap, łatwiejsze testy integracyjne (mock container)
 
-### Inline SVG → Font Awesome migration
+### Inline SVG → Font Awesome migration ✅
 
-- 19 plików w `src/views/` używa inline SVG
-- Plan gotowy: `dev/active/font-awesome/`
-- **Po wdrożeniu Font Awesome:** uruchomić `/ultra-workaholic font-awesome` — 8 faz, ~2h pracy
+- Migracja ukończona: 141× `render_icon()`, 0 inline SVG pozostało
+- Atrybucja w footerze `AppLayout.php` (CC BY 4.0)
 
 ### Tests — pokrycie Discovery klas
 
@@ -240,8 +240,8 @@ Aktualnie tylko `FingerprintServiceTest` (24 testy). Brak testów dla:
 
 ### Sprint 2 (UX + dokończenie features — 6-8h)
 
-5. **Font Awesome implementacja** (`/ultra-workaholic font-awesome` — 8 faz)
-6. **Tree sharing** (cały feature 0/64 — collaboration features)
+5. ~~**Font Awesome implementacja**~~ ✅ ukończone
+6. ~~**Tree sharing**~~ ✅ ukończone (Fazy 1-8)
 7. **Print-PDF Faza 8** (weryfikacja E2E + pozostałe ulepszenia)
 
 ### Sprint 3 (rozszerzenia — 8-12h)
