@@ -4,7 +4,7 @@ use App\Core\Csrf;
 
 /** @var string $token */
 ?>
-<div class="mx-auto max-w-md py-12">
+<div class="mx-auto max-w-xl py-12">
     <div class="rounded-lg border border-border bg-card p-8 shadow-sm">
         <h1 class="mb-2 text-2xl font-semibold text-foreground">Ustaw nowe hasło</h1>
         <p class="mb-6 text-sm text-muted-foreground">

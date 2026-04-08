@@ -97,10 +97,14 @@ final class FingerprintService
         if ($isLiving) {
             return false;
         }
+        // Brak roku urodzenia przy is_living=0: traktujemy jako historyczną.
+        // Właściciel explicite oznaczył osobę jako nieżyjącą — to wystarczające
+        // potwierdzenie przy braku daty. Próg wiekowy nie jest weryfikowalny.
         if ($birthYear === null) {
-            return false;
+            return true;
         }
-        return $birthYear < ((int)date('Y')) - 100;
+        $threshold = defined('DISCOVERY_HISTORICAL_YEARS') ? DISCOVERY_HISTORICAL_YEARS : 100;
+        return $birthYear < ((int)date('Y')) - $threshold;
     }
 
     /**

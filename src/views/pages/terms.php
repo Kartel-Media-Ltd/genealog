@@ -1,5 +1,5 @@
 <?php declare(strict_types=1); ?>
-<main id="main-content" class="max-w-3xl mx-auto py-10 px-4 prose prose-sm">
+<main id="main-content" class="max-w-2xl mx-auto py-10 px-4 prose prose-sm max-w-none">
     <nav class="mb-6 text-sm text-muted-foreground" aria-label="Nawigacja">
         <a href="/" class="hover:text-foreground transition-colors">Strona główna</a>
         <span class="mx-2">/</span>

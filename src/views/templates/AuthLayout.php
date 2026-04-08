@@ -81,7 +81,7 @@
   └──────────────────────────────────────────────────────────────┘
 
   Mobile: pełna szerokość, padding 16px, brak cienia karty
-  Tablet+: karta wyśrodkowana, max-w-md, shadow-md
+  Tablet+: karta wyśrodkowana, max-w-xl, shadow-md
 -->
 <body class="min-h-dvh bg-[hsl(var(--muted))] flex flex-col">
 
@@ -115,13 +115,13 @@
         </div>
 
         <!-- Flash messages (po przekierowaniu) -->
-        <div class="w-full max-w-md">
+        <div class="w-full max-w-2xl">
             <?php require_once __DIR__ . '/../molecules/flash-messages.php'; ?>
             <?php render_flash_messages(); ?>
         </div>
 
         <!-- Karta formularza -->
-        <div class="w-full max-w-md">
+        <div class="w-full max-w-2xl">
             <?= $content ?? '' ?>
         </div>
     </main>

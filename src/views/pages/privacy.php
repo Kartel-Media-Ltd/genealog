@@ -1,5 +1,5 @@
 <?php declare(strict_types=1); ?>
-<main id="main-content" class="max-w-3xl mx-auto py-10 px-4 prose prose-sm">
+<main id="main-content" class="max-w-2xl mx-auto py-10 px-4 prose prose-sm max-w-none">
     <nav class="mb-6 text-sm text-muted-foreground" aria-label="Nawigacja">
         <a href="/" class="hover:text-foreground transition-colors">Strona główna</a>
         <span class="mx-2">/</span>
@@ -39,8 +39,7 @@
         <h2 class="text-xl font-semibold mt-6 mb-3">1. Administrator danych</h2>
         <p>
             Administratorem danych osobowych jest <strong><?= htmlspecialchars(defined('COMPANY_NAME') ? COMPANY_NAME : '[TODO]') ?></strong>,
-            z siedzibą <?= htmlspecialchars(defined('COMPANY_ADDRESS') ? COMPANY_ADDRESS : '[TODO]') ?>,
-            NIP: <?= htmlspecialchars(defined('COMPANY_NIP') ? COMPANY_NIP : '[TODO]') ?>.
+            z siedzibą <?= htmlspecialchars(defined('COMPANY_ADDRESS') ? COMPANY_ADDRESS : '[TODO]') ?>.
         </p>
         <p>Kontakt w sprawach ochrony danych: <strong><?= htmlspecialchars(defined('DPO_EMAIL') ? DPO_EMAIL : '[TODO]') ?></strong>.</p>
     </section>

@@ -20,6 +20,80 @@
     <!-- Alpine.js (lokalny vendor) -->
     <script defer src="/vendor/alpine.min.js"></script>
 
+    <!-- Alpine store: globalny modal zastępujący natywny alert() -->
+    <script>
+        document.addEventListener('alpine:init', () => {
+            Alpine.store('modal', {
+                open:      false,
+                title:     '',
+                message:   '',
+                type:      'info',
+                isConfirm: false,
+                _callback: null,
+
+                show(message, title, type) {
+                    const defaultTitles = {
+                        error: 'Błąd', warning: 'Uwaga', success: 'Sukces', info: 'Informacja',
+                    };
+                    this.message   = message || '';
+                    this.title     = title || defaultTitles[type] || 'Informacja';
+                    this.type      = type || 'info';
+                    this.isConfirm = false;
+                    this._callback = null;
+                    this.open      = true;
+                    window.dispatchEvent(new Event('modal-opened'));
+                },
+
+                // Confirm-modal: callback wywoływany po kliknięciu OK
+                showConfirm(message, callback, title, type) {
+                    const defaultTitles = {
+                        error: 'Błąd', warning: 'Uwaga', success: 'Sukces', info: 'Potwierdzenie',
+                    };
+                    this.message   = message || '';
+                    this.title     = title || defaultTitles[type] || 'Potwierdzenie';
+                    this.type      = type || 'warning';
+                    this.isConfirm = true;
+                    this._callback = callback || null;
+                    this.open      = true;
+                    window.dispatchEvent(new Event('modal-opened'));
+                },
+
+                // Wywoływane przez przycisk OK (zarówno alert jak i confirm)
+                confirm() {
+                    this.open = false;
+                    if (this._callback) {
+                        const cb = this._callback;
+                        this._callback = null;
+                        cb();
+                    }
+                },
+
+                hide() {
+                    this._callback = null;
+                    this.open = false;
+                },
+            });
+        });
+
+        // Globalny helper alert — dostępny w czystym JS poza Alpine (np. print-helper.js)
+        window.showModal = function (message, title, type) {
+            if (typeof Alpine === 'undefined' || !Alpine.store('modal')) {
+                alert(message);
+                return;
+            }
+            Alpine.store('modal').show(message, title, type || 'info');
+        };
+
+        // Globalny helper confirm — zastępuje natywny confirm()
+        window.showConfirm = function (message, callback, title, type) {
+            if (typeof Alpine === 'undefined' || !Alpine.store('modal')) {
+                if (confirm(message) && callback) callback();
+                return;
+            }
+            Alpine.store('modal').showConfirm(message, callback, title, type);
+        };
+    </script>
+
     <script>
         tailwind.config = {
             darkMode: 'class',
@@ -400,12 +474,6 @@
                               focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] rounded">
                         Regulamin
                     </a>
-                    <a href="https://fontawesome.com/license/free"
-                       class="text-sm text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]
-                              focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] rounded"
-                       target="_blank" rel="noopener noreferrer">
-                        Icons: Font Awesome Free (CC BY 4.0)
-                    </a>
                 </nav>
             </div>
         </div>
@@ -437,6 +505,9 @@
         <!-- Spacer so page content isn't hidden behind the banner -->
         <div class="h-14"></div>
     <?php endif; ?>
+
+    <!-- Global modal alert — zastępuje natywny alert() -->
+    <?php include VIEWS_PATH . '/organisms/modal-alert.php'; ?>
 
     <script>
     function notificationBell() {

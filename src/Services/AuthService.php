@@ -49,7 +49,11 @@ class AuthService
         $id   = Uuid::generate();
         $hash = password_hash($password, PASSWORD_BCRYPT, ['cost' => BCRYPT_COST]);
 
-        $this->userRepo->create($id, $email, $hash, $name);
+        // ZAD-1.1 (K1): RODO Art. 7(1) — zapisz wersję regulaminu akceptowaną
+        // przy rejestracji. Umożliwia udowodnienie zgody + wyłapanie userów
+        // z nieaktualną wersją (np. do re-acceptance prompt).
+        $termsVersion = defined('TERMS_VERSION') ? TERMS_VERSION : '2026-04-08';
+        $this->userRepo->create($id, $email, $hash, $name, 'pl', $termsVersion);
 
         if ($ip !== null) {
             $this->recordAttempt($ip, 'register');

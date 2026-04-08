@@ -20,6 +20,33 @@ require_once __DIR__ . '/../atoms/icon.php';
     <link rel="preload" href="/vendor/fontawesome/webfonts/fa-solid-900.woff2"
           as="font" type="font/woff2" crossorigin>
     <link rel="stylesheet" href="/vendor/fontawesome/css/all.min.css">
+    <!-- Alpine.js -->
+    <script defer src="/vendor/alpine.min.js"></script>
+    <!-- Alpine store: modal alert/confirm -->
+    <script>
+        document.addEventListener('alpine:init', () => {
+            Alpine.store('modal', {
+                open: false, title: '', message: '', type: 'info',
+                isConfirm: false, _callback: null,
+                show(message, title, type) {
+                    const t = { error:'Błąd', warning:'Uwaga', success:'Sukces', info:'Informacja' };
+                    this.message = message || ''; this.title = title || t[type] || 'Informacja';
+                    this.type = type || 'info'; this.isConfirm = false; this._callback = null;
+                    this.open = true; window.dispatchEvent(new Event('modal-opened'));
+                },
+                showConfirm(message, callback, title, type) {
+                    const t = { error:'Błąd', warning:'Uwaga', success:'Sukces', info:'Potwierdzenie' };
+                    this.message = message || ''; this.title = title || t[type] || 'Potwierdzenie';
+                    this.type = type || 'warning'; this.isConfirm = true; this._callback = callback || null;
+                    this.open = true; window.dispatchEvent(new Event('modal-opened'));
+                },
+                confirm() { this.open = false; if (this._callback) { const cb = this._callback; this._callback = null; cb(); } },
+                hide() { this._callback = null; this.open = false; },
+            });
+        });
+        window.showModal   = (m, t, type) => { if (typeof Alpine !== 'undefined') Alpine.store('modal').show(m, t, type); else alert(m); };
+        window.showConfirm = (m, cb, t, type) => { if (typeof Alpine !== 'undefined') Alpine.store('modal').showConfirm(m, cb, t, type); else { if (confirm(m) && cb) cb(); } };
+    </script>
     <style>
         :root {
             --background: 0 0% 100%; --foreground: 240 10% 3.9%;
@@ -111,5 +138,6 @@ require_once __DIR__ . '/../atoms/icon.php';
         </main>
     </div>
 </div>
+<?php include __DIR__ . '/../organisms/modal-alert.php'; ?>
 </body>
 </html>

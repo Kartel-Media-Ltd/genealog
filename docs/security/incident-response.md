@@ -79,6 +79,42 @@ W projekcie one-person — wszystkie role pełni właściciel.
 3. Ostrzeż użytkowników o ewentualnej utracie najnowszych zmian (RPO 24h)
 4. Rozpocznij dochodzenie (root cause analysis)
 
+### E) Awaria zewnętrznej zależności (Discovery Sources)
+
+**Scenariusz:** FamilySearch API lub Geneteka są niedostępne / zwracają błędy.
+
+**Wykrycie:**
+- Alert monitoring: >10% fail rate requestów do external source
+- User reports: "wyszukiwanie w rejestrze X się zawiesza"
+- Log analysis: powtarzające się `[MatchingService] source "..." failed` w error_log
+
+**Mitigation (automatyczne):**
+1. `MatchingService::findCandidates` ma **exception isolation per source** (`try/catch(\Throwable) + continue`) — awaria jednego source nie wywala całości, pozostałe działają normalnie.
+2. `MatchSourceInterface::getTimeoutSeconds()` wymusza cap latency per source (10s FamilySearch, 8s Geneteka) — nie zawiesza request usera bez limitu.
+3. Po timeout `search()` zwraca `[]` i user widzi wyniki z dostępnych źródeł.
+
+**Mitigation (manualne):**
+1. Tymczasowo wyłącz source przez env:
+   ```bash
+   unset FAMILYSEARCH_CLIENT_ID && docker restart genealog-app
+   ```
+   `isAvailable()` zwróci `false` → `MatchSourceRegistry::getEnabled()` pominie source, `MatchingService` nie wywoła.
+2. Komunikat użytkownikom: banner lub flash "Wyszukiwanie w rejestrze X chwilowo niedostępne" (TODO: system banner do zaimplementowania).
+
+**Root cause analysis:**
+- Status providera (sprawdź https://status.familysearch.org lub status page Geneteka)
+- Rate limit z naszej strony (za dużo requestów)
+- Problem z network / firewall
+- Zmiany API (breaking changes w wersji)
+- SCC / compliance issue (FamilySearch wycofał dostęp?)
+
+**Recovery:**
+- Przywróć env variable
+- Monitor 1h — verify rate sukcesu
+- Zaloguj incident w `docs/security/incident-log.md`
+
+**SLA cel:** RTO dla external source **<2h** (external sources są opcjonalne — nie blokują głównego flow usera). Local i Cross-tree są zawsze dostępne.
+
 ## 6. Kontakty
 
 | Instytucja | Kontakt | Kiedy |

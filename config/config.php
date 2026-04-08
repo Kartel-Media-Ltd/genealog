@@ -30,6 +30,27 @@ define('BCRYPT_COST',         12);
 define('RATE_LIMIT_ATTEMPTS', 5);
 define('RATE_LIMIT_WINDOW',   900); // 15 min
 
+// Discovery — próg historyczności (lat wstecz od daty urodzenia).
+// Osoby bez daty urodzenia oznaczone jako nieżyjące (is_living=0) są zawsze traktowane
+// jako historyczne — brak daty = niemożność weryfikacji życia, ryzyko minimalne.
+define('DISCOVERY_HISTORICAL_YEARS', (int)($_ENV['DISCOVERY_HISTORICAL_YEARS'] ?? 100));
+
+// RODO Art. 7(1) — wersja regulaminu akceptowana przy rejestracji.
+// Zmiana tej wartości = nowi userzy akceptują nową wersję. Istniejący userzy
+// zostają z poprzednią wersją — rozważ mechanizm re-acceptance przy kolejnych
+// zmianach regulaminu (np. prompt po logowaniu).
+define('TERMS_VERSION', '2026-04-08');
+
+// ZAD-2.8 / ZAD-3.7: dane administratora + DPO — RODO Art. 13-14.
+// W produkcji uzupełnij przez env variables, nie hardkoduj.
+// Wartości "[TODO]" są świadomą sygnalizacją że wdrożenie wymaga ustaleń prawnych.
+define('COMPANY_NAME',    $_ENV['COMPANY_NAME']    ?? '[TODO: nazwa administratora]');
+define('COMPANY_ADDRESS', $_ENV['COMPANY_ADDRESS'] ?? '[TODO: adres]');
+define('COMPANY_NIP',     $_ENV['COMPANY_NIP']     ?? '[TODO: NIP]');
+define('DPO_EMAIL',       $_ENV['DPO_EMAIL']       ?? '[TODO: dpo@example.com]');
+define('CONTACT_EMAIL',   $_ENV['CONTACT_EMAIL']   ?? '[TODO: kontakt@example.com]');
+define('SERVER_LOCATION', $_ENV['SERVER_LOCATION'] ?? '[TODO: lokalizacja serwera EU]');
+
 // Ścieżki
 define('ROOT_PATH',    dirname(__DIR__));
 define('SRC_PATH',     ROOT_PATH . '/src');
@@ -37,3 +58,12 @@ define('STORAGE_PATH', ROOT_PATH . '/storage');
 define('VIEWS_PATH',   SRC_PATH . '/views');
 define('TRUSTED_PROXIES', array_filter(explode(',', $_ENV['TRUSTED_PROXIES'] ?? '')));
 define('UPLOAD_MAX_MB', (int)($_ENV['UPLOAD_MAX_MB'] ?? 10));
+
+// Redis — opcjonalny (Discovery async queue + rate limiting)
+// Konfiguracja przez .env.local:
+//   REDIS_SOCKET=/var/run/redis/redis.sock   (Unix socket)
+//   lub: REDIS_HOST=127.0.0.1  +  REDIS_PORT=6379  (TCP)
+// Brak obu zmiennych = Discovery działa synchronicznie (fallback <1000 osób).
+define('REDIS_SOCKET', $_ENV['REDIS_SOCKET'] ?? null);
+define('REDIS_HOST',   $_ENV['REDIS_HOST']   ?? null);
+define('REDIS_PORT',   $_ENV['REDIS_PORT']   ?? '6379');

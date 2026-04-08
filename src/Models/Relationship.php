@@ -23,6 +23,8 @@ class Relationship
         public readonly ?string $relatedPhotoPath = null,
         public readonly ?string $relatedGender    = null,
         public readonly ?string $relatedBirthDate = null,
+        public readonly ?string $relatedDeathDate = null,
+        public readonly bool    $relatedIsLiving  = true,
     ) {}
 
     public static function fromArray(array $d): self
@@ -42,6 +44,8 @@ class Relationship
             relatedPhotoPath: $d['related_photo_path'] ?? null,
             relatedGender:    $d['related_gender']     ?? null,
             relatedBirthDate: $d['related_birth_date'] ?? null,
+            relatedDeathDate: $d['related_death_date'] ?? null,
+            relatedIsLiving:  isset($d['related_is_living']) ? (bool)(int)$d['related_is_living'] : true,
         );
     }
 

@@ -39,13 +39,18 @@ final class CrossTreeMatchSource implements MatchSourceInterface
 
     public function getName(): string
     {
-        return 'cross_tree';
+        return MatchSourceInterface::SOURCE_CROSS_TREE;
     }
 
     public function isAvailable(): bool
     {
         // Dostępne jeśli istnieje tabela (zawsze po migracji 008).
         return true;
+    }
+
+    public function getTimeoutSeconds(): int
+    {
+        return 5; // local DB query (global_person_index)
     }
 
     /**
@@ -106,6 +111,13 @@ final class CrossTreeMatchSource implements MatchSourceInterface
             $binds[] = $criteria->birthYear + self::BIRTH_YEAR_TOLERANCE;
         }
 
+        // Opcjonalny filtr gender — gdy podano i nie jest 'unknown'
+        $genderFilter = '';
+        if ($criteria->gender !== null && $criteria->gender !== 'unknown') {
+            $genderFilter = ' AND (gpi.gender = ? OR gpi.gender = \'unknown\')';
+            $binds[]      = $criteria->gender;
+        }
+
         // I9: bierzemy first_name/last_name bezpośrednio z global_person_index (immutable)
         // zamiast JOINować tabelę `persons` która jest mutowalna. To zapobiega ujawnieniu
         // aktualnych wartości gdy user zmieni visibility na private przed unindex'em.
@@ -115,9 +127,10 @@ final class CrossTreeMatchSource implements MatchSourceInterface
                        gpi.tree_id,
                        gpi.region,
                        gpi.earliest_birth_year AS birth_year,
-                       gpi.first_name, gpi.last_name
+                       gpi.first_name, gpi.last_name,
+                       gpi.gender
                 FROM global_person_index gpi
-                WHERE $whereMatch AND $whereExclude{$birthYearFilter}
+                WHERE $whereMatch AND $whereExclude{$birthYearFilter}{$genderFilter}
                   AND gpi.first_name IS NOT NULL
                 LIMIT " . self::LIMIT;
 
@@ -139,6 +152,15 @@ final class CrossTreeMatchSource implements MatchSourceInterface
                 $confidence = self::CONFIDENCE_SOUNDEX_WITH_YEAR;
             } else {
                 $confidence = self::CONFIDENCE_SOUNDEX_ONLY;
+            }
+
+            // Bonus +0.05 gdy płeć się zgadza (oba pola znane i zgodne)
+            if ($criteria->gender !== null
+                && $criteria->gender !== 'unknown'
+                && isset($row['gender'])
+                && $row['gender'] === $criteria->gender
+            ) {
+                $confidence = min(1.0, $confidence + 0.05);
             }
 
             // I8 fix: 8 znaków HMAC (z user secret) zamiast 4 znaków sha256
@@ -168,11 +190,13 @@ final class CrossTreeMatchSource implements MatchSourceInterface
         // Sortuj po confidence malejąco
         usort($out, static fn(MatchResult $a, MatchResult $b) => $b->confidence <=> $a->confidence);
 
-        // Suggestion: log liczby wyników dla debug
-        if (count($out) > 0) {
+        // ZAD-2.4 (P4) + ZAD-3.10 (D10): debug log BEZ userId (info disclosure).
+        // Dodatkowo sampling 1% — chroni log przed spamem przy popularnych nazwiskach.
+        if (count($out) > 0 && random_int(1, 100) === 1) {
             error_log(sprintf(
-                '[CrossTreeMatchSource] returned %d matches for user=%s (hash=%s)',
-                count($out), $context->currentUserId, $hash !== null ? 'yes' : 'no'
+                '[CrossTreeMatchSource] %d matches (hash=%s, sampled 1%%)',
+                count($out),
+                $hash !== null ? 'yes' : 'no'
             ));
         }
 

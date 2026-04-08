@@ -35,7 +35,7 @@ require_once __DIR__ . '/../../../atoms/icon.php';
             <div class="rounded-md border border-primary/30 bg-primary/5 p-4">
                 <h2 class="text-sm font-semibold text-foreground mb-2">Jak to działa?</h2>
                 <p class="text-sm text-muted-foreground leading-relaxed">
-                    Gdy włączysz odkrywanie, Twoje <strong>osoby historyczne</strong> (zmarłe lub
+                    Gdy włączysz udostępnianie, Twoje <strong>osoby historyczne</strong> (zmarłe lub
                     urodzone ponad 100 lat temu, bez statusu „prywatne") trafią do anonimowego
                     globalnego indeksu. Inni użytkownicy mogą dopasować swoje osoby do Twoich
                     i znaleźć potencjalne powiązania rodzinne.
@@ -44,7 +44,7 @@ require_once __DIR__ . '/../../../atoms/icon.php';
                     <li><strong>Żyjące osoby nigdy</strong> nie są udostępniane (RODO)</li>
                     <li>Inni widzą tylko <strong>rok urodzenia i województwo</strong> — bez daty, bez miejsca, bez zdjęć</li>
                     <li>Nazwa Twojego drzewa nie jest ujawniana — tylko anonimowy identyfikator</li>
-                    <li>Możesz w każdej chwili wyłączyć odkrywanie — wpisy zostaną natychmiast usunięte</li>
+                    <li>Możesz w każdej chwili wyłączyć udostępnianie — wpisy zostaną natychmiast usunięte</li>
                 </ul>
             </div>
 

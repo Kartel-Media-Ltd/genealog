@@ -43,6 +43,13 @@ final class FamilySearchMatchSource implements MatchSourceInterface
         return $this->clientId !== null && $this->clientId !== '';
     }
 
+    public function getTimeoutSeconds(): int
+    {
+        // External HTTPS API — wyższy timeout. Fullyimplementacja powinna użyć
+        // CURLOPT_TIMEOUT tej wartości żeby nie zawieszać request usera.
+        return 10;
+    }
+
     /**
      * @return list<MatchResult>
      */
@@ -50,6 +57,7 @@ final class FamilySearchMatchSource implements MatchSourceInterface
     {
         // TODO: wywołać FamilySearchService::search($criteria) z planu registries
         // i transformować wyniki do MatchResult[] z sourceType='external'.
+        // UWAGA (ZAD-2.7 P7): przy implementacji dodaj audit log (Art. 30) przed return.
         return [];
     }
 }

@@ -383,7 +383,7 @@
       .style('padding',        '8px')
       .style('border-radius',  '8px')
       .style('border',         '1px solid hsl(var(--border))')
-      .style('background',     'hsl(var(--card))')
+      .style('background',     d => d.data.isLiving === false ? 'hsl(0,0%,93%)' : 'hsl(var(--card))')
       .style('box-shadow',     '0 1px 3px rgba(0,0,0,.1)')
       .style('overflow',       'hidden')
       .style('user-select',    'none')

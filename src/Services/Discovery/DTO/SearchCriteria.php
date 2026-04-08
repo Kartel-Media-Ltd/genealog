@@ -8,12 +8,17 @@ namespace App\Services\Discovery\DTO;
  */
 final class SearchCriteria
 {
+    /** @var list<string> */
+    private const VALID_GENDERS = ['male', 'female', 'unknown'];
+
     public function __construct(
         public readonly string  $firstName,
         public readonly string  $lastName,
         public readonly ?int    $birthYear,
         public readonly ?string $birthPlace,
-        public readonly ?int    $deathYear = null,
+        public readonly ?int    $deathYear  = null,
+        public readonly ?string $deathPlace = null,
+        public readonly ?string $gender     = null,  // 'male'|'female'|'unknown'|null (null = nieznana)
     ) {}
 
     public static function fromArray(array $input): self
@@ -36,6 +41,10 @@ final class SearchCriteria
         }
 
         $birthPlace = trim((string)($input['birthPlace'] ?? $input['birth_place'] ?? ''));
+        $deathPlace = trim((string)($input['deathPlace'] ?? $input['death_place'] ?? ''));
+
+        $rawGender = trim((string)($input['gender'] ?? ''));
+        $gender    = in_array($rawGender, self::VALID_GENDERS, true) ? $rawGender : null;
 
         return new self(
             firstName:  $firstName,
@@ -43,6 +52,8 @@ final class SearchCriteria
             birthYear:  $birthYear,
             birthPlace: $birthPlace !== '' ? $birthPlace : null,
             deathYear:  $deathYear,
+            deathPlace: $deathPlace !== '' ? $deathPlace : null,
+            gender:     $gender,
         );
     }
 

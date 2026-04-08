@@ -17,6 +17,11 @@ use App\Services\Discovery\DTO\SearchCriteria;
  */
 interface MatchSourceInterface
 {
+    // ZAD-3.6 (D6): stałe dla nazw źródeł — eliminuje magic strings w MatchingService.
+    public const SOURCE_LOCAL      = 'local';
+    public const SOURCE_CROSS_TREE = 'cross_tree';
+    public const SOURCE_EXTERNAL   = 'external';
+
     /**
      * Unikalna nazwa źródła. Używana jako klucz w registry i w odpowiedzi JSON.
      * Np. 'local', 'cross_tree', 'familysearch', 'geneteka'.
@@ -33,4 +38,16 @@ interface MatchSourceInterface
      * Jeśli false → MatchSourceRegistry::getEnabled() pomija.
      */
     public function isAvailable(): bool;
+
+    /**
+     * ZAD-2.5 (P5): timeout w sekundach dla wywołania search().
+     *
+     * Local/internal sources: 5s (default).
+     * External HTTP sources: 10-15s (FamilySearch API, Geneteka scraper).
+     *
+     * Używane przez MatchingService + implementacje external sources żeby
+     * wymusić timeout (curl CURLOPT_TIMEOUT lub stream_context timeout).
+     * Eliminuje sytuację gdzie zawieszona external source blokuje cały request usera.
+     */
+    public function getTimeoutSeconds(): int;
 }

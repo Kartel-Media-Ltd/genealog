@@ -183,6 +183,7 @@ require_once __DIR__ . '/../../../atoms/icon.php';
                 <div class="space-y-1.5">
                     <label for="gender" class="block text-sm font-medium text-foreground">Płeć</label>
                     <select id="gender" name="gender"
+                            @change="triggerSearch()"
                             class="w-full h-10 px-3 py-2 rounded-md border border-border bg-background
                                    text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring
                                    focus:border-transparent">
@@ -203,6 +204,7 @@ require_once __DIR__ . '/../../../atoms/icon.php';
                         </label>
                         <input type="text" id="birth_date" name="birth_date" maxlength="10"
                                placeholder="np. 1945 lub 1945-06-15"
+                               @input.debounce.400ms="triggerSearch()"
                                class="w-full h-10 px-3 py-2 rounded-md border border-border bg-background
                                       text-foreground text-sm placeholder:text-muted-foreground
                                       focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent">
@@ -210,6 +212,7 @@ require_once __DIR__ . '/../../../atoms/icon.php';
                     <div class="space-y-1.5">
                         <label for="birth_place" class="block text-sm font-medium text-foreground">Miejsce urodzenia</label>
                         <input type="text" id="birth_place" name="birth_place" maxlength="255"
+                               @input.debounce.400ms="triggerSearch()"
                                class="w-full h-10 px-3 py-2 rounded-md border border-border bg-background
                                       text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring
                                       focus:border-transparent">
@@ -227,6 +230,7 @@ require_once __DIR__ . '/../../../atoms/icon.php';
                         </label>
                         <input type="text" id="death_date" name="death_date" maxlength="10"
                                placeholder="np. 2010 lub 2010-03-22"
+                               @input.debounce.400ms="triggerSearch()"
                                class="w-full h-10 px-3 py-2 rounded-md border border-border bg-background
                                       text-foreground text-sm placeholder:text-muted-foreground
                                       focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent">
@@ -234,6 +238,7 @@ require_once __DIR__ . '/../../../atoms/icon.php';
                     <div class="space-y-1.5">
                         <label for="death_place" class="block text-sm font-medium text-foreground">Miejsce śmierci</label>
                         <input type="text" id="death_place" name="death_place" maxlength="255"
+                               @input.debounce.400ms="triggerSearch()"
                                class="w-full h-10 px-3 py-2 rounded-md border border-border bg-background
                                       text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring
                                       focus:border-transparent">
@@ -248,7 +253,7 @@ require_once __DIR__ . '/../../../atoms/icon.php';
                 <div class="flex items-start gap-3 rounded-md border border-border bg-muted/40 p-4">
                     <input type="checkbox" id="is_living" name="is_living" value="1" checked
                            x-model="isLiving"
-                           @change="if(isLiving) { visibility = 'private' }"
+                           @change="visibility = isLiving ? 'private' : 'anonymous'; triggerSearch()"
                            class="mt-0.5 h-4 w-4 rounded border-border text-primary
                                   focus:ring-2 focus:ring-ring focus:ring-offset-2">
                     <div>
@@ -261,20 +266,101 @@ require_once __DIR__ . '/../../../atoms/icon.php';
                     </div>
                 </div>
 
-                <div class="space-y-1.5">
-                    <label for="visibility" class="block text-sm font-medium text-foreground">Widoczność</label>
-                    <select id="visibility" name="visibility"
-                            x-model="visibility"
-                            :disabled="isLiving"
-                            class="w-full h-10 px-3 py-2 rounded-md border border-border bg-background
-                                   text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring
-                                   focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed">
-                        <option value="private">Prywatne (tylko Ty i zaproszeni)</option>
-                        <option value="public">Publiczne (widoczne w wyszukiwaniu)</option>
-                        <option value="anonymous">Anonimowe (tylko w globalnym indeksie)</option>
-                    </select>
-                    <p x-show="isLiving" class="text-xs text-amber-600">
-                        Żyjące osoby są zawsze prywatne (RODO).
+                <div class="space-y-2">
+                    <p class="text-sm font-medium text-foreground">Widoczność</p>
+
+                    <!-- Blokada dla żyjących -->
+                    <p x-show="isLiving" x-cloak
+                       class="text-xs text-amber-600 flex items-center gap-1.5">
+                        <i class="fa-solid fa-triangle-exclamation fa-fw"></i>
+                        Żyjące osoby są zawsze prywatne zgodnie z RODO — widoczność zostanie ustawiona automatycznie.
+                    </p>
+
+                    <!-- Ukryty input — zawsze wysyła wartość z Alpine (działa też gdy radio disabled) -->
+                    <input type="hidden" name="visibility" :value="visibility">
+
+                    <div class="space-y-2" :class="isLiving ? 'opacity-40 pointer-events-none select-none' : ''">
+
+                        <!-- Prywatne -->
+                        <label class="flex items-start gap-3 p-3 rounded-md border cursor-pointer transition-colors"
+                               :class="visibility === 'private'
+                                   ? 'border-foreground/40 bg-muted/60'
+                                   : 'border-border hover:border-foreground/20 hover:bg-muted/30'">
+                            <input type="radio" value="private" x-model="visibility"
+                                   class="mt-0.5 h-4 w-4 shrink-0 text-primary border-border focus:ring-ring">
+                            <div>
+                                <span class="text-sm font-medium text-foreground flex items-center gap-1.5">
+                                    <i class="fa-solid fa-lock fa-fw text-muted-foreground"></i>
+                                    Prywatne
+                                </span>
+                                <p class="mt-1 text-xs text-muted-foreground leading-relaxed">
+                                    Dane osoby widoczne tylko dla Ciebie i zaproszonych współpracowników tego drzewa.
+                                    Osoba nie pojawia się w żadnym wyszukiwaniu poza Twoim drzewem.
+                                    Domyślne ustawienie — odpowiednie dla wszystkich żyjących osób oraz dla osób,
+                                    których danych nie chcesz udostępniać.
+                                </p>
+                            </div>
+                        </label>
+
+                        <!-- Publiczne -->
+                        <label class="flex items-start gap-3 p-3 rounded-md border cursor-pointer transition-colors"
+                               :class="visibility === 'public'
+                                   ? 'border-blue-400 bg-blue-50'
+                                   : 'border-border hover:border-blue-200 hover:bg-blue-50/30'">
+                            <input type="radio" value="public" x-model="visibility"
+                                   class="mt-0.5 h-4 w-4 shrink-0 text-primary border-border focus:ring-ring">
+                            <div>
+                                <span class="text-sm font-medium text-foreground flex items-center gap-1.5">
+                                    <i class="fa-solid fa-eye fa-fw text-blue-500"></i>
+                                    Publiczne
+                                </span>
+                                <p class="mt-1 text-xs text-muted-foreground leading-relaxed">
+                                    Pełne dane osoby — imię, nazwisko, daty i miejsca urodzenia/śmierci — są widoczne
+                                    dla wszystkich zalogowanych użytkowników Genealog w wyszukiwarce globalnej.
+                                    Stosuj wyłącznie dla osób historycznych, których dane są już powszechnie dostępne
+                                    (np. przodkowie z metryk kościelnych).
+                                </p>
+                            </div>
+                        </label>
+
+                        <!-- Anonimowe -->
+                        <label class="flex items-start gap-3 p-3 rounded-md border cursor-pointer transition-colors"
+                               :class="visibility === 'anonymous'
+                                   ? 'border-emerald-400 bg-emerald-50'
+                                   : 'border-border hover:border-emerald-200 hover:bg-emerald-50/30'">
+                            <input type="radio" value="anonymous" x-model="visibility"
+                                   class="mt-0.5 h-4 w-4 shrink-0 text-primary border-border focus:ring-ring">
+                            <div>
+                                <span class="text-sm font-medium text-foreground flex items-center gap-1.5">
+                                    <i class="fa-solid fa-link fa-fw text-emerald-600"></i>
+                                    Anonimowe
+                                    <span class="ml-1 inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-semibold
+                                                 bg-emerald-100 text-emerald-700 border border-emerald-200">
+                                        Zalecane dla nieżyjących
+                                    </span>
+                                </span>
+                                <p class="mt-1 text-xs text-muted-foreground leading-relaxed">
+                                    Osoba uczestniczy w <strong class="text-foreground">globalnym kojarzeniu rodzin</strong>
+                                    — inni użytkownicy mogą odkryć, że ich przodek może być powiązany z osobą w Twoim
+                                    drzewie, bez dostępu do jej pełnych danych. Imię i nazwisko są widoczne tylko po
+                                    obustronnym potwierdzeniu powiązania.
+                                </p>
+                                <p class="mt-1.5 text-xs text-amber-600 leading-relaxed">
+                                    Wymagane: osoba musi być oznaczona jako nieżyjąca, a rok urodzenia musi przypadać
+                                    ponad 100 lat temu (lub nie być podany). Właściciel drzewa musi włączyć globalne
+                                    indeksowanie w ustawieniach drzewa.
+                                </p>
+                            </div>
+                        </label>
+
+                    </div>
+
+                    <!-- Wskazówka gdy nieżyjąca + private -->
+                    <p x-show="!isLiving && visibility === 'private'" x-cloak
+                       class="text-xs text-muted-foreground flex items-start gap-1.5 pt-1">
+                        <i class="fa-solid fa-circle-info fa-fw mt-0.5 shrink-0"></i>
+                        Aby inni genealodzy mogli powiązać tę osobę z osobami w swoich drzewach, rozważ ustawienie
+                        widoczności na <strong>Anonimowe</strong>.
                     </p>
                 </div>
             </fieldset>
@@ -341,24 +427,36 @@ function personDiscovery(treeId) {
                 return;
             }
 
-            const query = first + '|' + last;
+            const birthDate  = document.getElementById('birth_date')?.value?.trim() ?? '';
+            const birthPlace = document.getElementById('birth_place')?.value?.trim() ?? '';
+            const deathDate  = document.getElementById('death_date')?.value?.trim() ?? '';
+            const deathPlace = document.getElementById('death_place')?.value?.trim() ?? '';
+            const gender     = document.getElementById('gender')?.value?.trim() ?? '';
+
+            const query = first + '|' + last + '|' + birthDate + '|' + birthPlace + '|' + deathPlace + '|' + gender;
             if (query === this.lastQuery && this.showPanel) {
                 return;
             }
             this.lastQuery = query;
 
-            this.fetchMatches(first, last);
+            this.fetchMatches(first, last, birthDate, birthPlace, deathDate, deathPlace, gender);
         },
 
-        async fetchMatches(firstName, lastName) {
+        async fetchMatches(firstName, lastName, birthDate = '', birthPlace = '', deathDate = '', deathPlace = '', gender = '') {
             this.loading = true;
             this.showPanel = true;
+
+            const birthYear = birthDate.length >= 4 ? birthDate.substring(0, 4) : '';
 
             const params = new URLSearchParams({
                 treeId: this.treeId,
                 firstName: firstName,
                 lastName: lastName,
             });
+            if (birthYear)  params.append('birthYear',  birthYear);
+            if (birthPlace) params.append('birthPlace', birthPlace);
+            if (deathPlace) params.append('deathPlace', deathPlace);
+            if (gender && gender !== 'unknown') params.append('gender', gender);
 
             try {
                 const resp = await fetch('/api/discovery/search?' + params.toString(), {

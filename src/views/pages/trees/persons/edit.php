@@ -146,19 +146,102 @@ require_once __DIR__ . '/../../../atoms/icon.php';
                         <p class="mt-0.5 text-xs text-muted-foreground">Żyjące osoby są chronione zgodnie z RODO.</p>
                     </div>
                 </div>
-                <div class="space-y-1.5">
-                    <label for="visibility" class="block text-sm font-medium text-foreground">Widoczność</label>
-                    <select id="visibility" name="visibility"
-                            x-model="visibility"
-                            :disabled="isLiving"
-                            class="w-full h-10 px-3 py-2 rounded-md border border-border bg-background
-                                   text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring
-                                   focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed">
-                        <option value="private"   <?= $person->visibility === 'private'   ? 'selected' : '' ?>>Prywatne</option>
-                        <option value="public"    <?= $person->visibility === 'public'    ? 'selected' : '' ?>>Publiczne</option>
-                        <option value="anonymous" <?= $person->visibility === 'anonymous' ? 'selected' : '' ?>>Anonimowe</option>
-                    </select>
-                    <p x-show="isLiving" class="text-xs text-amber-600">Żyjące osoby są zawsze prywatne (RODO).</p>
+                <div class="space-y-2">
+                    <p class="text-sm font-medium text-foreground">Widoczność</p>
+
+                    <!-- Blokada dla żyjących -->
+                    <p x-show="isLiving" x-cloak
+                       class="text-xs text-amber-600 flex items-center gap-1.5">
+                        <i class="fa-solid fa-triangle-exclamation fa-fw"></i>
+                        Żyjące osoby są zawsze prywatne zgodnie z RODO — widoczność zostanie ustawiona automatycznie.
+                    </p>
+
+                    <!-- Ukryty input — zawsze wysyła wartość z Alpine (działa też gdy radio disabled) -->
+                    <input type="hidden" name="visibility" :value="visibility">
+
+                    <div class="space-y-2" :class="isLiving ? 'opacity-40 pointer-events-none select-none' : ''">
+
+                        <!-- Prywatne -->
+                        <label class="flex items-start gap-3 p-3 rounded-md border cursor-pointer transition-colors"
+                               :class="visibility === 'private'
+                                   ? 'border-foreground/40 bg-muted/60'
+                                   : 'border-border hover:border-foreground/20 hover:bg-muted/30'">
+                            <input type="radio" value="private" x-model="visibility"
+                                   class="mt-0.5 h-4 w-4 shrink-0 text-primary border-border focus:ring-ring">
+                            <div>
+                                <span class="text-sm font-medium text-foreground flex items-center gap-1.5">
+                                    <i class="fa-solid fa-lock fa-fw text-muted-foreground"></i>
+                                    Prywatne
+                                </span>
+                                <p class="mt-1 text-xs text-muted-foreground leading-relaxed">
+                                    Dane osoby widoczne tylko dla Ciebie i zaproszonych współpracowników tego drzewa.
+                                    Osoba nie pojawia się w żadnym wyszukiwaniu poza Twoim drzewem.
+                                    Domyślne ustawienie — odpowiednie dla wszystkich żyjących osób oraz dla osób,
+                                    których danych nie chcesz udostępniać.
+                                </p>
+                            </div>
+                        </label>
+
+                        <!-- Publiczne -->
+                        <label class="flex items-start gap-3 p-3 rounded-md border cursor-pointer transition-colors"
+                               :class="visibility === 'public'
+                                   ? 'border-blue-400 bg-blue-50'
+                                   : 'border-border hover:border-blue-200 hover:bg-blue-50/30'">
+                            <input type="radio" value="public" x-model="visibility"
+                                   class="mt-0.5 h-4 w-4 shrink-0 text-primary border-border focus:ring-ring">
+                            <div>
+                                <span class="text-sm font-medium text-foreground flex items-center gap-1.5">
+                                    <i class="fa-solid fa-eye fa-fw text-blue-500"></i>
+                                    Publiczne
+                                </span>
+                                <p class="mt-1 text-xs text-muted-foreground leading-relaxed">
+                                    Pełne dane osoby — imię, nazwisko, daty i miejsca urodzenia/śmierci — są widoczne
+                                    dla wszystkich zalogowanych użytkowników Genealog w wyszukiwarce globalnej.
+                                    Stosuj wyłącznie dla osób historycznych, których dane są już powszechnie dostępne
+                                    (np. przodkowie z metryk kościelnych).
+                                </p>
+                            </div>
+                        </label>
+
+                        <!-- Anonimowe -->
+                        <label class="flex items-start gap-3 p-3 rounded-md border cursor-pointer transition-colors"
+                               :class="visibility === 'anonymous'
+                                   ? 'border-emerald-400 bg-emerald-50'
+                                   : 'border-border hover:border-emerald-200 hover:bg-emerald-50/30'">
+                            <input type="radio" value="anonymous" x-model="visibility"
+                                   class="mt-0.5 h-4 w-4 shrink-0 text-primary border-border focus:ring-ring">
+                            <div>
+                                <span class="text-sm font-medium text-foreground flex items-center gap-1.5">
+                                    <i class="fa-solid fa-link fa-fw text-emerald-600"></i>
+                                    Anonimowe
+                                    <span class="ml-1 inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-semibold
+                                                 bg-emerald-100 text-emerald-700 border border-emerald-200">
+                                        Zalecane dla nieżyjących
+                                    </span>
+                                </span>
+                                <p class="mt-1 text-xs text-muted-foreground leading-relaxed">
+                                    Osoba uczestniczy w <strong class="text-foreground">globalnym kojarzeniu rodzin</strong>
+                                    — inni użytkownicy mogą odkryć, że ich przodek może być powiązany z osobą w Twoim
+                                    drzewie, bez dostępu do jej pełnych danych. Imię i nazwisko są widoczne tylko po
+                                    obustronnym potwierdzeniu powiązania.
+                                </p>
+                                <p class="mt-1.5 text-xs text-amber-600 leading-relaxed">
+                                    Wymagane: osoba musi być oznaczona jako nieżyjąca, a rok urodzenia musi przypadać
+                                    ponad 100 lat temu (lub nie być podany). Właściciel drzewa musi włączyć globalne
+                                    indeksowanie w ustawieniach drzewa.
+                                </p>
+                            </div>
+                        </label>
+
+                    </div>
+
+                    <!-- Wskazówka gdy nieżyjąca + private -->
+                    <p x-show="!isLiving && visibility === 'private'" x-cloak
+                       class="text-xs text-muted-foreground flex items-start gap-1.5 pt-1">
+                        <i class="fa-solid fa-circle-info fa-fw mt-0.5 shrink-0"></i>
+                        Aby inni genealodzy mogli powiązać tę osobę z osobami w swoich drzewach, rozważ ustawienie
+                        widoczności na <strong>Anonimowe</strong>.
+                    </p>
                 </div>
             </fieldset>
 

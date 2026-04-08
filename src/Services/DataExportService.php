@@ -124,6 +124,34 @@ final class DataExportService
                 JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE
             ));
 
+            // ZAD-2.6 (P6): tree-memberships.json — drzewa gdzie user jest członkiem (editor/viewer).
+            // RODO Art. 15: user ma prawo wiedzieć w których drzewach jest członkiem, z jaką rolą,
+            // kto go zaprosił. Wcześniejsze sekcje eksportują tylko trees sole-owned.
+            $memberships = $this->db->fetchAll(
+                'SELECT tm.tree_id, tm.role, tm.invited_at, tm.invited_by, t.name AS tree_name
+                 FROM tree_members tm
+                 INNER JOIN trees t ON t.id = tm.tree_id
+                 WHERE tm.user_id = ?',
+                [$userId]
+            );
+            $zip->addFromString('tree-memberships.json', json_encode(
+                $memberships,
+                JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE
+            ));
+
+            // ZAD-2.6 (P6): password-resets.json — historia żądań resetu hasła.
+            // Bez kolumny `token` (secret) — tylko metadata (IP, daty). User może
+            // zobaczyć czy ktoś nieautoryzowany żądał resetu z obcego IP.
+            $passwordResets = $this->db->fetchAll(
+                'SELECT id, expires_at, used_at, ip, created_at
+                 FROM password_resets WHERE user_id = ? ORDER BY created_at DESC',
+                [$userId]
+            );
+            $zip->addFromString('password-resets.json', json_encode(
+                $passwordResets,
+                JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE
+            ));
+
             // 3c. discovery-suggestions.json — sugestie dopasowań Discovery dotyczące usera
             $discoverySuggestions = $this->db->fetchAll(
                 "SELECT pms.*
@@ -159,6 +187,7 @@ final class DataExportService
             }
 
             // 5. README
+            $dpoContact = defined('DPO_EMAIL') ? DPO_EMAIL : '[do uzupełnienia w config]';
             $zip->addFromString('README.txt',
                 "Genealog — Eksport danych konta\n"
                 . "===================================\n\n"
@@ -171,13 +200,15 @@ final class DataExportService
                 . "  - invitations.json                — wysłane zaproszenia do drzew\n"
                 . "  - shared-tree-contributions.json  — osoby dodane przez Ciebie do cudzych drzew\n"
                 . "  - discovery-suggestions.json      — sugestie dopasowań z globalnego indeksu\n"
+                . "  - tree-memberships.json           — drzewa gdzie jesteś członkiem (editor/viewer)\n"
+                . "  - password-resets.json            — historia żądań resetu hasła (bez tokenów)\n"
                 . "  - trees/                          — drzewa sole-owned w formacie GEDCOM 5.5.1\n\n"
                 . "GEDCOM 5.5.1 jest standardem branżowym — pliki .ged można zaimportować\n"
                 . "do dowolnego programu genealogicznego (Ancestry, MyHeritage, FamilySearch, Gramps, etc.).\n\n"
                 . "Uwaga: dane żyjących osób w plikach GEDCOM są ograniczone do imienia,\n"
                 . "nazwiska i roku urodzenia (RODO Art. 25 — privacy by design).\n\n"
                 . "Jeśli masz pytania dotyczące zawartości eksportu lub brakuje jakichś danych,\n"
-                . "skontaktuj się z administratorem danych: [EMAIL DPO].\n"
+                . "skontaktuj się z administratorem danych: " . $dpoContact . "\n"
             );
 
             $zip->close();

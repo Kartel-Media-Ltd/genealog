@@ -27,11 +27,29 @@ class UserRepository
         return $this->db->fetchOne('SELECT * FROM users WHERE email = :email AND is_active = 1', [':email' => $email]);
     }
 
-    public function create(string $id, string $email, string $passwordHash, string $name, string $locale = 'pl'): bool
-    {
+    public function create(
+        string $id,
+        string $email,
+        string $passwordHash,
+        string $name,
+        string $locale = 'pl',
+        ?string $termsVersion = null,
+    ): bool {
+        // ZAD-1.1 (K1): RODO Art. 7(1) — persystencja zgody.
+        // Jeśli `$termsVersion` przekazany → zapisujemy timestamp + wersję regulaminu.
+        // Legacy users (pre-2026-04-08) mają wartości ustawione przez migrację 015.
         $affected = $this->db->execute(
-            'INSERT INTO users (id, email, password_hash, name, locale) VALUES (:id, :email, :hash, :name, :locale)',
-            [':id' => $id, ':email' => $email, ':hash' => $passwordHash, ':name' => $name, ':locale' => $locale]
+            'INSERT INTO users (id, email, password_hash, name, locale, terms_accepted_at, terms_version)
+             VALUES (:id, :email, :hash, :name, :locale, :accepted_at, :version)',
+            [
+                ':id'          => $id,
+                ':email'       => $email,
+                ':hash'        => $passwordHash,
+                ':name'        => $name,
+                ':locale'      => $locale,
+                ':accepted_at' => $termsVersion !== null ? date('Y-m-d H:i:s') : null,
+                ':version'     => $termsVersion,
+            ]
         );
         return $affected === 1;
     }

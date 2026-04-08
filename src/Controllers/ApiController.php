@@ -132,7 +132,9 @@ class ApiController
      */
     public function health(): never
     {
-        $status = ['status' => 'ok', 'ts' => date('c')];
+        // ZAD-3.1 (D1): bez `ts` — informacja o strefie czasowej serwera
+        // to gratis dla rekonesansu, zero wartości dla load balancera.
+        $status = ['status' => 'ok'];
         $code   = 200;
 
         try {
@@ -140,7 +142,7 @@ class ApiController
             $status['db'] = 'ok';
         } catch (\Throwable $e) {
             error_log('Health check DB fail: ' . $e->getMessage());
-            $status = ['status' => 'fail', 'db' => 'fail', 'ts' => date('c')];
+            $status = ['status' => 'fail', 'db' => 'fail'];
             $code   = 503;
         }
 

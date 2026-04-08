@@ -7,7 +7,7 @@ use App\Core\Csrf;
 $userRole ??= null;
 $canEdit = in_array($userRole, ['owner', 'editor'], true);
 
-require_once __DIR__ . '/../../../atoms/icon.php';
+require_once __DIR__ . '/../../atoms/icon.php';
 ?>
 
 <!-- Breadcrumb -->
@@ -43,18 +43,6 @@ require_once __DIR__ . '/../../../atoms/icon.php';
 -->
 <div class="mb-6">
     <div class="flex flex-wrap justify-end gap-2">
-        <a href="/trees/<?= htmlspecialchars($tree->id) ?>/print"
-           target="_blank"
-           rel="noopener noreferrer"
-           title="Drukuj drzewo"
-           aria-label="Drukuj drzewo"
-           class="inline-flex h-10 w-10 md:w-auto items-center justify-center md:justify-start gap-2 rounded-md border border-input md:px-4
-                  text-sm font-medium text-foreground hover:bg-accent transition-colors
-                  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-            <?php render_icon('print', 'solid', 'h-4 w-4') ?>
-            <span class="hidden md:inline">Drukuj drzewo</span>
-        </a>
-
         <?php if ($canEdit): ?>
             <!-- 1. Dodaj osobę (primary CTA) -->
             <a href="/trees/<?= htmlspecialchars($tree->id) ?>/persons/new"
@@ -77,6 +65,21 @@ require_once __DIR__ . '/../../../atoms/icon.php';
                 <?php render_icon('users', 'solid', 'h-4 w-4') ?>
                 <span class="hidden md:inline">Osoby</span>
             </a>
+        <?php endif; ?>
+
+        <a href="/trees/<?= htmlspecialchars($tree->id) ?>/print"
+           target="_blank"
+           rel="noopener noreferrer"
+           title="Drukuj drzewo"
+           aria-label="Drukuj drzewo"
+           class="inline-flex h-10 w-10 md:w-auto items-center justify-center md:justify-start gap-2 rounded-md border border-input md:px-4
+                  text-sm font-medium text-foreground hover:bg-accent transition-colors
+                  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+            <?php render_icon('print', 'solid', 'h-4 w-4') ?>
+            <span class="hidden md:inline">Drukuj drzewo</span>
+        </a>
+
+        <?php if ($canEdit): ?>
 
             <!-- 3. Import/Export (GEDCOM) -->
             <a href="/trees/<?= htmlspecialchars($tree->id) ?>/gedcom"
@@ -98,7 +101,7 @@ require_once __DIR__ . '/../../../atoms/icon.php';
                class="inline-flex h-10 w-10 md:w-auto items-center justify-center md:justify-start gap-2 rounded-md border border-input md:px-4
                       text-sm font-medium text-foreground hover:bg-accent transition-colors
                       focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-                <?php render_icon('user-group', 'solid', 'h-4 w-4') ?>
+                <?php render_icon('lock', 'solid', 'h-4 w-4') ?>
                 <span class="hidden md:inline">Dostęp</span>
             </a>
 
@@ -109,8 +112,8 @@ require_once __DIR__ . '/../../../atoms/icon.php';
                class="inline-flex h-10 w-10 md:w-auto items-center justify-center md:justify-start gap-2 rounded-md border border-input md:px-4
                       text-sm font-medium text-foreground hover:bg-accent transition-colors
                       focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-                <?php render_icon('magnifying-glass', 'solid', 'h-4 w-4') ?>
-                <span class="hidden md:inline">Odkrywanie</span>
+                <?php render_icon('share', 'solid', 'h-4 w-4') ?>
+                <span class="hidden md:inline">Udostępnianie</span>
             </a>
         <?php endif; ?>
 
@@ -123,7 +126,7 @@ require_once __DIR__ . '/../../../atoms/icon.php';
                       text-sm font-medium text-foreground hover:bg-accent transition-colors
                       focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
                 <?php render_icon('gear', 'solid', 'h-4 w-4') ?>
-                <span class="hidden md:inline">Ustawienia</span>
+                
             </a>
         <?php endif; ?>
     </div>

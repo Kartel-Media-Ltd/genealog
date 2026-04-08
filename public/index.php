@@ -60,6 +60,7 @@ use App\Middleware\AdminMiddleware;
 use App\Middleware\AuthMiddleware;
 use App\Services\AdminService;
 use App\Services\AuthService;
+use App\Services\RedisService;
 use App\Services\EmailService;
 use App\Services\InvitationService;
 use App\Services\MediaService;
@@ -130,12 +131,29 @@ $matchRegistry->register(new CrossTreeMatchSource($db, $fingerprintSvc));
 // External sources — rejestrowane warunkowo, isAvailable() pilnuje samo wyłączenia
 $matchRegistry->register(new FamilySearchMatchSource(getenv('FAMILYSEARCH_CLIENT_ID') ?: null));
 $matchRegistry->register(new GenetykaMatchSource(getenv('GENETEKA_LOCAL_DB') ?: null));
-$matchingSvc     = new MatchingService($matchRegistry, $notifSvc, $treeRepo, $discoveryRepo);
+$matchingSvc     = new MatchingService($matchRegistry, $notifSvc, $treeRepo, $discoveryRepo, $userRepo, $personRepo);
 $personImportSvc = new PersonImportService($db, $discoveryRepo, $personSvc);
+// Redis — opcjonalny (null gdy niezdefiniowany w .env.local lub ext-redis niedostępny)
+$redis = RedisService::connect();
 
 EventDispatcher::on('person.created', static function ($person, $userId) use ($globalIndexSvc, $matchingSvc) {
+    // Zawsze indeksuj w global_person_index (tanie, RODO gatekeeping w GlobalIndexService)
     $globalIndexSvc->indexPerson($person);
-    $matchingSvc->findAndNotifyMatches($person, $userId);
+
+    // ZAD-2.1 (P1): per-person matching WYŁĄCZONE podczas bulk GEDCOM import.
+    // Po zakończeniu importu GedcomService emituje `tree.imported` → batch matching.
+    // Chroni przed DoS przy imporcie 5000+ osób (eliminacja 5000 × CrossTreeSearch).
+    if (empty($GLOBALS['_gedcom_import_in_progress'] ?? false)) {
+        $matchingSvc->findAndNotifyMatches($person, $userId);
+    }
+});
+EventDispatcher::on('tree.imported', static function ($treeId, $userId, $importedCount) use ($matchingSvc) {
+    // ZAD-2.1 (P1): batch matching po bulk GEDCOM import (1× zamiast N×).
+    try {
+        $matchingSvc->matchTreeAfterImport($treeId, $userId);
+    } catch (\Throwable $e) {
+        error_log('[tree.imported] batch matching failed: ' . $e->getMessage());
+    }
 });
 EventDispatcher::on('person.updated', static function ($person, $userId) use ($globalIndexSvc) {
     $globalIndexSvc->indexPerson($person);
@@ -225,14 +243,14 @@ $router->group('/trees', $mw, function (Router $r) use (
     $personRepo, $personSvc, $mediaSvc,
     $relRepo, $relSvc, $suggSvc, $registerSvc,
     $invRepo, $invSvc,
-    $matchingSvc, $discoveryRepo, $globalIndexSvc, $db, $personImportSvc, $rateLimiter,
+    $matchingSvc, $discoveryRepo, $globalIndexSvc, $db, $personImportSvc, $rateLimiter, $redis,
 ) {
     $treeCtrl      = new TreeController($request, $response, $treeRepo, $treeSvc);
     $personCtrl    = new PersonController($request, $response, $treeRepo, $personRepo, $personSvc, $mediaSvc, $relRepo, $suggSvc, $registerSvc, $discoveryRepo);
     $relCtrl       = new RelationshipController($request, $response, $treeRepo, $personRepo, $relRepo, $relSvc, $suggSvc);
     $suggCtrl      = new SuggestionController($request, $response, $treeRepo, $personRepo, $relSvc);
     $invCtrl       = new InvitationController($request, $response, $treeRepo, $invRepo, $invSvc, $rateLimiter);
-    $discoveryCtrl = new DiscoveryController($request, $response, $treeRepo, $matchingSvc, $discoveryRepo, $globalIndexSvc, $db, $personImportSvc, $rateLimiter);
+    $discoveryCtrl = new DiscoveryController($request, $response, $treeRepo, $matchingSvc, $discoveryRepo, $globalIndexSvc, $db, $personImportSvc, $rateLimiter, $redis);
 
     // Discovery — ustawienia drzewa (cross-tree opt-in/out)
     $r->get('/{id}/settings/discovery',  [$discoveryCtrl, 'showSettings']);
@@ -282,10 +300,10 @@ $router->group('/trees', $mw, function (Router $r) use (
 $router->group('/api', $mw, function (Router $r) use (
     $request, $response, $treeRepo, $personRepo, $relRepo,
     $matchingSvc, $discoveryRepo, $globalIndexSvc, $db,
-    $notifRepo, $personImportSvc, $rateLimiter
+    $notifRepo, $personImportSvc, $rateLimiter, $redis
 ) {
     $apiCtrl       = new ApiController($request, $response, $treeRepo, $personRepo, $relRepo);
-    $discoveryCtrl = new DiscoveryController($request, $response, $treeRepo, $matchingSvc, $discoveryRepo, $globalIndexSvc, $db, $personImportSvc, $rateLimiter);
+    $discoveryCtrl = new DiscoveryController($request, $response, $treeRepo, $matchingSvc, $discoveryRepo, $globalIndexSvc, $db, $personImportSvc, $rateLimiter, $redis);
     $notifCtrl     = new NotificationController($request, $response, $notifRepo);
 
     $r->get('/trees/{id}/persons', [$apiCtrl, 'personsForTree']);

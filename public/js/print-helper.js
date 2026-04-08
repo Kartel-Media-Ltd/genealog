@@ -37,7 +37,7 @@ function resolveCssVariables(svgString) {
  */
 function exportSvgAsPng(svgElement, filename) {
     if (!svgElement) {
-        alert('Brak drzewa do eksportu. Odczekaj chwilę na załadowanie drzewa i spróbuj ponownie.');
+        window.showModal('Brak drzewa do eksportu. Odczekaj chwilę na załadowanie drzewa i spróbuj ponownie.', 'Eksport niedostępny', 'warning');
         return;
     }
 
@@ -87,7 +87,7 @@ function exportSvgAsPng(svgElement, filename) {
             dataUrl = canvas.toDataURL('image/png');
         } catch (err) {
             console.error('Canvas tainted, cannot export PNG:', err);
-            alert('Nie można wyeksportować drzewa jako PNG (ograniczenia przeglądarki dla niektórych elementów). Użyj opcji "Drukuj" → "Zapisz jako PDF".');
+            window.showModal('Nie można wyeksportować drzewa jako PNG — ograniczenia przeglądarki uniemożliwiają odczyt elementów osadzonych w SVG. Użyj opcji "Drukuj" → "Zapisz jako PDF" jako alternatywę.', 'Eksport PNG niemożliwy', 'warning');
             return;
         }
 
@@ -103,7 +103,7 @@ function exportSvgAsPng(svgElement, filename) {
 
     img.onerror = function () {
         URL.revokeObjectURL(url);
-        alert('Nie udało się wczytać drzewa do eksportu. Użyj opcji "Drukuj" → "Zapisz jako PDF" jako alternatywę.');
+        window.showModal('Nie udało się wczytać drzewa do eksportu. Użyj opcji "Drukuj" → "Zapisz jako PDF" jako alternatywę.', 'Błąd eksportu', 'error');
     };
 
     img.src = url;

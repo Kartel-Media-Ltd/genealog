@@ -1,0 +1,33 @@
+services:
+  groby:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: genealog_groby
+    restart: unless-stopped
+    ports:
+      - "${PORT:-8010}:8010"
+    env_file:
+      - .env
+    environment:
+      # Nadpisz wartości z .env jeśli potrzebne
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    volumes:
+      # Hot-reload w trybie dev — zakomentuj na produkcji
+      - ./scrapers:/app/scrapers:ro
+      - ./main.py:/app/main.py:ro
+    healthcheck:
+      test: ["CMD", "python", "-c",
+             "import httpx; httpx.get('http://localhost:8010/health', timeout=5).raise_for_status()"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    networks:
+      - genealog_net
+
+networks:
+  genealog_net:
+    name: genealog_net
+    # Jeśli PHP działa w Docker — dołącz do tej samej sieci
+    # external: true

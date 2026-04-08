@@ -37,6 +37,17 @@ class GedcomService
 
     public function import(int|string $treeId, string $filePath, int|string $userId): ImportResult
     {
+        // ZAD-2.1 (P1): flaga wyłącza per-person matching w EventDispatcher listener
+        // podczas bulk importu. Po zakończeniu emitujemy batch `tree.imported` który
+        // uruchamia matching RAZ dla całego drzewa.
+        $GLOBALS['_gedcom_import_in_progress'] = true;
+
+        $success       = false;
+        $personsCount  = 0;
+        $relationshipsCount = 0;
+        $skipped       = 0;
+        $errors        = [];
+
         try {
             $content = file_get_contents($filePath);
             if ($content === false) {
@@ -70,6 +81,7 @@ class GedcomService
             );
 
             $this->pdo->commit();
+            $success = true;
 
             return new ImportResult($personsCount, $relationshipsCount, $skipped, $errors);
         } catch (\Throwable $e) {
@@ -80,6 +92,19 @@ class GedcomService
         } finally {
             if (file_exists($filePath)) {
                 unlink($filePath);
+            }
+            // ZAD-2.1 (P1): wyłącz flagę PRZED emit tree.imported — żeby handler
+            // mógł bezpiecznie wywołać findAndNotifyMatches bez natychmiastowego skip.
+            unset($GLOBALS['_gedcom_import_in_progress']);
+
+            // Emit batch event TYLKO gdy import się udał. W finally — bo `return` wewnątrz try
+            // ominąłby kod po return. Używamy flagi $success żeby nie emitować przy exception.
+            if ($success) {
+                try {
+                    \App\Core\EventDispatcher::dispatch('tree.imported', (string)$treeId, (string)$userId, $personsCount);
+                } catch (\Throwable $e) {
+                    error_log('[GedcomService] tree.imported dispatch failed: ' . $e->getMessage());
+                }
             }
         }
     }

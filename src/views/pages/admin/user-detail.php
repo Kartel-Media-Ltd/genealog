@@ -70,7 +70,7 @@ $isCurrentAdmin = ($user['id'] === $currentAdminId);
                 </form>
             <?php else: ?>
                 <form method="POST" action="/admin/users/<?= htmlspecialchars($user['id']) ?>/block"
-                      x-data onsubmit="return confirm('Na pewno zablokować konto?')">
+                      x-data @submit.prevent="showConfirm('Na pewno zablokować konto? Użytkownik straci dostęp do systemu.', () => $el.submit(), 'Blokada konta', 'error')">
                     <?= Csrf::hiddenInput() ?>
                     <button type="submit"
                             class="w-full rounded-md border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-700 hover:bg-red-100 transition-colors">
@@ -82,7 +82,7 @@ $isCurrentAdmin = ($user['id'] === $currentAdminId);
             <!-- Promote / Demote -->
             <?php if ($user['is_admin']): ?>
                 <form method="POST" action="/admin/users/<?= htmlspecialchars($user['id']) ?>/demote"
-                      onsubmit="return confirm('Cofnąć uprawnienia admina?')">
+                      x-data @submit.prevent="showConfirm('Cofnąć uprawnienia administratora temu użytkownikowi?', () => $el.submit(), 'Cofnięcie uprawnień', 'warning')">
                     <?= Csrf::hiddenInput() ?>
                     <button type="submit"
                             class="w-full rounded-md border border-orange-300 bg-orange-50 px-3 py-2 text-sm text-orange-700 hover:bg-orange-100 transition-colors">
@@ -91,7 +91,7 @@ $isCurrentAdmin = ($user['id'] === $currentAdminId);
                 </form>
             <?php else: ?>
                 <form method="POST" action="/admin/users/<?= htmlspecialchars($user['id']) ?>/promote"
-                      onsubmit="return confirm('Mianować użytkownika adminem?')">
+                      x-data @submit.prevent="showConfirm('Mianować tego użytkownika administratorem? Uzyska pełny dostęp do panelu administracyjnego.', () => $el.submit(), 'Mianowanie admina', 'info')">
                     <?= Csrf::hiddenInput() ?>
                     <button type="submit"
                             class="w-full rounded-md border border-blue-300 bg-blue-50 px-3 py-2 text-sm text-blue-700 hover:bg-blue-100 transition-colors">
@@ -102,7 +102,7 @@ $isCurrentAdmin = ($user['id'] === $currentAdminId);
                 <!-- Impersonate — only for non-blocked, non-admin -->
                 <?php if (!$user['is_blocked']): ?>
                     <form method="POST" action="/admin/users/<?= htmlspecialchars($user['id']) ?>/impersonate"
-                          onsubmit="return confirm('Zalogować się jako ten użytkownik? Sesja zostanie przełączona.')">
+                          x-data @submit.prevent="showConfirm('Zalogować się jako ten użytkownik? Twoja sesja admina zostanie przełączona — możesz wrócić przez baner na dole strony.', () => $el.submit(), 'Przełączenie sesji', 'warning')">
                         <?= Csrf::hiddenInput() ?>
                         <button type="submit"
                                 class="w-full rounded-md border border-purple-300 bg-purple-50 px-3 py-2 text-sm text-purple-700 hover:bg-purple-100 transition-colors">

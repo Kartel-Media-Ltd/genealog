@@ -32,12 +32,17 @@ final class LocalTreeMatchSource implements MatchSourceInterface
 
     public function getName(): string
     {
-        return 'local';
+        return MatchSourceInterface::SOURCE_LOCAL;
     }
 
     public function isAvailable(): bool
     {
         return true; // zawsze dostępne — to lokalna baza
+    }
+
+    public function getTimeoutSeconds(): int
+    {
+        return 5; // local DB query, szybkie
     }
 
     /**
@@ -80,6 +85,9 @@ final class LocalTreeMatchSource implements MatchSourceInterface
         $placeholders = implode(',', array_fill(0, count($context->accessibleTreeIds), '?'));
         $binds        = array_merge([$hash], $context->accessibleTreeIds);
 
+        // Opcjonalne filtry — gender i place (birth_place OR death_place)
+        $extraWhere = $this->buildExtraWhere($criteria, $binds);
+
         $rows = $this->db->fetchAll(
             "SELECT p.id, p.first_name, p.last_name, p.birth_date, p.birth_place,
                     p.death_date, p.gender, p.tree_id,
@@ -88,6 +96,7 @@ final class LocalTreeMatchSource implements MatchSourceInterface
              JOIN trees t ON t.id = p.tree_id
              WHERE p.fingerprint_hash = ?
                AND p.tree_id IN ($placeholders)
+               {$extraWhere}
              LIMIT " . self::EXACT_LIMIT,
             $binds
         );
@@ -113,6 +122,8 @@ final class LocalTreeMatchSource implements MatchSourceInterface
         $placeholders = implode(',', array_fill(0, count($context->accessibleTreeIds), '?'));
         $binds        = array_merge([$soundex], $context->accessibleTreeIds);
 
+        $extraWhere = $this->buildExtraWhere($criteria, $binds);
+
         $rows = $this->db->fetchAll(
             "SELECT p.id, p.first_name, p.last_name, p.birth_date, p.birth_place,
                     p.death_date, p.gender, p.tree_id,
@@ -121,6 +132,7 @@ final class LocalTreeMatchSource implements MatchSourceInterface
              JOIN trees t ON t.id = p.tree_id
              WHERE p.name_soundex = ?
                AND p.tree_id IN ($placeholders)
+               {$extraWhere}
              LIMIT " . self::FUZZY_LIMIT,
             $binds
         );
@@ -142,6 +154,38 @@ final class LocalTreeMatchSource implements MatchSourceInterface
         // Sortuj malejąco po confidence
         usort($out, static fn($a, $b) => $b->confidence <=> $a->confidence);
         return $out;
+    }
+
+    /**
+     * Buduje dodatkowe klauzule WHERE dla gender i miejsca urodzenia/śmierci.
+     * Modyfikuje $binds przez referencję — dołącza wartości parametrów.
+     *
+     * @param array<mixed> $binds
+     */
+    private function buildExtraWhere(SearchCriteria $criteria, array &$binds): string
+    {
+        $parts = [];
+
+        if ($criteria->gender !== null && $criteria->gender !== 'unknown') {
+            $parts[] = 'p.gender = ?';
+            $binds[] = $criteria->gender;
+        }
+
+        // Miejsce urodzenia LUB śmierci — wystarczy jedno trafienie
+        $placeParts = [];
+        if ($criteria->birthPlace !== null) {
+            $placeParts[] = 'p.birth_place LIKE ?';
+            $binds[]      = '%' . $criteria->birthPlace . '%';
+        }
+        if ($criteria->deathPlace !== null) {
+            $placeParts[] = 'p.death_place LIKE ?';
+            $binds[]      = '%' . $criteria->deathPlace . '%';
+        }
+        if (!empty($placeParts)) {
+            $parts[] = '(' . implode(' OR ', $placeParts) . ')';
+        }
+
+        return $parts !== [] ? 'AND ' . implode(' AND ', $parts) : '';
     }
 
     private function computeLevenshteinConfidence(SearchCriteria $criteria, array $row): float

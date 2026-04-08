@@ -183,8 +183,9 @@ unset($entry);
                         $number = $entry['number'];
                         $indent = $depth * 24; // px per level
                     ?>
+                        <?php $needsVisibilityHint = !$person->isLiving && $person->visibility === 'private'; ?>
                         <tr
-                            class="border-b border-border last:border-0 hover:bg-muted/30 transition-colors"
+                            class="border-b border-border last:border-0 transition-colors <?= $needsVisibilityHint ? 'bg-red-50 hover:bg-red-100/70' : 'hover:bg-muted/30' ?>"
                             data-search-name="<?= htmlspecialchars(strtolower($person->fullName()), ENT_QUOTES, 'UTF-8') ?>"
                             x-show="search === '' || $el.dataset.searchName.includes(search.toLowerCase())"
                         >
@@ -242,23 +243,39 @@ unset($entry);
                             </td>
                             <td class="px-4 py-3 text-right">
                                 <div class="flex items-center justify-end gap-1">
+                                    <?php if ($needsVisibilityHint): ?>
+                                        <span class="relative group hidden sm:inline-flex">
+                                            <span class="inline-flex h-8 w-8 items-center justify-center text-red-400 cursor-default">
+                                                <?php render_icon('circle-info', 'solid', 'h-4 w-4', 'Uwaga o widoczności') ?>
+                                            </span>
+                                            <span class="pointer-events-none absolute right-full mr-2 top-1/2 -translate-y-1/2 z-20
+                                                         w-64 rounded-md border border-red-200 bg-white px-3 py-2 text-xs
+                                                         text-red-700 shadow-md opacity-0 group-hover:opacity-100 transition-opacity
+                                                         text-left leading-relaxed">
+                                                Ta osoba nie pojawi się w wynikach wyszukiwania innych użytkowników.
+                                                Zmień widoczność na <strong>Anonimową</strong>, aby umożliwić innym
+                                                genealogom odnalezienie swoich korzeni i połączenie rodzin.
+                                            </span>
+                                        </span>
+                                    <?php endif; ?>
                                     <a href="/trees/<?= htmlspecialchars($tree->id) ?>/persons/<?= htmlspecialchars($person->id) ?>"
-                                       class="inline-flex h-8 items-center rounded-md border border-input px-2.5
-                                              text-xs font-medium text-foreground hover:bg-accent transition-colors">
-                                        Szczegóły
+                                       title="Szczegóły"
+                                       class="inline-flex h-8 w-8 items-center justify-center rounded-md border border-input
+                                              text-muted-foreground hover:bg-accent hover:text-foreground transition-colors">
+                                        <?php render_icon('eye', 'solid', 'h-3.5 w-3.5', 'Szczegóły') ?>
                                     </a>
                                     <a href="/trees/<?= htmlspecialchars($tree->id) ?>/persons/<?= htmlspecialchars($person->id) ?>/register"
                                        title="Rejestr potomków"
                                        class="inline-flex h-8 w-8 items-center justify-center rounded-md border border-input
                                               text-muted-foreground hover:bg-accent hover:text-foreground transition-colors">
-                                        <?php render_icon('file', 'solid', 'h-3.5 w-3.5') ?>
-                                        <span class="sr-only">Rejestr potomków</span>
+                                        <?php render_icon('file', 'solid', 'h-3.5 w-3.5', 'Rejestr potomków') ?>
                                     </a>
                                     <?php if ($canEdit): ?>
                                         <a href="/trees/<?= htmlspecialchars($tree->id) ?>/persons/<?= htmlspecialchars($person->id) ?>/edit"
-                                           class="inline-flex h-8 items-center rounded-md border border-input px-2.5
-                                                  text-xs font-medium text-foreground hover:bg-accent transition-colors">
-                                            Edytuj
+                                           title="Edytuj"
+                                           class="inline-flex h-8 w-8 items-center justify-center rounded-md border border-input
+                                                  text-muted-foreground hover:bg-accent hover:text-foreground transition-colors">
+                                            <?php render_icon('pen-to-square', 'solid', 'h-3.5 w-3.5', 'Edytuj') ?>
                                         </a>
                                     <?php endif; ?>
                                 </div>

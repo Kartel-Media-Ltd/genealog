@@ -92,12 +92,16 @@ final class GlobalIndexService
         $soundex = $this->fingerprint->computeSoundex($person->firstName, $person->lastName);
         $region  = $this->fingerprint->extractRegion($person->birthPlace);
 
+        $gender = in_array($person->gender, ['male', 'female', 'unknown'], true)
+            ? $person->gender
+            : 'unknown';
+
         $this->db->execute(
             'INSERT INTO global_person_index
                 (id, fingerprint_hash, name_soundex, first_name, last_name,
                  tree_id, person_id, owner_user_id, region,
-                 earliest_birth_year, latest_birth_year, is_living)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)
+                 earliest_birth_year, latest_birth_year, is_living, gender)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?)
              ON DUPLICATE KEY UPDATE
                 fingerprint_hash    = VALUES(fingerprint_hash),
                 name_soundex        = VALUES(name_soundex),
@@ -108,12 +112,13 @@ final class GlobalIndexService
                 region              = VALUES(region),
                 earliest_birth_year = VALUES(earliest_birth_year),
                 latest_birth_year   = VALUES(latest_birth_year),
-                is_living           = 0',
+                is_living           = 0,
+                gender              = VALUES(gender)',
             [
                 Uuid::generate(),
                 $hash, $soundex, $person->firstName, $person->lastName,
                 $person->treeId, $person->id, $tree->ownerId, $region,
-                $birthYear, $birthYear,
+                $birthYear, $birthYear, $gender,
             ]
         );
     }
@@ -144,12 +149,57 @@ final class GlobalIndexService
     /**
      * Reindeksuj wszystkie osoby w drzewie — używane po włączeniu
      * is_indexed_globally lub po zmianie ustawień.
+     *
+     * ZAD-2.3 (P3): pobiera tree + opt-in RAZ przed pętlą (eliminacja N+1),
+     * dodaje set_time_limit dla dużych drzew + chunkowanie z early exit.
      */
     public function reindexTree(string $treeId): void
     {
+        @set_time_limit(300);
+
+        // Pobierz tree i opt-in raz — były pobierane per każda osoba.
+        $tree = $this->treeRepo->findById($treeId);
+        if ($tree === null || !$tree->isIndexedGlobally) {
+            // Drzewo usunięte lub wyłączone globally → unindex wszystko.
+            $this->unindexTree($treeId);
+            return;
+        }
+
+        // Sprawdź opt-in ownera raz.
+        $optedIn = false;
+        if ($this->userRepo !== null) {
+            $optedIn = $this->userRepo->isDiscoveryOptedIn($tree->ownerId);
+        } else {
+            $owner = $this->db->fetchOne(
+                'SELECT discovery_opt_in FROM users WHERE id = ?',
+                [$tree->ownerId]
+            );
+            $optedIn = $owner !== null && (int)$owner['discovery_opt_in'] === 1;
+        }
+
+        if (!$optedIn) {
+            // Opt-in cofnięty → usuń wszystkie wpisy drzewa
+            $this->unindexTree($treeId);
+            return;
+        }
+
         $persons = $this->personRepo->findByTree($treeId);
-        foreach ($persons as $person) {
-            $this->indexPerson($person);
+        $chunkSize = 100;
+        $chunks = array_chunk($persons, $chunkSize);
+
+        foreach ($chunks as $chunk) {
+            foreach ($chunk as $person) {
+                try {
+                    // indexPerson nadal wywołuje getEligibleTree wewnętrznie — ale zyski
+                    // z pre-checku powyżej są znaczące (early exit dla całego drzewa).
+                    $this->indexPerson($person);
+                } catch (\Throwable $e) {
+                    error_log(sprintf(
+                        '[GlobalIndexService] reindexTree: failed person %s: %s',
+                        $person->id, $e->getMessage()
+                    ));
+                }
+            }
         }
     }
 

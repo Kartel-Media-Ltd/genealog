@@ -295,7 +295,7 @@ $suggestions ??= [];
                         await this._postWithCsrf('/api/discovery/match/' + item.id + '/import');
                         this.hidden[item.id] = true;
                     } catch (e) {
-                        alert('Nie udało się zaakceptować dopasowania: ' + e.message);
+                        window.showModal('Nie udało się zaakceptować dopasowania: ' + e.message, 'Błąd', 'error');
                     } finally {
                         this.processing[item.id] = false;
                     }
@@ -308,7 +308,7 @@ $suggestions ??= [];
                         await this._postWithCsrf('/api/discovery/match/' + item.id + '/reject');
                         this.hidden[item.id] = true;
                     } catch (e) {
-                        alert('Nie udało się odrzucić dopasowania: ' + e.message);
+                        window.showModal('Nie udało się odrzucić dopasowania: ' + e.message, 'Błąd', 'error');
                     } finally {
                         this.processing[item.id] = false;
                     }
@@ -469,7 +469,11 @@ $suggestions ??= [];
                                             <div class="h-7 w-7 rounded-full bg-muted flex items-center justify-center flex-shrink-0 text-xs font-medium text-muted-foreground">
                                                 <?= htmlspecialchars(mb_strtoupper(mb_substr($rel->relatedFirstName ?? '?', 0, 1) . mb_substr($rel->relatedLastName ?? '', 0, 1))) ?>
                                             </div>
-                                            <?= htmlspecialchars($rel->relatedFullName() ?: 'Nieznana osoba') ?>
+                                            <?php if (!$rel->relatedIsLiving): ?><span class="text-muted-foreground mr-0.5" aria-hidden="true">†</span><?php endif; ?><?= htmlspecialchars($rel->relatedFullName() ?: 'Nieznana osoba') ?><?php
+                                                $rAge  = DateHelper::ageInYears($rel->relatedBirthDate, $rel->relatedDeathDate);
+                                                $rYear = $rel->relatedBirthDate ? (int) substr($rel->relatedBirthDate, 0, 4) : null;
+                                                if ($rAge !== null || $rYear !== null):
+                                            ?> <span class="text-muted-foreground font-normal text-xs">(<?php if ($rAge !== null): ?>l.&nbsp;<?= $rAge ?><?php endif; ?><?php if ($rAge !== null && $rYear !== null): ?>, <?php endif; ?><?php if ($rYear !== null): ?>ur.&nbsp;<?= $rYear ?><?php endif; ?>)</span><?php endif; ?>
                                         </a>
                                         <?php if ($canEdit): ?>
                                             <form method="POST"

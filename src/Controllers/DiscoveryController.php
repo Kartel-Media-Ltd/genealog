@@ -40,6 +40,7 @@ final class DiscoveryController
         private readonly Database            $db,
         private readonly PersonImportService $importService,
         private readonly RateLimiter         $rateLimiter,
+        private readonly ?\Redis             $redis = null,
     ) {}
 
     /**
@@ -60,12 +61,25 @@ final class DiscoveryController
         $ip     = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
 
         // Rate limit — max 30 req/min per IP (audyt P1, enumeration attack protection)
-        if ($this->rateLimiter->isLimited($ip, 'discovery_search', 30, 60)) {
-            // Suggestion: Retry-After header informuje klienta kiedy ponowić
-            header('Retry-After: 60');
-            $this->response->json(['error' => 'too_many_requests'], 429);
+        // Redis: atomowe INCR+EXPIRE (szybsze niż DB, brak race condition)
+        // Fallback: DB-based RateLimiter gdy Redis niezdefiniowany w .env.local
+        if ($this->redis !== null) {
+            $rlKey = 'genealog:rl:discovery:' . $ip;
+            $count = $this->redis->incr($rlKey);
+            if ($count === 1) {
+                $this->redis->expire($rlKey, 60); // okno 60s
+            }
+            if ($count > 30) {
+                header('Retry-After: 60');
+                $this->response->json(['error' => 'too_many_requests'], 429);
+            }
+        } else {
+            if ($this->rateLimiter->isLimited($ip, 'discovery_search', 30, 60)) {
+                header('Retry-After: 60');
+                $this->response->json(['error' => 'too_many_requests'], 429);
+            }
+            $this->rateLimiter->record($ip, 'discovery_search');
         }
-        $this->rateLimiter->record($ip, 'discovery_search');
 
         // IDOR: weryfikacja dostępu editor/owner do drzewa
         $role = $this->treeRepo->getUserRole($treeId, $userId);
@@ -78,6 +92,8 @@ final class DiscoveryController
             'lastName'   => $this->request->getParam('lastName', ''),
             'birthYear'  => $this->request->getParam('birthYear'),
             'birthPlace' => $this->request->getParam('birthPlace', ''),
+            'deathPlace' => $this->request->getParam('deathPlace', ''),
+            'gender'     => $this->request->getParam('gender', ''),
         ]);
 
         if (!$criteria->isSearchable()) {
@@ -286,8 +302,19 @@ final class DiscoveryController
         $nowEligible = $treeOptIn && $userOptIn;
 
         if (!$wasEligible && $nowEligible) {
-            // Włączone od zera → pełny reindex
-            $this->globalIndex->reindexTree($treeId);
+            // Włączone od zera → reindex
+            // Redis: wrzuć job do kolejki (async) — worker: php bin/reindex-worker.php
+            // Fallback: synchronicznie (blokujące, OK dla drzew < ~1000 osób)
+            if ($this->redis !== null) {
+                $this->redis->lPush('genealog:reindex_queue', (string)json_encode([
+                    'treeId'    => $treeId,
+                    'queued_at' => time(),
+                ]));
+                $reindexFlash = 'Reindeksowanie zaplanowane w tle.';
+            } else {
+                $this->globalIndex->reindexTree($treeId);
+                $reindexFlash = null;
+            }
         } elseif ($wasEligible && !$nowEligible) {
             // Wyłączone cokolwiek (tree OR user opt-in) → unindex
             // RODO Art. 7(3) — right to withdraw consent (I7)
@@ -295,7 +322,11 @@ final class DiscoveryController
         }
         // Jeśli oba stany były eligible i pozostały eligible — nic nie robimy (no-op reindex niepotrzebny).
 
-        $this->response->withFlash('success', 'Ustawienia zapisane.');
+        $flashMsg = 'Ustawienia zapisane.';
+        if (!empty($reindexFlash)) {
+            $flashMsg .= ' ' . $reindexFlash;
+        }
+        $this->response->withFlash('success', $flashMsg);
         $this->response->redirect('/trees/' . $treeId . '/settings/discovery');
     }
 

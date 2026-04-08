@@ -19,7 +19,9 @@ class RelationshipRepository
                     p.last_name  AS related_last_name,
                     p.photo_path AS related_photo_path,
                     p.gender     AS related_gender,
-                    p.birth_date AS related_birth_date
+                    p.birth_date AS related_birth_date,
+                    p.death_date AS related_death_date,
+                    p.is_living  AS related_is_living
              FROM relationships r
              JOIN persons p ON p.id = r.person_b_id AND p.tree_id = r.tree_id
              WHERE r.person_a_id = ? AND r.tree_id = ?
