@@ -89,15 +89,17 @@ use App\Core\Csrf;
         </div>
 
         <!-- ZAD-1.3 (K3): Consent flow — wymagane RODO Art. 6/7 i Art. 13 -->
+        <!-- ZAD-2.10 (P10): aria-describedby → WCAG 3.3.2 Labels or Instructions -->
         <div class="flex items-start gap-2 text-sm">
             <input type="checkbox"
                    id="consent"
                    name="consent"
                    value="1"
                    required
+                   aria-describedby="consent-desc"
                    class="mt-0.5 h-4 w-4 rounded border-border text-primary focus:ring-ring"
             >
-            <label for="consent" class="text-muted-foreground select-none">
+            <label for="consent" id="consent-desc" class="text-muted-foreground select-none">
                 Akceptuję
                 <a href="/terms" target="_blank" rel="noopener"
                    class="font-medium text-foreground hover:underline">Regulamin</a>

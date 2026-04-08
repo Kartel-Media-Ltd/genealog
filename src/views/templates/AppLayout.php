@@ -111,10 +111,11 @@
             <!-- Nav desktop -->
             <nav class="hidden md:flex items-center gap-1" aria-label="Główna nawigacja">
                 <?php
+                require_once __DIR__ . '/../atoms/icon.php';
                 $navItems = [
-                    ['href' => '/dashboard',   'label' => 'Dashboard'],
-                    ['href' => '/trees',        'label' => 'Moje drzewa'],
-                    ['href' => '/search',       'label' => 'Poszukiwania'],
+                    ['href' => '/dashboard',   'label' => 'Dashboard',     'icon' => 'house'],
+                    ['href' => '/trees',        'label' => 'Moje drzewa',   'icon' => 'sitemap'],
+                    ['href' => '/search',       'label' => 'Poszukiwania',  'icon' => 'magnifying-glass'],
                 ];
                 // PHP 8.1+: str_starts_with($null, ...) jest deprecated — fallback na '/'
                 $currentPath = (string)(parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/');
@@ -126,11 +127,12 @@
                         : 'text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--accent))] hover:text-[hsl(var(--foreground))]';
                 ?>
                     <a href="<?= htmlspecialchars($item['href']) ?>"
-                       class="rounded-md px-3 py-2 text-sm transition-colors
+                       class="flex items-center gap-1.5 rounded-md px-3 py-2 text-sm transition-colors
                               focus-visible:outline-none focus-visible:ring-2
                               focus-visible:ring-[hsl(var(--ring))]
                               <?= $activeClass ?>"
                        <?= $isActive ? 'aria-current="page"' : '' ?>>
+                        <?php render_icon($item['icon'], 'solid', 'h-4 w-4') ?>
                         <?= htmlspecialchars($item['label']) ?>
                     </a>
                 <?php endforeach; ?>
@@ -147,11 +149,7 @@
                                    text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--accent))]
                                    focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))]"
                             :aria-label="'Powiadomienia' + (count > 0 ? ', ' + count + ' nowych' : '')">
-                        <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none"
-                             viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
-                            <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
-                        </svg>
+                        <?php render_icon('bell', 'solid', 'h-5 w-5') ?>
                         <span x-show="count > 0" x-cloak
                               class="absolute -top-1 -right-1 inline-flex h-4 min-w-4 items-center justify-center
                                      rounded-full bg-[hsl(var(--destructive))] px-1 text-[10px] font-bold
@@ -213,13 +211,7 @@
                     aria-controls="mobile-menu"
                     aria-label="Otwórz menu"
                 >
-                    <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg"
-                         fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                         stroke-width="2" aria-hidden="true">
-                        <line x1="3" y1="6"  x2="21" y2="6"/>
-                        <line x1="3" y1="12" x2="21" y2="12"/>
-                        <line x1="3" y1="18" x2="21" y2="18"/>
-                    </svg>
+                    <?php render_icon('bars', 'solid', 'h-5 w-5') ?>
                 </button>
 
                 <!-- Menu użytkownika — desktop -->
@@ -242,12 +234,7 @@
                             'md'
                         );
                         ?>
-                        <svg class="h-4 w-4 text-[hsl(var(--muted-foreground))]"
-                             xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
-                             fill="none" stroke="currentColor" stroke-width="2"
-                             aria-hidden="true">
-                            <polyline points="6 9 12 15 18 9"/>
-                        </svg>
+                        <?php render_icon('chevron-down', 'solid', 'h-3 w-3 text-[hsl(var(--muted-foreground))]') ?>
                     </button>
 
                     <!-- Dropdown menu -->
@@ -279,24 +266,14 @@
                            class="flex items-center gap-2 rounded-md px-3 py-2 text-sm
                                   text-[hsl(var(--foreground))] hover:bg-[hsl(var(--accent))]
                                   focus-visible:outline-none focus-visible:bg-[hsl(var(--accent))]">
-                            <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg"
-                                 viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                 stroke-width="2" aria-hidden="true">
-                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                                <circle cx="12" cy="7" r="4"/>
-                            </svg>
+                            <?php render_icon('user', 'solid', 'h-4 w-4') ?>
                             Mój profil
                         </a>
                         <a href="/settings" role="menuitem"
                            class="flex items-center gap-2 rounded-md px-3 py-2 text-sm
                                   text-[hsl(var(--foreground))] hover:bg-[hsl(var(--accent))]
                                   focus-visible:outline-none focus-visible:bg-[hsl(var(--accent))]">
-                            <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg"
-                                 viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                 stroke-width="2" aria-hidden="true">
-                                <circle cx="12" cy="12" r="3"/>
-                                <path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/>
-                            </svg>
+                            <?php render_icon('gear', 'solid', 'h-4 w-4') ?>
                             Ustawienia
                         </a>
 
@@ -308,13 +285,7 @@
                                     class="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm
                                            text-[hsl(var(--destructive))] hover:bg-[hsl(var(--destructive)/0.1)]
                                            focus-visible:outline-none focus-visible:bg-[hsl(var(--destructive)/0.1)]">
-                                <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg"
-                                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                     stroke-width="2" aria-hidden="true">
-                                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-                                    <polyline points="16 17 21 12 16 7"/>
-                                    <line x1="21" y1="12" x2="9" y2="12"/>
-                                </svg>
+                                <?php render_icon('arrow-right-from-bracket', 'solid', 'h-4 w-4') ?>
                                 Wyloguj się
                             </button>
                         </form>
@@ -338,8 +309,9 @@
                         : 'text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--accent))]';
                 ?>
                     <a href="<?= htmlspecialchars($item['href']) ?>"
-                       class="rounded-md px-3 py-2.5 text-sm transition-colors <?= $activeClass ?>"
+                       class="flex items-center gap-2 rounded-md px-3 py-2.5 text-sm transition-colors <?= $activeClass ?>"
                        <?= $isActive ? 'aria-current="page"' : '' ?>>
+                        <?php render_icon($item['icon'], 'solid', 'h-4 w-4') ?>
                         <?= htmlspecialchars($item['label']) ?>
                     </a>
                 <?php endforeach; ?>
@@ -419,12 +391,7 @@
         <div class="fixed bottom-0 inset-x-0 z-50 bg-red-600 text-white shadow-lg">
             <div class="mx-auto max-w-7xl px-4 py-3 sm:px-6 lg:px-8 flex items-center justify-between gap-4">
                 <div class="flex items-center gap-2 text-sm font-medium">
-                    <svg class="h-4 w-4 flex-shrink-0" xmlns="http://www.w3.org/2000/svg"
-                         viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                        <circle cx="9" cy="7" r="4"/>
-                        <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>
-                    </svg>
+                    <?php render_icon('users', 'solid', 'h-4 w-4 flex-shrink-0') ?>
                     <span>
                         Impersonujesz konto:
                         <strong><?= htmlspecialchars(\App\Core\Session::get('user_name', 'Użytkownik') ?? 'Użytkownik') ?></strong>

@@ -20,8 +20,8 @@
         <h2 class="text-xl font-semibold mt-6 mb-3">§1. Postanowienia ogólne</h2>
         <ol class="list-decimal list-inside space-y-1">
             <li>Niniejszy regulamin określa zasady korzystania z serwisu Genealog (dalej: „Serwis"),
-                dostępnego pod adresem [APP_URL].</li>
-            <li>Usługodawcą jest <strong>[NAZWA ADMINISTRATORA]</strong>, dalej „Usługodawca".</li>
+                dostępnego pod adresem <?= htmlspecialchars(defined('SITE_URL') ? SITE_URL : '[TODO]') ?>.</li>
+            <li>Usługodawcą jest <strong><?= htmlspecialchars(defined('COMPANY_NAME') ? COMPANY_NAME : '[TODO]') ?></strong>, dalej „Usługodawca".</li>
             <li>Użytkownikiem jest każda osoba fizyczna, która korzysta z Serwisu, zarówno jako
                 użytkownik zarejestrowany, jak i niezalogowany.</li>
             <li>Korzystanie z Serwisu oznacza akceptację niniejszego regulaminu.</li>
@@ -47,6 +47,24 @@
             <li>Minimalna długość hasła: 12 znaków, z cyfrą lub znakiem specjalnym.</li>
             <li>Jedno konto odpowiada jednej osobie fizycznej. Dzielenie konta z osobami trzecimi
                 jest zabronione.</li>
+            <li>Przy rejestracji Użytkownik akceptuje niniejszy Regulamin i Politykę prywatności.
+                Akceptacja jest zapisywana w bazie danych wraz z wersją dokumentu (RODO Art. 7(1)).</li>
+        </ol>
+    </section>
+
+    <section class="mb-6">
+        <h2 class="text-xl font-semibold mt-6 mb-3">§3a. Integracje z zewnętrznymi rejestrami (Discovery)</h2>
+        <ol class="list-decimal list-inside space-y-1">
+            <li>Serwis umożliwia opcjonalne wyszukiwanie osób w zewnętrznych rejestrach genealogicznych
+                (FamilySearch, Geneteka, inne wewnętrzne źródła). Funkcja jest domyślnie <strong>wyłączona</strong>.</li>
+            <li>Włączenie Discovery dla drzewa oznacza zgodę na wysyłanie ograniczonych danych
+                (imię, nazwisko, rok urodzenia) do wybranych rejestrów w momencie Twojego ręcznego
+                wyszukiwania.</li>
+            <li>W przypadku rejestru FamilySearch (USA) obowiązują Standardowe Klauzule Umowne —
+                szczegóły w Polityce Prywatności, sekcja 8 i 9.</li>
+            <li>Wyniki wyszukiwania są prezentowane Użytkownikowi — nie są automatycznie importowane.
+                Import wymaga osobnej decyzji.</li>
+            <li>Użytkownik może w każdej chwili wyłączyć Discovery dla drzewa w ustawieniach.</li>
         </ol>
     </section>
 
@@ -120,7 +138,7 @@
     <section class="mb-6">
         <h2 class="text-xl font-semibold mt-6 mb-3">§9. Reklamacje</h2>
         <ol class="list-decimal list-inside space-y-1">
-            <li>Reklamacje należy zgłaszać na adres [EMAIL KONTAKTOWY].</li>
+            <li>Reklamacje należy zgłaszać na adres <?= htmlspecialchars(defined('CONTACT_EMAIL') ? CONTACT_EMAIL : '[TODO]') ?>.</li>
             <li>Usługodawca rozpatrzy reklamację w terminie 14 dni roboczych.</li>
         </ol>
     </section>

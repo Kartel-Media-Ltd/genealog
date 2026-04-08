@@ -42,13 +42,8 @@ require_once __DIR__ . '/../atoms/icon.php';
     <aside class="fixed inset-y-0 left-0 z-40 w-56 bg-slate-900 flex flex-col">
         <!-- Logo -->
         <div class="flex items-center gap-2 px-4 py-4 border-b border-slate-700">
-            <div class="h-7 w-7 rounded bg-white/10 flex items-center justify-center">
-                <svg class="h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
-                     fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                    <circle cx="9" cy="7" r="4"/>
-                    <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>
-                </svg>
+            <div class="h-7 w-7 rounded bg-white/10 flex items-center justify-center text-white">
+                <?php render_icon('tree', 'solid', 'h-4 w-4') ?>
             </div>
             <div>
                 <p class="text-white text-sm font-semibold leading-none">Genealog</p>
@@ -59,31 +54,19 @@ require_once __DIR__ . '/../atoms/icon.php';
         <!-- Nav -->
         <nav class="flex-1 px-3 py-4 space-y-1">
             <a href="/admin" class="<?= $currentPath === '/admin' ? 'flex items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium bg-white/10 text-white' : 'flex items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium text-slate-300 hover:bg-white/10 hover:text-white transition-colors' ?>">
-                <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
-                    <rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
-                </svg>
+                <?php render_icon('gauge-high', 'solid', 'fa-fw h-4 w-4') ?>
                 Dashboard
             </a>
             <a href="/admin/users" class="<?= str_starts_with($currentPath, '/admin/users') ? 'flex items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium bg-white/10 text-white' : 'flex items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium text-slate-300 hover:bg-white/10 hover:text-white transition-colors' ?>">
-                <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
-                    <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>
-                </svg>
+                <?php render_icon('users', 'solid', 'fa-fw h-4 w-4') ?>
                 Użytkownicy
             </a>
             <a href="/admin/trees" class="<?= str_starts_with($currentPath, '/admin/trees') ? 'flex items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium bg-white/10 text-white' : 'flex items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium text-slate-300 hover:bg-white/10 hover:text-white transition-colors' ?>">
-                <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
-                </svg>
+                <?php render_icon('tree', 'solid', 'fa-fw h-4 w-4') ?>
                 Drzewa
             </a>
             <a href="/admin/logs" class="<?= str_starts_with($currentPath, '/admin/logs') ? 'flex items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium bg-white/10 text-white' : 'flex items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium text-slate-300 hover:bg-white/10 hover:text-white transition-colors' ?>">
-                <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                    <polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/>
-                    <line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>
-                </svg>
+                <?php render_icon('list-ul', 'solid', 'fa-fw h-4 w-4') ?>
                 Logi
             </a>
         </nav>
@@ -92,9 +75,7 @@ require_once __DIR__ . '/../atoms/icon.php';
         <div class="px-3 py-4 border-t border-slate-700">
             <a href="/dashboard"
                class="flex items-center gap-2.5 rounded-md px-3 py-2 text-sm text-slate-400 hover:text-white hover:bg-white/10 transition-colors">
-                <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <polyline points="15 18 9 12 15 6"/>
-                </svg>
+                <?php render_icon('chevron-left', 'solid', 'h-4 w-4') ?>
                 Wróć do aplikacji
             </a>
             <p class="mt-2 px-3 text-xs text-slate-500 truncate"><?= htmlspecialchars($currentUser['email'] ?? '') ?></p>

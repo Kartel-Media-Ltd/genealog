@@ -16,16 +16,36 @@
         przed uruchomieniem produkcyjnym. Szablon oparty o RODO Art. 13-14.
     </div>
 
-    <section class="mb-6">
+    <!-- ZAD-3.8 (D8): Table of Contents — WCAG 2.4.5 (multiple ways) -->
+    <nav aria-label="Spis treści" class="my-6 rounded-md border border-border bg-muted/30 p-4">
+        <h2 class="text-sm font-semibold mb-2">Spis treści</h2>
+        <ol class="text-sm space-y-1 list-decimal list-inside text-muted-foreground">
+            <li><a href="#sec-1"  class="hover:underline hover:text-foreground">Administrator danych</a></li>
+            <li><a href="#sec-2"  class="hover:underline hover:text-foreground">Cel i podstawa przetwarzania</a></li>
+            <li><a href="#sec-3"  class="hover:underline hover:text-foreground">Zakres przetwarzanych danych</a></li>
+            <li><a href="#sec-4"  class="hover:underline hover:text-foreground">Okres przechowywania</a></li>
+            <li><a href="#sec-5"  class="hover:underline hover:text-foreground">Twoje prawa</a></li>
+            <li><a href="#sec-6"  class="hover:underline hover:text-foreground">Odbiorcy danych</a></li>
+            <li><a href="#sec-7"  class="hover:underline hover:text-foreground">Dane osób trzecich</a></li>
+            <li><a href="#sec-8"  class="hover:underline hover:text-foreground">Przekazywanie poza EOG</a></li>
+            <li><a href="#sec-9"  class="hover:underline hover:text-foreground">Zewnętrzne rejestry (Discovery)</a></li>
+            <li><a href="#sec-10" class="hover:underline hover:text-foreground">Bezpieczeństwo</a></li>
+            <li><a href="#sec-11" class="hover:underline hover:text-foreground">Zmiany polityki</a></li>
+            <li><a href="#sec-12" class="hover:underline hover:text-foreground">Kontakt</a></li>
+        </ol>
+    </nav>
+
+    <section class="mb-6" id="sec-1">
         <h2 class="text-xl font-semibold mt-6 mb-3">1. Administrator danych</h2>
         <p>
-            Administratorem danych osobowych jest <strong>[NAZWA ADMINISTRATORA]</strong>,
-            z siedzibą w [ADRES], NIP: [NIP].
+            Administratorem danych osobowych jest <strong><?= htmlspecialchars(defined('COMPANY_NAME') ? COMPANY_NAME : '[TODO]') ?></strong>,
+            z siedzibą <?= htmlspecialchars(defined('COMPANY_ADDRESS') ? COMPANY_ADDRESS : '[TODO]') ?>,
+            NIP: <?= htmlspecialchars(defined('COMPANY_NIP') ? COMPANY_NIP : '[TODO]') ?>.
         </p>
-        <p>Kontakt w sprawach ochrony danych: <strong>[EMAIL DPO]</strong>.</p>
+        <p>Kontakt w sprawach ochrony danych: <strong><?= htmlspecialchars(defined('DPO_EMAIL') ? DPO_EMAIL : '[TODO]') ?></strong>.</p>
     </section>
 
-    <section class="mb-6">
+    <section class="mb-6" id="sec-2">
         <h2 class="text-xl font-semibold mt-6 mb-3">2. Cel i podstawa przetwarzania (Art. 13 RODO)</h2>
         <ul class="list-disc list-inside space-y-1">
             <li><strong>Prowadzenie konta użytkownika</strong> — podstawa: art. 6(1)(b) RODO (wykonanie umowy).</li>
@@ -39,7 +59,7 @@
         </ul>
     </section>
 
-    <section class="mb-6">
+    <section class="mb-6" id="sec-3">
         <h2 class="text-xl font-semibold mt-6 mb-3">3. Zakres przetwarzanych danych</h2>
         <ul class="list-disc list-inside space-y-1">
             <li><strong>Dane konta:</strong> imię i nazwisko, adres e-mail, hasło (przechowywane
@@ -53,7 +73,7 @@
         </ul>
     </section>
 
-    <section class="mb-6">
+    <section class="mb-6" id="sec-4">
         <h2 class="text-xl font-semibold mt-6 mb-3">4. Okres przechowywania (Art. 5(1)(e) RODO)</h2>
         <ul class="list-disc list-inside space-y-1">
             <li>Dane konta — do czasu jego usunięcia przez użytkownika.</li>
@@ -64,7 +84,7 @@
         </ul>
     </section>
 
-    <section class="mb-6">
+    <section class="mb-6" id="sec-5">
         <h2 class="text-xl font-semibold mt-6 mb-3">5. Twoje prawa (Art. 15-22 RODO)</h2>
         <p>Jako osoba, której dane dotyczą, masz prawo do:</p>
         <ul class="list-disc list-inside space-y-1">
@@ -86,7 +106,7 @@
         </ul>
     </section>
 
-    <section class="mb-6">
+    <section class="mb-6" id="sec-6">
         <h2 class="text-xl font-semibold mt-6 mb-3">6. Odbiorcy danych</h2>
         <p>Dane nie są udostępniane stronom trzecim z wyjątkiem:</p>
         <ul class="list-disc list-inside space-y-1">
@@ -97,7 +117,7 @@
         </ul>
     </section>
 
-    <section class="mb-6">
+    <section class="mb-6" id="sec-7">
         <h2 class="text-xl font-semibold mt-6 mb-3">7. Dane osób trzecich w drzewach genealogicznych</h2>
         <p>
             Genealog umożliwia wprowadzanie danych osób trzecich (przodków, krewnych). Użytkownik
@@ -113,16 +133,85 @@
         </ul>
     </section>
 
-    <section class="mb-6">
+    <section class="mb-6" id="sec-8">
         <h2 class="text-xl font-semibold mt-6 mb-3">8. Przekazywanie danych poza EOG</h2>
         <p>
-            Dane nie są przekazywane poza Europejski Obszar Gospodarczy. Infrastruktura Genealog
-            znajduje się w [LOKALIZACJA SERWERA].
+            <strong>Domyślnie</strong> dane osobowe nie są przekazywane poza Europejski Obszar
+            Gospodarczy. Infrastruktura Genealog znajduje się w
+            <?= htmlspecialchars(defined('SERVER_LOCATION') ? SERVER_LOCATION : '[TODO]') ?> (UE).
+        </p>
+        <p class="mt-3">
+            <strong>Wyjątek — Discovery Sources:</strong> Na Twoje świadome żądanie, Genealog może
+            inicjować wyszukiwanie osób w zewnętrznych rejestrach genealogicznych (patrz sekcja 9).
+            W przypadku rejestru <strong>FamilySearch</strong> (USA) wysyłane są ograniczone dane
+            (imię, nazwisko, rok urodzenia osoby której szukasz). Podstawa transferu: Standardowe
+            Klauzule Umowne (<em>Standard Contractual Clauses</em>) zgodnie z Decyzją Wykonawczą
+            Komisji 2021/914. Transfer następuje wyłącznie po włączeniu przez Ciebie opcji
+            Discovery w ustawieniach drzewa.
         </p>
     </section>
 
-    <section class="mb-6">
-        <h2 class="text-xl font-semibold mt-6 mb-3">9. Bezpieczeństwo (Art. 32 RODO)</h2>
+    <section class="mb-6" id="sec-9">
+        <h2 class="text-xl font-semibold mt-6 mb-3">9. Zewnętrzne rejestry (Discovery Sources)</h2>
+        <p>
+            Genealog umożliwia wyszukiwanie osób w zewnętrznych bazach genealogicznych.
+            Wyszukiwanie wymaga Twojej świadomej decyzji — musisz włączyć opcję Discovery
+            w ustawieniach drzewa, a następnie kliknąć "Szukaj w [nazwa rejestru]" dla konkretnej
+            osoby.
+        </p>
+        <div class="overflow-x-auto my-4">
+            <table class="min-w-full text-sm border border-border">
+                <thead class="bg-muted">
+                    <tr>
+                        <th class="border border-border px-3 py-2 text-left">Rejestr</th>
+                        <th class="border border-border px-3 py-2 text-left">Lokalizacja</th>
+                        <th class="border border-border px-3 py-2 text-left">Transfer poza EOG</th>
+                        <th class="border border-border px-3 py-2 text-left">Podstawa prawna</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="border border-border px-3 py-2">Local / Cross-tree</td>
+                        <td class="border border-border px-3 py-2">Genealog (UE)</td>
+                        <td class="border border-border px-3 py-2">Nie</td>
+                        <td class="border border-border px-3 py-2">Zgoda — opt-in Discovery</td>
+                    </tr>
+                    <tr>
+                        <td class="border border-border px-3 py-2">Geneteka (PTG)</td>
+                        <td class="border border-border px-3 py-2">Polska</td>
+                        <td class="border border-border px-3 py-2">Nie</td>
+                        <td class="border border-border px-3 py-2">Zgoda — opt-in Discovery</td>
+                    </tr>
+                    <tr>
+                        <td class="border border-border px-3 py-2">FamilySearch</td>
+                        <td class="border border-border px-3 py-2">USA</td>
+                        <td class="border border-border px-3 py-2"><strong>Tak (SCC)</strong></td>
+                        <td class="border border-border px-3 py-2">Zgoda + Standard Contractual Clauses</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <p>
+            <strong>Zasady:</strong>
+        </p>
+        <ul class="list-disc list-inside space-y-1">
+            <li>Wyniki wyszukiwania są prezentowane Tobie — <strong>nie są automatycznie importowane</strong>.</li>
+            <li>Import danych z zewnętrznego rejestru wymaga Twojej decyzji (klik „Importuj").</li>
+            <li>Osoby importowane z zewnętrznych rejestrów są oznaczane jako <strong>historyczne</strong>
+                (niezyjące) — privacy by design (RODO Art. 25).</li>
+            <li>Możesz w każdym momencie wyłączyć konkretne źródła w ustawieniach Discovery.</li>
+            <li>Każde wywołanie zewnętrznego rejestru jest zapisywane w Twoim rejestrze
+                czynności przetwarzania (RODO Art. 30) — dostępne w eksporcie danych.</li>
+        </ul>
+        <p class="mt-3 text-xs text-muted-foreground">
+            Jeśli nie chcesz korzystać z Discovery, pozostaw opcję wyłączoną w ustawieniach
+            drzewa. Bez aktywnego Discovery Twoje dane nigdy nie opuszczają infrastruktury
+            Genealog w UE.
+        </p>
+    </section>
+
+    <section class="mb-6" id="sec-10">
+        <h2 class="text-xl font-semibold mt-6 mb-3">10. Bezpieczeństwo (Art. 32 RODO)</h2>
         <p>Stosowane środki techniczne i organizacyjne:</p>
         <ul class="list-disc list-inside space-y-1">
             <li>Szyfrowanie transmisji (HTTPS/TLS).</li>
@@ -135,8 +224,8 @@
         </ul>
     </section>
 
-    <section class="mb-6">
-        <h2 class="text-xl font-semibold mt-6 mb-3">10. Zmiany polityki</h2>
+    <section class="mb-6" id="sec-11">
+        <h2 class="text-xl font-semibold mt-6 mb-3">11. Zmiany polityki</h2>
         <p>
             W przypadku istotnych zmian niniejszej polityki użytkownicy zostaną poinformowani
             e-mailem na adres powiązany z kontem. Aktualna wersja jest zawsze dostępna pod adresem
@@ -144,11 +233,11 @@
         </p>
     </section>
 
-    <section class="mb-6">
-        <h2 class="text-xl font-semibold mt-6 mb-3">11. Kontakt</h2>
+    <section class="mb-6" id="sec-12">
+        <h2 class="text-xl font-semibold mt-6 mb-3">12. Kontakt</h2>
         <p>
             W sprawach związanych z ochroną danych osobowych prosimy o kontakt na adres:
-            <strong>[EMAIL DPO]</strong>.
+            <strong><?= htmlspecialchars(defined('DPO_EMAIL') ? DPO_EMAIL : '[TODO]') ?></strong>.
         </p>
     </section>
 </main>
