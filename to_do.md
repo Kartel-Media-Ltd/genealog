@@ -41,18 +41,20 @@ ARCHIVES_API_KEY=...            # NIEDOSTĘPNE — szukajwarchiwach.gov.pl nie m
 
 ---
 
-## 🔴 Krytyczne błędy do naprawy
+## ✅ Relationship Suggestions — 4 blockery (NAPRAWIONE 2026-04-08)
 
-### Relationship Suggestions — 4 blockery (z review)
+> Pierwotnie wskazane w `dev/active/relationship-suggestions/review-2026-04-07.md`
 
-> Plik: `dev/active/relationship-suggestions/relationship-suggestions-zadania.md` linie 109-112
+Wszystkie 4 krytyczne błędy zostały naprawione przez wcześniejsze interwencje (linter/refactor):
 
-- 🔴 **B1** `src/Services/GedcomService.php:450,452,464,465,477,481,482` — `$rel->person_a_id` / `person_b_id` / `start_date` muszą być camelCase (`personAId`, `personBId`, `startDate`); model używa camelCase, snake_case zwraca cicho `null` → **GEDCOM eksport produkuje pusty `$parentToChildren` → wszystkie FAM bez `CHIL`**
-- 🔴 **B2** `src/Services/GedcomService.php:447-454` — `$parentToChildren` zbiera duplikaty z forward+inverse rekordów relacji
-- 🔴 **B3** `src/Services/SuggestionService.php:104-114` — case `'child'` sugeruje rodzeństwo bez weryfikacji że ma `personId` jako rodzica
-- 🔴 **B4** `src/views/pages/trees/persons/show.php:186-193` — `typeLabel` parent↔child odwrócone
+- ✅ **B1** `GedcomService.php:447-454` — wszystkie odwołania używają camelCase (`personAId`/`personBId`/`startDate`)
+- ✅ **B2** `GedcomService.php:486-497` — set-based dedup `$parentChildSet` eliminuje duplikaty z forward+inverse
+- ✅ **B3** `SuggestionService.php:118-143` — sprawdzenie `relRepo->exists($candidateChildId, $personId, 'parent', $treeId)` w linii 126
+- ✅ **B4** `show.php:361-368` — labels zgodne z konwencją FORM-interpretation (`'parent' => 'rodzic'`, `'child' => 'dziecko'`)
 
-**Wpływ:** GEDCOM eksport może być uszkodzony, suggestions pokazują nieprawidłowe podpowiedzi.
+**Weryfikacja 2026-04-08:** 60/60 testów green, phpstan 0 errors. GEDCOM eksport produkuje poprawne FAM z CHIL elementami.
+
+**Pozostałe issues z relationship-suggestions:** 31 pending (10 important + 21 nit/suggestions) — patrz `dev/active/relationship-suggestions/relationship-suggestions-zadania.md`
 
 ---
 

@@ -104,12 +104,14 @@
 > Pełny raport: [`review-2026-04-07.md`](./review-2026-04-07.md)
 > Werdykt: **FAIL** — 4 blocking, 8 important
 
-### 🔴 Blocking (do naprawy ZANIM zadanie pójdzie do completed)
+### 🔴 Blocking — naprawione 2026-04-08
 
-- [ ] 🔴 [B1] **`src/Services/GedcomService.php:450,452,464,465,477,481,482`** — wszystkie `$rel->person_a_id` / `person_b_id` / `start_date` zamienić na `personAId` / `personBId` / `startDate` (model używa camelCase, snake_case zwraca cicho `null`)
-- [ ] 🔴 [B2] **`src/Services/GedcomService.php:447-454`** — `$parentToChildren` zbiera duplikaty z forward+inverse rekordów; dedup przez set lub iteruj tylko jeden typ
-- [ ] 🔴 [B3] **`src/Services/SuggestionService.php:104-114`** — case `'child'` sugeruje rodzeństwo dziecka jako własne dzieci bez weryfikacji że ten sibling ma `personId` jako rodzica; dodać `relRepo->exists($candidateSibling, $personId, 'parent', $treeId)`
-- [ ] 🔴 [B4] **`src/views/pages/trees/persons/show.php:186-193`** — `typeLabel` parent↔child odwrócone; zamienić: `'child' => 'dziecko'`, `'parent' => 'rodzic'`
+> Weryfikacja: 60/60 testów green, phpstan 0 errors. GEDCOM eksport produkuje poprawne FAM z CHIL.
+
+- [x] 🔴 [B1] **`src/Services/GedcomService.php:447-454`** — wszystkie odwołania używają camelCase (`personAId`/`personBId`/`startDate`); model `Relationship` używa camelCase, snake_case zwracało cicho `null`
+- [x] 🔴 [B2] **`src/Services/GedcomService.php:486-497`** — set-based dedup `$parentChildSet` (nested array `[parentId][childId] => true`) eliminuje duplikaty z forward+inverse rekordów relacji przed redukcją do `$parentToChildren`
+- [x] 🔴 [B3] **`src/Services/SuggestionService.php:118-143`** — `case 'child'` sprawdza `relRepo->exists($candidateChildId, $personId, 'parent', $treeId)` w linii 126 przed sugerowaniem rodzeństwa dziecka jako własne dziecko (chroni przed false positives z poprzednich małżeństw drugiego rodzica)
+- [x] 🔴 [B4] **`src/views/pages/trees/persons/show.php:361-368`** — `typeLabel` zgodne z konwencją FORM-interpretation: `'parent' => 'rodzic'`, `'child' => 'dziecko'`
 
 ### 🟠 Important
 
