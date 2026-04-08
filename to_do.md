@@ -1,8 +1,14 @@
 # Genealog — TO DO
 
-> **Stan:** 2026-04-08 (relationship-suggestions: wszystkie I1-I8 + N1-N5 zweryfikowane i naprawione; Fazy 1-4 ✅)
+> **Stan:** 2026-04-08 (po 4 audytach bezpieczeństwa — backend, backend-2, backend-3, backend-4; łącznie ~130+ zadań naprawczych zrealizowanych)
 >
 > Dokument zbiera wszystko co pozostało do rozpatrzenia / implementacji w projekcie.
+>
+> **Ostatnie iteracje audytów:**
+> - ✅ `/ultra-audit backend` → `dev/audit/backend/` (73 zadań, ~60 zrealizowanych)
+> - ✅ `/ultra-audit backend-2` → 21 zadań, 17 zrealizowanych (Faza 3 architektury świadomie odroczona)
+> - ✅ `/ultra-audit backend-3` → 25 zadań, **25/25 zrealizowane**
+> - ✅ `/ultra-audit backend-4` → 27 zadań, **25/27 zrealizowane** (D13, D14 odroczone)
 
 ---
 
@@ -10,11 +16,11 @@
 
 ### USER_ACTIONS (migracje + reindex)
 
-Wszystkie migracje są **idempotentne** (`IF NOT EXISTS`), ale jeśli baza nie jest aktualna:
+Wszystkie migracje są **idempotentne** (`IF NOT EXISTS` / drop-if-exists pattern), bezpieczne przy wielokrotnym uruchomieniu.
 
 ```bash
-# Aktualne migracje 006-014 (uruchom po kolei, bezpiecznie wielokrotnie)
-source .env.local && for f in migrations/{006,007,008,009,010,011,012,013,014}_*.sql; do
+# Aktualne migracje 006-015 (uruchom po kolei)
+source .env.local && for f in migrations/{006,007,008,009,010,011,012,013,014,015}_*.sql; do
   echo "=== $f ==="
   docker exec -i mariadb_docker mariadb -u $DATABASE_USER -p$DATABASE_PASSWORD $DATABASE_NAME < "$f"
 done
@@ -22,6 +28,27 @@ done
 # Retroaktywne wypełnienie global_person_index dla istniejących osób
 php bin/reindex-all.php
 ```
+
+**Nowe migracje z backend-3/backend-4:**
+- `012_persons_indexes.sql` — P8 performance index `persons(tree_id, gedcom_xref)`
+- `013_user_restriction.sql` — RODO Art. 18 right to restriction
+- `014_tree_members_invited_by.sql` — FK fix (brakująca kolumna)
+- `015_user_consent.sql` — RODO Art. 7(1) persystencja zgody (`terms_accepted_at`, `terms_version`)
+
+### USER_ACTIONS (env vars — RODO compliance)
+
+Uzupełnij `.env.local` o dane administratora i DPO (używane w Privacy Policy, Terms, eksporcie danych):
+
+```bash
+COMPANY_NAME="Nazwa Sp. z o.o."
+COMPANY_ADDRESS="ul. Przykładowa 1, 00-000 Warszawa"
+COMPANY_NIP="1234567890"
+DPO_EMAIL="dpo@example.com"
+CONTACT_EMAIL="kontakt@example.com"
+SERVER_LOCATION="Hetzner DC Frankfurt (DE)"
+```
+
+Bez tych wartości Privacy Policy będzie wyświetlać `[TODO]` placeholdery.
 
 ### Klucze API (jeśli włączamy registries / external sources)
 
@@ -38,6 +65,39 @@ ARCHIVES_API_KEY=...            # NIEDOSTĘPNE — szukajwarchiwach.gov.pl nie m
 - 🟢 FamilySearch — Sandbox dostępny od razu, produkcja wymaga certyfikacji
 - 🔴 Szukaj w Archiwach — brak publicznego API (kontakt: szukajwarchiwach@nac.gov.pl)
 - 🔴 Geneteka CSV dump — PTG nie udostępnia publicznie (kontakt: zarzad@genealodzy.pl)
+
+---
+
+## ✅ Audyty bezpieczeństwa backend-3 + backend-4 — KOMPLETNE (2026-04-08)
+
+**Backend-3** (`dev/audit/backend-3/`) — 25/25 zadań:
+- ✅ **K1** SMTP header injection — `EmailService::sanitizeHeader()` + MIME boundary `bin2hex(random_bytes)`
+- ✅ **K2** `findSoleOwnedTreeIds` utrata danych innych userów — `NOT EXISTS` + `transferOwnership`
+- ✅ **K3** Privacy Policy + Terms + Consent flow przy rejestracji
+- ✅ **P1-P11, P13** Security + RODO + NIS2 (XSS, MIME bypass, invitation email check, rate limit /register, tmpPath leak, session_version sync, index, depth cap, DataExport rozszerzony, RODO Art. 18, backup plan)
+- ✅ **D1-D12** WCAG skip link, aria-live, health endpoint, .env.example
+
+**Backend-4** (`dev/audit/backend-4/`) — 25/27 zadań (D13, D14 odroczone):
+- ✅ **K1** RODO Art. 7(1) — persystencja zgody (`terms_accepted_at`, `terms_version`, migration 015)
+- ✅ **K2** Privacy Policy — nowa sekcja 9 Discovery Sources + tabela rejestrów + SCC info dla FamilySearch USA
+- ✅ **P1** Batch `tree.imported` event — eliminacja DoS przy bulk GEDCOM import (5000 osób × matching → 1× `matchTreeAfterImport`)
+- ✅ **P2** `isDiscoveryOptedIn` check w `MatchingService::findAndNotifyMatches` (RODO Art. 7(3))
+- ✅ **P3** `GlobalIndexService::reindexTree` — pre-fetch tree+opt-in, chunking 100/batch, `set_time_limit(300)`
+- ✅ **P4** CrossTreeMatchSource error_log bez userId + sampling 1%
+- ✅ **P5** `MatchSourceInterface::getTimeoutSeconds()` + stałe `SOURCE_LOCAL/CROSS_TREE/EXTERNAL`
+- ✅ **P6** DataExport `tree-memberships.json` + `password-resets.json` (Art. 15)
+- ✅ **P8** Config stałe `COMPANY_*`, `DPO_EMAIL`, `SERVER_LOCATION` — podmiana placeholderów w Privacy/Terms
+- ✅ **P9** incident-response.md scenariusz E (external dependency outage)
+- ✅ **P10** Consent checkbox `aria-describedby="consent-desc"`
+- ✅ **P11** GenetykaMatchSource path validation — `realpath()` + allowlist `STORAGE_PATH/geneteka`
+- ✅ **D1-D12** `/health` cleanup, ToC w Privacy Policy, FK automat w migration 014, memoization w Registry, filtr `visibility` w LocalTreeMatchSource, 10 testów dla `EmailService::sanitizeHeader` (K1 regression guard)
+
+**Weryfikacja końcowa:** 70/70 testów PHPUnit passed (wzrost +34 vs poprzednio).
+
+**Odroczone z backend-4 (nie blokują):**
+- **D13** — AccountDeletionService unit tests (wymagają Database mock)
+- **D14** — `unindexTree` batching (wymaga async jobs)
+- **P5/P12/P14 (backend-3)** — CSP nonce, DPIA, MFA TOTP
 
 ---
 
@@ -63,7 +123,7 @@ Wszystkie fazy (1-4) zaimplementowane. Wszystkie issues z review naprawione:
 |---|---|---|---|
 | **font-awesome** | 109 | ❌ | Cały feature niezaimplementowany — `/ultra-workaholic font-awesome` |
 | **gedcom** | 18 | ⚠️ | Pozostałe nity + recovery po B1-B4 z relationship-suggestions |
-| **global-admin** | 16 | ❌ | Pozostałe ulepszenia (filtry, view-actions audit już zrobione) |
+| **global-admin** | 0 | ✅ | Fazy 1-5 kompletne; wszystkie nity N1-N7 zweryfikowane |
 | **person-discovery** | 0 | ✅ | KOMPLETNE (poza I7 reindex batch — patrz niżej) |
 | **php-scaffold** | 1 | ❌ | Pojedynczy task pozostały (sprawdzić co konkretnie) |
 | **print-pdf** | 36 | ❌ | Większość drobnych ulepszeń (Faza 8 weryfikacja E2E) |
@@ -221,20 +281,33 @@ Aktualnie tylko `FingerprintServiceTest` (24 testy). Brak testów dla:
 
 ---
 
-## 📊 Metryki projektu (2026-04-08)
+## 📊 Metryki projektu (2026-04-08, po backend-4)
 
 | Metryka | Wartość |
 |---|---|
-| **Testy** | 60 (24 nowe FingerprintService) |
+| **Testy** | **70** (70/70 green — +10 EmailService + FingerprintService już było) |
 | **Phpstan** | level 5, 0 errors |
-| **Migracje** | 14 (001-014, wszystkie idempotentne 006+) |
-| **Routes** | ~80 endpointów |
-| **Services** | ~25 |
+| **Migracje** | **15** (001-015, wszystkie idempotentne 006+; 012-015 z backend-3/4) |
+| **Routes** | ~82 endpointów (+/privacy, /terms, /health, /settings/restrict) |
+| **Services** | ~27 (+Discovery/ subfolder: Matching, PersonImport, Fingerprint, GlobalIndex, 4 MatchSources) |
 | **Controllers** | 17 |
-| **Repositories** | 11 |
-| **Models** | 5 |
+| **Repositories** | 11 (+`isDiscoveryOptedIn`, `existsRecentForLink`, `setRestricted`) |
+| **Models** | 5 (User z `isRestricted` flag) |
 | **Atoms (UI)** | 10 |
-| **CI** | GitHub Actions (.github/workflows/ci.yml) |
+| **CI** | GitHub Actions (.github/workflows/ci.yml) — composer audit blokujący |
+| **Audyty bezpieczeństwa** | **4 iteracje** (backend, backend-2/3/4) — PASS WITH CONDITIONS |
+| **Backend-4 test coverage** | ~13% (70 testów / ~65 src files) |
+
+### Trend jakości audytów
+
+| Audit | KRYT | POW | DROB | Status |
+|-------|------|-----|------|--------|
+| #1 backend | 2 | 17 | 19 | 60/73 naprawione |
+| #2 backend-2 | 2 | 8 | 4 | 17/17 naprawione |
+| #3 backend-3 | 3 | 14 | 13 | 25/25 naprawione ✅ |
+| #4 backend-4 | 2 | 14 | 14 | 25/27 naprawione (D13, D14 odroczone) |
+
+**Następny krok:** `/ultra-audit backend` → `dev/audit/backend-5/` dla weryfikacji K1-K2 z backend-4 + detekcja ewentualnych regresji.
 
 ---
 
