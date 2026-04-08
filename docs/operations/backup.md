@@ -39,7 +39,7 @@ source_audit_log, global_person_index, password_resets, rate_limits.
   - Monthly fulls (pierwszy dzień miesiąca): **12 miesięcy**
   - Binary logs: **7 dni**
 
-**Skrypt:** `bin/backup-db.sh` (TODO — utworzyć)
+**Skrypt:** `scripts/backup-db.sh` ✅
 
 ### 2. Filesystem — `storage/media/`
 Zdjęcia i dokumenty dodane przez użytkowników (po konwersji do WebP).
@@ -198,8 +198,8 @@ Zdjęcia i dokumenty dodane przez użytkowników (po konwersji do WebP).
 
 ## TODO
 
-- [ ] Utworzyć `bin/backup-db.sh`
-- [ ] Utworzyć `bin/restore-db.sh` (template dla Scenariusza A)
+- [x] ~~Utworzyć `bin/backup-db.sh`~~ → `scripts/backup-db.sh` (2026-04-08)
+- [x] ~~Utworzyć `bin/restore-db.sh`~~ → `scripts/restore-db.sh` (2026-04-08)
 - [ ] Konfiguracja Grafana dashboard
 - [ ] IaC w `infrastructure/terraform/` dla Scenariusza C
 - [ ] Pierwszy DR drill — deadline [TBD]

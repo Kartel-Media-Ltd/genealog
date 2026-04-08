@@ -10,6 +10,14 @@ PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
 SHELL=/bin/bash
 
 # ---------------------------------------------------------------------------
+# NIS2 Art. 21.2(c) — backup bazy danych (RPO 24h)
+# Full dump MariaDB, gzip, retencja 30 dni daily + 12 miesięcy monthly
+# Codziennie o 2:00 UTC (przed czyszczeniem logów)
+# Wymaga: scripts/backup-db.sh, Docker, /backups/mariadb/ z prawami www-data
+# ---------------------------------------------------------------------------
+0 2 * * * www-data /bin/bash /var/www/genealog/scripts/backup-db.sh >> /var/log/genealog/backup-db.log 2>&1
+
+# ---------------------------------------------------------------------------
 # RODO Art. 5(1)(e) — ograniczenie przechowywania
 # Cleanup audit log (retencja: 3 lata) — codziennie o 3:00
 # ---------------------------------------------------------------------------

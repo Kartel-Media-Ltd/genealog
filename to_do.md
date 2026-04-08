@@ -195,11 +195,14 @@ Aktualnie tylko `FingerprintServiceTest` (24 testy). Brak testów dla:
 - **Level 6** wymaga pełnych PHPDoc generic types (np. `array<string, mixed>` zamiast `array`)
 - Estymacja: ~50 fix'ów (głównie iterable type hints w services)
 
-### Database backup
+### Database backup ✅
 
-- ✅ Już istnieje: `docs/operations/backup.md` (z poprzedniego commitu)
-- ❌ Zweryfikować że backup script faktycznie istnieje i działa
-- ❌ Restore procedure test (raz na kwartał)
+- ✅ `docs/operations/backup.md` — strategia + procedury recovery
+- ✅ `scripts/backup-db.sh` — full dump, gzip, retencja 30d/12m, weryfikacja rozmiaru
+- ✅ `scripts/restore-db.sh` — interaktywny szablon restore (Scenariusz A)
+- ✅ `infrastructure/cron.example` — wpis backup 2:00 UTC
+- `[USER]` Skonfiguruj cron na produkcji + utwórz `/backups/mariadb/` z prawami
+- `[USER]` Restore procedure test (raz na kwartał) — wg `docs/operations/backup.md`
 
 ### Cron jobs
 
