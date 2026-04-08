@@ -122,7 +122,7 @@ Wszystkie fazy (1-4) zaimplementowane. Wszystkie issues z review naprawione:
 | Feature | Pending | Blocker? | Komentarz |
 |---|---|---|---|
 | **font-awesome** | 109 | ❌ | Cały feature niezaimplementowany — `/ultra-workaholic font-awesome` |
-| **gedcom** | 18 | ⚠️ | Pozostałe nity + recovery po B1-B4 z relationship-suggestions |
+| **gedcom** | 0 | ✅ | Fazy 1-5 kompletne; blocking/important/nity zweryfikowane; E2E = manual |
 | **global-admin** | 0 | ✅ | Fazy 1-5 kompletne; wszystkie nity N1-N7 zweryfikowane |
 | **person-discovery** | 0 | ✅ | KOMPLETNE (poza I7 reindex batch — patrz niżej) |
 | **php-scaffold** | 1 | ❌ | Pojedynczy task pozostały (sprawdzić co konkretnie) |
@@ -212,7 +212,7 @@ Aktualnie tylko `FingerprintServiceTest` (24 testy). Brak testów dla:
 
 - ❌ Wpis o zaimplementowanym Person Discovery
 - ❌ Wpis o session_version (RODO Art. 18 + invalidation on demote/block)
-- ❌ Wpis o migracjach 006-014
+- ❌ Wpis o migracjach 006-015 (+012 indexes, 013 Art. 18 restriction, 014 FK, 015 consent persistence)
 
 ### Atrybucja licencji
 
@@ -230,9 +230,13 @@ Aktualnie tylko `FingerprintServiceTest` (24 testy). Brak testów dla:
 ### Sprint 1 (krytyczne — 4-6h)
 
 1. ~~**🔴 Naprawić 4 blockery z relationship-suggestions**~~ ✅ KOMPLETNE
-2. **🔴 Php-scaffold pozostały 1 task** (sprawdzić co)
-3. **🟠 Tests dla GlobalIndexService** (RODO compliance — najważniejsze przed produkcją)
-4. **📝 CLAUDE.md** + MEMORY.md update
+2. ~~**🔴 Audyty backend-3 + backend-4**~~ ✅ KOMPLETNE (50/52 zadań)
+3. **🔴 USER_ACTIONS — migracje 012-015 + env vars RODO** (patrz sekcja na górze)
+4. **🔴 Research prawny:** Privacy Policy + Terms + SCC z FamilySearch Inc. przed aktywacją
+5. **🟠 Re-audit #5** (`/ultra-audit backend` → `dev/audit/backend-5/`) — weryfikacja K1-K2 z backend-4
+6. **🟠 Tests: AccountDeletionService (D13 backend-4) + GlobalIndexService** (RODO compliance)
+7. **🔴 Php-scaffold pozostały 1 task** (sprawdzić co)
+8. **📝 CLAUDE.md** + MEMORY.md update — Discovery, consent flow, Art. 18 restriction
 
 ### Sprint 2 (UX + dokończenie features — 6-8h)
 
