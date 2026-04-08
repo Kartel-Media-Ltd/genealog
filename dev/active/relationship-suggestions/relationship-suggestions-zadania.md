@@ -7,18 +7,18 @@
 ## Faza 1: SuggestionService
 
 - [x] Utworzyć `src/Services/SuggestionService.php`
-  - [ ] Constructor: `RelationshipRepository $relRepo, PersonRepository $personRepo`
-  - [ ] Metoda `compute(string $personId, string $treeId): array`
-  - [ ] Logika: iteruj relacje osoby A przez `relRepo->findByPerson($personId, $treeId)`
-  - [ ] Dla każdego rodzeństwa B: pobierz `relRepo->findByPerson(B, treeId)` → zbierz rodziców i inne rodzeństwo
-  - [ ] Dla każdego małżonka/partnera B: zbierz dzieci B (B ma type='parent')
-  - [ ] Dla każdego rodzica B: zbierz inne dzieci B (rodzeństwo A), małżonka B
-  - [ ] Filtruj przez `relRepo->exists()` — pomijaj już istniejące relacje
-  - [ ] Pomijaj sugestie A→A
-  - [ ] Deduplikuj po `type|targetPersonId`
-  - [ ] Dla każdej sugestii dołącz Person object: `personRepo->findById(targetPersonId, treeId)`
-  - [ ] Pomijaj sugestie gdzie Person nie istnieje (null)
-  - [ ] Zwróć array `['type' => string, 'targetPerson' => Person, 'reason' => string]`
+  - [x] Constructor: `RelationshipRepository $relRepo, PersonRepository $personRepo`
+  - [x] Metoda `compute(string $personId, string $treeId): array`
+  - [x] Logika: iteruj relacje osoby A przez `relRepo->findByPerson($personId, $treeId)`
+  - [x] Dla każdego rodzeństwa B: pobierz `relRepo->findByPerson(B, treeId)` → zbierz rodziców i inne rodzeństwo
+  - [x] Dla każdego małżonka/partnera B: zbierz dzieci B (B ma type='parent')
+  - [x] Dla każdego rodzica B: zbierz inne dzieci B (rodzeństwo A), małżonka B
+  - [x] Filtruj przez `relRepo->exists()` — pomijaj już istniejące relacje
+  - [x] Pomijaj sugestie A→A
+  - [x] Deduplikuj po `type|targetPersonId`
+  - [x] Dla każdej sugestii dołącz Person object: `personRepo->findById(targetPersonId, treeId)`
+  - [x] Pomijaj sugestie gdzie Person nie istnieje (null)
+  - [x] Zwróć array `['type' => string, 'targetPerson' => Person, 'reason' => string]`
 
 **Weryfikacja:** Dodaj dwie osoby z relacją sibling + dodaj rodziców jednej → `compute()` zwraca rodziców jako sugestię
 
@@ -27,21 +27,21 @@
 ## Faza 2: SuggestionController + routing
 
 - [x] Utworzyć `src/Controllers/SuggestionController.php`
-  - [ ] Constructor: `Request, Response, TreeRepository, PersonRepository, RelationshipRepository, RelationshipService`
-  - [ ] Metoda `apply(): never` — POST /trees/{id}/persons/{pid}/suggestions
-  - [ ] `$this->request->verifyCsrf()`
-  - [ ] `requireEditorAccess($treeId, $userId)` (skopiuj wzorzec z RelationshipController)
-  - [ ] Odczyt `$suggestions = $this->request->getParam('suggestions', [])` (tablica JSON stringów)
-  - [ ] Walidacja: dla każdego elementu — decode JSON, sprawdź `type` i `targetPersonId`
-  - [ ] Weryfikacja IDOR: `personRepo->findById($targetPersonId, $treeId)` — musi nie być null
-  - [ ] Wywołaj `relService->create($treeId, $personId, $targetPersonId, $type)` w try/catch
-  - [ ] Skip jeśli relacja już istnieje (InvalidArgumentException z "już istnieje" → continue)
-  - [ ] Redirect na `/trees/{id}/persons/{pid}` (BEZ ?suggest=1)
+  - [x] Constructor: `Request, Response, TreeRepository, PersonRepository, RelationshipService`
+  - [x] Metoda `apply(): never` — POST /trees/{id}/persons/{pid}/suggestions
+  - [x] `$this->request->verifyCsrf()`
+  - [x] `requireEditorAccess($treeId, $userId)` (skopiuj wzorzec z RelationshipController)
+  - [x] Odczyt `$suggestions = $this->request->getParam('suggestions', [])` (tablica JSON stringów)
+  - [x] Walidacja: dla każdego elementu — decode JSON, sprawdź `type` i `targetPersonId`
+  - [x] Weryfikacja IDOR: `personRepo->findById($targetPersonId, $treeId)` — musi nie być null
+  - [x] Wywołaj `relService->create($treeId, $personId, $targetPersonId, $type)` w try/catch
+  - [x] Skip jeśli relacja już istnieje (InvalidArgumentException z "już istnieje" → continue)
+  - [x] Redirect na `/trees/{id}/persons/{pid}` (BEZ ?suggest=1)
 
-- [ ] Edytować `public/index.php`
-  - [ ] Zaimportować/dodać `SuggestionService` i `SuggestionController` do DI (wzorzec jak inne kontrolery)
-  - [ ] Dodać trasę: `POST /trees/{id}/persons/{pid}/suggestions → SuggestionController::apply`
-  - [ ] Upewnić się że trasa jest PRZED `/trees/{id}/persons/{pid}` w routerze
+- [x] Edytować `public/index.php`
+  - [x] Zaimportować/dodać `SuggestionService` i `SuggestionController` do DI (wzorzec jak inne kontrolery)
+  - [x] Dodać trasę: `POST /trees/{id}/persons/{pid}/suggestions → SuggestionController::apply`
+  - [x] Upewnić się że trasa jest PRZED `/trees/{id}/persons/{pid}` w routerze
 
 **Weryfikacja:** `POST /trees/X/persons/Y/suggestions` z CSRF + pustą tablicą → redirect bez błędu
 
@@ -49,17 +49,17 @@
 
 ## Faza 3: Integracja z PersonController + RelationshipController
 
-- [ ] Edytować `src/Controllers/RelationshipController.php`
-  - [ ] W `processCreate()` zmień redirect z `'/trees/' . $treeId . '/persons/' . $personId` na `'/trees/' . $treeId . '/persons/' . $personId . '?suggest=1'`
+- [x] Edytować `src/Controllers/RelationshipController.php`
+  - [x] W `processCreate()` zmień redirect z `'/trees/' . $treeId . '/persons/' . $personId` na `'/trees/' . $treeId . '/persons/' . $personId . '?suggest=1'`
 
-- [ ] Edytować `src/Controllers/PersonController.php`
-  - [ ] Dodać `SuggestionService $suggestionService` do konstruktora
-  - [ ] W `show()` po obliczeniu `$canEdit`: jeśli `$this->request->getParam('suggest') === '1' && $canEdit`, wywołaj `$suggestionService->compute($personId, $treeId)`, zapisz do `$suggestions`
-  - [ ] W innym przypadku `$suggestions = []`
-  - [ ] Przekaż `'suggestions' => $suggestions` do widoku
+- [x] Edytować `src/Controllers/PersonController.php`
+  - [x] Dodać `SuggestionService $suggestionService` do konstruktora
+  - [x] W `show()` po obliczeniu `$canEdit`: jeśli `$this->request->getParam('suggest') === '1' && $canEdit`, wywołaj `$suggestionService->compute($personId, $treeId)`, zapisz do `$suggestions`
+  - [x] W innym przypadku `$suggestions = []`
+  - [x] Przekaż `'suggestions' => $suggestions` do widoku
 
-- [ ] Edytować `public/index.php`
-  - [ ] Dodać SuggestionService do konstruktora PersonController
+- [x] Edytować `public/index.php`
+  - [x] Dodać SuggestionService do konstruktora PersonController
 
 **Weryfikacja:** Po dodaniu relacji URL zawiera `?suggest=1`, show.php otrzymuje `$suggestions`
 
@@ -67,24 +67,24 @@
 
 ## Faza 4: Widok — panel sugestii
 
-- [ ] Edytować `src/views/pages/trees/persons/show.php`
-  - [ ] Na początku pliku dodać `/** @var array $suggestions */`
-  - [ ] Przed panelem "Relacje rodzinne" dodać blok: `<?php if (!empty($suggestions) && $canEdit): ?>`
-  - [ ] Panel z nagłówkiem "💡 Sugerowane relacje do dodania" i opisem
-  - [ ] Form: `method="POST"` action na `/trees/{treeId}/persons/{personId}/suggestions`
-  - [ ] `Csrf::hiddenInput()`
-  - [ ] Foreach `$suggestions` → checkbox + avatar + imię + powód (reason)
-  - [ ] Wartość checkboxa: `htmlspecialchars(json_encode(['type' => $s['type'], 'targetPersonId' => $s['targetPerson']->id]))`
-  - [ ] Checkboxy domyślnie zaznaczone (`checked`)
-  - [ ] Przyciski: "Dodaj zaznaczone" (primary) + "Pomiń →" (link do `/trees/{id}/persons/{pid}`)
-  - [ ] Styl panelu: `border border-primary/30 bg-primary/5` — wyróżniony ale nie nachalny
-  - [ ] `<?php endif; ?>` na końcu bloku
+- [x] Edytować `src/views/pages/trees/persons/show.php`
+  - [x] Na początku pliku dodać `/** @var array $suggestions */`
+  - [x] Przed panelem "Relacje rodzinne" dodać blok: `<?php if (!empty($suggestions) && $canEdit): ?>`
+  - [x] Panel z nagłówkiem "💡 Sugerowane relacje do dodania" i opisem
+  - [x] Form: `method="POST"` action na `/trees/{treeId}/persons/{personId}/suggestions`
+  - [x] `Csrf::hiddenInput()`
+  - [x] Foreach `$suggestions` → checkbox + avatar + imię + powód (reason)
+  - [x] Wartość checkboxa: `htmlspecialchars(json_encode(['type' => $s['type'], 'targetPersonId' => $s['targetPerson']->id]))`
+  - [x] Checkboxy domyślnie zaznaczone (`checked`)
+  - [x] Przyciski: "Dodaj zaznaczone" (primary) + "Pomiń →" (link do `/trees/{id}/persons/{pid}`)
+  - [x] Styl panelu: `border border-primary/30 bg-primary/5` — wyróżniony ale nie nachalny
+  - [x] `<?php endif; ?>` na końcu bloku
 
 **Weryfikacja:**
-- [ ] Otworzyć stronę osoby z `?suggest=1` gdy są sugestie → panel widoczny
-- [ ] Bez sugestii lub bez `?suggest=1` → panel niewidoczny
-- [ ] Kliknąć "Pomiń" → URL bez `?suggest=1`, panel znika
-- [ ] Zaznaczyć sugestie + kliknąć "Dodaj zaznaczone" → relacje dodane, redirect do show
+- [x] Otworzyć stronę osoby z `?suggest=1` gdy są sugestie → panel widoczny
+- [x] Bez sugestii lub bez `?suggest=1` → panel niewidoczny
+- [x] Kliknąć "Pomiń" → URL bez `?suggest=1`, panel znika
+- [x] Zaznaczyć sugestie + kliknąć "Dodaj zaznaczone" → relacje dodane, redirect do show
 
 ---
 
@@ -113,23 +113,23 @@
 - [x] 🔴 [B3] **`src/Services/SuggestionService.php:118-143`** — `case 'child'` sprawdza `relRepo->exists($candidateChildId, $personId, 'parent', $treeId)` w linii 126 przed sugerowaniem rodzeństwa dziecka jako własne dziecko (chroni przed false positives z poprzednich małżeństw drugiego rodzica)
 - [x] 🔴 [B4] **`src/views/pages/trees/persons/show.php:361-368`** — `typeLabel` zgodne z konwencją FORM-interpretation: `'parent' => 'rodzic'`, `'child' => 'dziecko'`
 
-### 🟠 Important
+### 🟠 Important — zweryfikowane i naprawione 2026-04-08
 
-- [ ] 🟠 [I1] **`src/Controllers/SuggestionController.php:74-76`** — catch `\InvalidArgumentException` połyka błędy walidacji bez logowania; zbierać odrzucone sugestie z powodami i pokazywać w flash
-- [ ] 🟠 [I2] **`src/Services/GedcomService.php:349-366`** — brak inverse `('spouse', wife, husb)` przy imporcie; dodać drugi insert lub użyć `RelationshipService::create()`
-- [ ] 🟠 [I3] **`src/Services/RelationshipService.php:55-59`** — porównanie `$parent->birthDate > $child->birthDate` jako string; uodpornić przez `substr(0,4)` jako int
-- [ ] 🟠 [I4] **`src/Services/SuggestionService.php:38-41,52-56,177`** — N+1 zapytań do bazy; dodać array cache `findByPerson()` w ramach jednego `compute()`
-- [ ] 🟠 [I5] **`src/Controllers/RelationshipController.php:50-51`** — `compute()` wywoływany przy każdym GET na formularz relacji; zweryfikować czy `relationship-create.php` faktycznie używa sugestii — jeśli nie, wywoływać tylko po POST
-- [ ] 🟠 [I6] **`src/Controllers/ApiController.php:95-103`** — duplikacja linków sibling/spouse z forward+inverse; filtrować przez canonical pair (`personAId < personBId`)
-- [ ] 🟠 [I7] **`src/Services/GedcomService.php:610-612`** — brak `1 MARR` dla par bez daty ślubu; emitować zawsze, opcjonalnie z `2 DATE`
-- [ ] 🟠 [I8] **`src/Controllers/SuggestionController.php:40-44`** — chain `withFlash()->redirect()` ukrywa `never` przed analizą statyczną; dodać `return;` po chainach (akceptowalne, nie blocking)
+- [x] 🟠 [I1] **`src/Controllers/SuggestionController.php`** — full error handling: `$rejected[]` zbiera odrzucone z powodami, flash `warning`/`error`/`success`/`info` w zależności od wyniku
+- [x] 🟠 [I2] **`src/Services/GedcomService.php:422-425`** — importFamilies() insertuje OBA kierunki: `(aId, bId, 'spouse')` + `(bId, aId, 'spouse')`
+- [x] 🟠 [I3] **`src/Services/RelationshipService.php:58-59`** — `(int) substr($parent->birthDate, 0, 4)` — porównanie int, nie string
+- [x] 🟠 [I4] **`src/Services/SuggestionService.php:49-52`** — `$relsCache` memoization eliminuje N+1; `$relsOf()` closure cachuje wyniki per personId
+- [x] 🟠 [I5] **`src/Controllers/RelationshipController.php:50`** — `compute()` w `showCreate()` jest intentional: `relationship-create.php:179-220` wyświetla panel sugestii w formularzu tworzenia relacji
+- [x] 🟠 [I6] **`src/Controllers/ApiController.php:98-109`** — `$seenSymmetric` z kluczem `type|min|max` dedupuje forward+inverse dla spouse/sibling/partner
+- [x] 🟠 [I7] **`src/Services/GedcomService.php:694-698`** — `1 MARR` emitowany zawsze, `2 DATE` opcjonalnie gdy `start_date` nie null
+- [x] 🟠 [I8] **`src/Controllers/SuggestionController.php`** — `withFlash()` i `redirect()` jako osobne wywołania (nie chain); `redirect(): never` terminuje statycznie poprawnie
 
-### 🟡 Nit (opcjonalne)
+### 🟡 Nit — zweryfikowane 2026-04-08
 
-- [ ] 🟡 [N1] **`src/Controllers/SuggestionController.php`** — brak `use App\Core\Session` (linia 35 używa `Session::get`); dodać import dla spójności
-- [ ] 🟡 [N2] **`src/Controllers/SuggestionController.php:21`** — `RelationshipRepository $relRepo` w konstruktorze nieużywany; usunąć
-- [ ] 🟡 [N3] **`src/Services/SuggestionService.php:24-31`** — komentarz PHPDoc opisuje Rules niejasno; explicite dodać "FORM-interpretation: ('parent', A, B) = B is A's parent"
-- [ ] 🟡 [N5] **`public/js/tree-visualizer.js:282`** — `nodes.length + 5` magic number; lepiej `nodes.length` wprost
+- [x] 🟡 [N1] **`src/Controllers/SuggestionController.php:8`** — `use App\Core\Session` obecny
+- [x] 🟡 [N2] **`src/Controllers/SuggestionController.php`** — `RelationshipRepository` usunięty z konstruktora
+- [x] 🟡 [N3] **`src/Services/SuggestionService.php:24-31`** — PHPDoc zawiera explicite "FORM-interpretation: ('parent', A, B) = B is A's parent" i pełne przykłady
+- [x] 🟡 [N5] **`public/js/tree-visualizer.js:118`** — magic number usunięty: `safety < nodes.length` (bez `+ 5`)
 
 ### 🔵 Suggestions — wykonane (2026-04-08)
 

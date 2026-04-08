@@ -1,6 +1,6 @@
 # Genealog — TO DO
 
-> **Stan:** 2026-04-08 (po implementacji 39 issues z review person-discovery)
+> **Stan:** 2026-04-08 (relationship-suggestions: wszystkie I1-I8 + N1-N5 zweryfikowane i naprawione; Fazy 1-4 ✅)
 >
 > Dokument zbiera wszystko co pozostało do rozpatrzenia / implementacji w projekcie.
 
@@ -41,20 +41,19 @@ ARCHIVES_API_KEY=...            # NIEDOSTĘPNE — szukajwarchiwach.gov.pl nie m
 
 ---
 
-## ✅ Relationship Suggestions — 4 blockery (NAPRAWIONE 2026-04-08)
+## ✅ Relationship Suggestions — KOMPLETNE (2026-04-08)
 
 > Pierwotnie wskazane w `dev/active/relationship-suggestions/review-2026-04-07.md`
 
-Wszystkie 4 krytyczne błędy zostały naprawione przez wcześniejsze interwencje (linter/refactor):
+Wszystkie fazy (1-4) zaimplementowane. Wszystkie issues z review naprawione:
 
-- ✅ **B1** `GedcomService.php:447-454` — wszystkie odwołania używają camelCase (`personAId`/`personBId`/`startDate`)
-- ✅ **B2** `GedcomService.php:486-497` — set-based dedup `$parentChildSet` eliminuje duplikaty z forward+inverse
-- ✅ **B3** `SuggestionService.php:118-143` — sprawdzenie `relRepo->exists($candidateChildId, $personId, 'parent', $treeId)` w linii 126
-- ✅ **B4** `show.php:361-368` — labels zgodne z konwencją FORM-interpretation (`'parent' => 'rodzic'`, `'child' => 'dziecko'`)
+- ✅ **B1-B4** Blockery naprawione (camelCase, dedup, child-guard, typeLabel)
+- ✅ **I1-I8** Important naprawione: flash error handling, GEDCOM spouse inverse, int year compare, N+1 cache, `compute()` intentional, canonical pair dedup, MARR always, separate redirect calls
+- ✅ **N1-N5** Nity naprawione: Session import, RelationshipRepository usunięty z SuggestionController, PHPDoc, magic number
 
-**Weryfikacja 2026-04-08:** 60/60 testów green, phpstan 0 errors. GEDCOM eksport produkuje poprawne FAM z CHIL elementami.
+**Weryfikacja 2026-04-08:** 60/60 testów green, phpstan 0 errors.
 
-**Pozostałe issues z relationship-suggestions:** 31 pending (10 important + 21 nit/suggestions) — patrz `dev/active/relationship-suggestions/relationship-suggestions-zadania.md`
+**Pozostało:** Faza 5 — manual E2E testy (patrz `dev/active/relationship-suggestions/relationship-suggestions-zadania.md`)
 
 ---
 
@@ -69,7 +68,7 @@ Wszystkie 4 krytyczne błędy zostały naprawione przez wcześniejsze interwencj
 | **php-scaffold** | 1 | ❌ | Pojedynczy task pozostały (sprawdzić co konkretnie) |
 | **print-pdf** | 36 | ❌ | Większość drobnych ulepszeń (Faza 8 weryfikacja E2E) |
 | **registries** | 55 | ⚠️ | Cały feature — wymaga decyzji o API keys (patrz wyżej) |
-| **relationship-suggestions** | 31 | 🔴 | **4 BLOCKERY** + 27 pozostałych |
+| **relationship-suggestions** | 0 | ✅ | Fazy 1-4 kompletne; Faza 5 = manual E2E |
 | **tree-sharing** | 64 | ❌ | Cały feature niezaimplementowany |
 
 ---
@@ -170,7 +169,7 @@ Aktualnie tylko `FingerprintServiceTest` (24 testy). Brak testów dla:
 
 ### Sprint 1 (krytyczne — 4-6h)
 
-1. **🔴 Naprawić 4 blockery z relationship-suggestions** (GedcomService snake_case, parent/child label)
+1. ~~**🔴 Naprawić 4 blockery z relationship-suggestions**~~ ✅ KOMPLETNE
 2. **🔴 Php-scaffold pozostały 1 task** (sprawdzić co)
 3. **🟠 Tests dla GlobalIndexService** (RODO compliance — najważniejsze przed produkcją)
 4. **📝 CLAUDE.md** + MEMORY.md update
@@ -216,7 +215,7 @@ Aktualnie tylko `FingerprintServiceTest` (24 testy). Brak testów dla:
 | **Notifications** | 🟢 Production-ready | Bell icon polling 30s, dedup 24h, 5 typów |
 | **RODO compliance** | 🟢 | Account deletion, data export, audit log, opt-in cross-tree |
 | **Tree sharing** | 🟡 | Invitations + members działają, brak granular permissions |
-| **Relationship suggestions** | 🟡 | Działa, ale ma 4 blockery do naprawy |
+| **Relationship suggestions** | 🟢 | Fazy 1-4 kompletne, wszystkie issues z review naprawione |
 | **Font Awesome icons** | 🔴 | Plan gotowy, niezaimplementowane |
 | **External registries** | 🔴 | Plan gotowy, wymaga API keys + decyzji |
 
