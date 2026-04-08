@@ -36,7 +36,7 @@
 
 ## Faza 5: Weryfikacja
 
-- [ ] PHP syntax check: `php -l src/Controllers/AdminController.php` i pozostałe nowe pliki
+- [x] PHP syntax check: `php -l src/Controllers/AdminController.php` i pozostałe nowe pliki
 - [ ] Sprawdź logowanie admina → przekierowanie po `Session::get('is_admin')` nadal działa na `/dashboard`
 - [ ] Przejdź do `/admin` → widoczny panel
 - [ ] Kliknij "Zaloguj jako" przy koncie testowym → banner pojawia się, `user_id` w sesji zmieniony
@@ -84,10 +84,10 @@
 
 ### 🟡 Nit
 
-- [ ] 🟡 [nit] **migrations/004_admin.sql** — `meta TEXT` powinno być `JSON` (nie zmieniać po deploy)
-- [ ] 🟡 [nit] **migrations/004_admin.sql** — brak indeksu `(target_type, target_id)` w `admin_logs`
-- [ ] 🟡 [nit] **src/views/templates/AdminLayout.php:61** — logika klasy aktywnej dla `/admin` niejasna; `$currentPath === '/admin'`
-- [ ] 🟡 [nit] **src/views/pages/admin/users.php:8** — `x-data="{ search: ... }"` deklaracja nieużywana
-- [ ] 🟡 [nit] **src/views/pages/admin/logs.php:67-71** — `array_map` może rzucić błąd przy zagnieżdżonych tablicach; defensive cast
-- [ ] 🟡 [nit] **src/Services/AdminService.php:145-151** — `generateUuid()` duplikat z AuthService; wyciągnąć do `App\Core\Uuid`
-- [ ] 🟡 [nit] **src/Middleware/AdminMiddleware.php:14** — sygnatura `: bool` ale praktycznie zawsze `redirect` lub `true`
+- [x] 🟡 [nit] **migrations/004_admin.sql** — `meta TEXT` powinno być `JSON` (pominięte: nie zmieniać po deploy)
+- [x] 🟡 [nit] **migrations/004_admin.sql** — brak indeksu `(target_type, target_id)` w `admin_logs` → naprawione w `007_admin_extras.sql:14` (`idx_admin_logs_target`)
+- [x] 🟡 [nit] **src/views/templates/AdminLayout.php:65** — uproszczona logika: `$currentPath === '/admin'`; usunięta dead function `admin_nav_class()`
+- [x] 🟡 [nit] **src/views/pages/admin/users.php:8** — brak x-data (już usunięte w poprzednim refactorze)
+- [x] 🟡 [nit] **src/views/pages/admin/logs.php:127-130** — `is_array($v) ? json_encode($v) : (string)$v` defensive cast
+- [x] 🟡 [nit] **src/Services/AdminService.php** — `Uuid::generate()` z `App\Core\Uuid` (już naprawione)
+- [x] 🟡 [nit] **src/Middleware/AdminMiddleware.php:18** — sygnatura `: bool` akceptowalna; `redirect()` jest `never`, PHPStan green

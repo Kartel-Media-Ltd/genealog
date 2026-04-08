@@ -6,11 +6,7 @@ use App\Core\Csrf;
 $flash = Session::getFlash();
 $currentPath = $_SERVER['REQUEST_URI'] ?? '';
 
-function admin_nav_class(string $path, string $current): string {
-    return str_starts_with($current, $path)
-        ? 'flex items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium bg-white/10 text-white'
-        : 'flex items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium text-slate-300 hover:bg-white/10 hover:text-white transition-colors';
-}
+require_once __DIR__ . '/../atoms/icon.php';
 ?>
 <!doctype html>
 <html lang="pl">
@@ -62,7 +58,7 @@ function admin_nav_class(string $path, string $current): string {
 
         <!-- Nav -->
         <nav class="flex-1 px-3 py-4 space-y-1">
-            <a href="/admin" class="<?= admin_nav_class('/admin', $currentPath) === admin_nav_class('/admin/users', $currentPath) || $currentPath === '/admin' ? 'flex items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium bg-white/10 text-white' : 'flex items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium text-slate-300 hover:bg-white/10 hover:text-white transition-colors' ?>">
+            <a href="/admin" class="<?= $currentPath === '/admin' ? 'flex items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium bg-white/10 text-white' : 'flex items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium text-slate-300 hover:bg-white/10 hover:text-white transition-colors' ?>">
                 <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
                     <rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>

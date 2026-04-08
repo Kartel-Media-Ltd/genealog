@@ -125,7 +125,7 @@ $hasActiveFilters = !empty(array_filter($filters, fn($v) => $v !== ''));
                                 <?php if ($log['meta']): ?>
                                     <?php $meta = json_decode((string)$log['meta'], true); ?>
                                     <?= $meta ? htmlspecialchars(implode(', ', array_map(
-                                        fn($k, $v) => "$k: $v",
+                                        fn($k, $v) => $k . ': ' . (is_array($v) ? json_encode($v, JSON_UNESCAPED_UNICODE) : (string)$v),
                                         array_keys($meta), array_values($meta)
                                     ))) : htmlspecialchars((string)$log['meta']) ?>
                                 <?php else: ?>
