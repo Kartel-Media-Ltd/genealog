@@ -245,7 +245,7 @@ Aktualnie tylko `FingerprintServiceTest` (24 testy). Brak testów dla:
 4. **🔴 Research prawny:** Privacy Policy + Terms + SCC z FamilySearch Inc. przed aktywacją
 5. ~~**🟠 Re-audit #5**~~ ✅ KOMPLETNE (`dev/audit/backend-5/` — **PASS** bez warunków, commit `54b25af`)
 6. **🟠 Tests: AccountDeletionService (D13 backend-4) + GlobalIndexService** (RODO compliance)
-7. **🔴 Php-scaffold pozostały 1 task** (sprawdzić co)
+7. ~~**🔴 Php-scaffold pozostały 1 task**~~ ✅ KOMPLETNE (kod); [USER] zrotuj hasło SMTP
 8. **📝 CLAUDE.md** + MEMORY.md update — Discovery, consent flow, Art. 18 restriction
 
 ### Sprint 2 (UX + dokończenie features — 6-8h)
