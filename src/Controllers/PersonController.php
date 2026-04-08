@@ -7,6 +7,7 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
 use App\Models\Person;
+use App\Repositories\DiscoveryRepository;
 use App\Repositories\PersonRepository;
 use App\Repositories\RelationshipRepository;
 use App\Repositories\TreeRepository;
@@ -27,6 +28,7 @@ class PersonController
         private readonly RelationshipRepository $relRepo,
         private readonly SuggestionService      $suggestionService,
         private readonly RegisterService        $registerService,
+        private readonly ?DiscoveryRepository   $discoveryRepo = null,
     ) {}
 
     /** GET /trees/{id}/persons */
@@ -178,15 +180,27 @@ class PersonController
             $suggestions = $this->suggestionService->compute($personId, $treeId);
         }
 
+        // Discovery match suggestions (cross-tree, external sources, local fingerprint)
+        // Tylko dla editor/owner — viewer nie powinien widzieć potencjalnych dopasowań
+        $matchSuggestions = [];
+        if ($canEdit && $this->discoveryRepo !== null) {
+            try {
+                $matchSuggestions = $this->discoveryRepo->findPendingForPerson($personId, $userId);
+            } catch (\Throwable $e) {
+                error_log('Failed to load match suggestions: ' . $e->getMessage());
+            }
+        }
+
         $this->response->view('pages/trees/persons/show', [
-            'title'         => $person->fullName(),
-            'currentUser'   => $this->currentUser(),
-            'tree'          => $this->treeRepo->findById($treeId),
-            'person'        => $person,
-            'userRole'      => $role,
-            'canEdit'       => $canEdit,
-            'relationships' => $relationships,
-            'suggestions'   => $suggestions,
+            'title'            => $person->fullName(),
+            'currentUser'      => $this->currentUser(),
+            'tree'             => $this->treeRepo->findById($treeId),
+            'person'           => $person,
+            'userRole'         => $role,
+            'canEdit'          => $canEdit,
+            'relationships'    => $relationships,
+            'suggestions'      => $suggestions,
+            'matchSuggestions' => $matchSuggestions,
         ]);
     }
 
@@ -255,8 +269,12 @@ class PersonController
             $this->response
                 ->withFlash('success', 'Zdjęcie zostało zaktualizowane.')
                 ->redirect('/trees/' . $treeId . '/persons/' . $personId . '/edit');
-        } catch (\Exception $e) {
+        } catch (\InvalidArgumentException $e) {
             $this->response->withFlash('error', $e->getMessage())
+                ->redirect('/trees/' . $treeId . '/persons/' . $personId . '/edit');
+        } catch (\Throwable $e) {
+            error_log('Photo upload failed: ' . $e->getMessage());
+            $this->response->withFlash('error', 'Nie udało się przesłać zdjęcia.')
                 ->redirect('/trees/' . $treeId . '/persons/' . $personId . '/edit');
         }
     }
@@ -278,8 +296,12 @@ class PersonController
             $this->response
                 ->withFlash('success', 'Osoba "' . $person->fullName() . '" została usunięta.')
                 ->redirect('/trees/' . $treeId . '/persons');
-        } catch (\Exception $e) {
+        } catch (\InvalidArgumentException $e) {
             $this->response->withFlash('error', $e->getMessage())
+                ->redirect('/trees/' . $treeId . '/persons/' . $personId);
+        } catch (\Throwable $e) {
+            error_log('Person delete failed: ' . $e->getMessage());
+            $this->response->withFlash('error', 'Nie udało się usunąć osoby.')
                 ->redirect('/trees/' . $treeId . '/persons/' . $personId);
         }
     }

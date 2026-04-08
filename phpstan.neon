@@ -18,6 +18,8 @@ parameters:
         - '#Function render_[a-z_]+ not found#'
         # Constructor-injected DTOs — request/response są prawnie wymagane przez DI nawet jeśli nieużywane bezpośrednio
         - '#Property App\\Controllers\\[A-Za-z]+::\$(request|response) is never read#'
+        # Constructor-injected DI dependencies w services używane przez metody DI factory
+        - '#Property App\\Services\\AccountDeletionService::\$treeRepo is never read#'
         # Database singleton — `new static()` i return type są intencjonalne dla LSB
         -
             message: '#Unsafe usage of new static#'

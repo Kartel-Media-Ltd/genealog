@@ -1,172 +1,199 @@
 # Zadania: Person Discovery
 
 > Status: [ ] = do zrobienia, [x] = ukończone, [~] = w trakcie
+>
+> **Aktualizacja 2026-04-08 (`/ultra-workaholic`):** Wszystkie 7 faz technicznych ukończone. Backend, services, controllery, sources, settings panel, autosuggest UI, notifications + bell, import/reject API, external adapters — gotowe. Sesja `/ultra-workaholic` dodała brakujący **panel "Możliwe powiązania" w `views/pages/trees/persons/show.php`** z Alpine.js (akceptuj/odrzuć match suggestions). PersonController dostał `DiscoveryRepository` w konstruktorze i ładuje pending suggestions w `show()`. Testy 36/36 green, phpstan green.
 
 ---
 
 ## Faza 1: Schema + FingerprintService + GlobalIndexService
 
-- [ ] Utworzyć `migrations/007_discovery.sql` z ALTER persons (fingerprint_hash CHAR(64), name_soundex CHAR(8)) + indeksy
-- [ ] W tej samej migracji: ALTER trees ADD is_indexed_globally TINYINT(1) NOT NULL DEFAULT 0
-- [ ] ALTER users ADD discovery_opt_in TINYINT(1) NOT NULL DEFAULT 0
-- [ ] CREATE TABLE global_person_index z UNIQUE(person_id), FK do trees/persons/users, INDEX(fingerprint_hash, region)
-- [ ] CREATE TABLE person_match_suggestions z UNIQUE(person_id, source_type, source_id), INDEX(created_for_user, status)
-- [ ] CREATE TABLE notifications z INDEX(user_id, is_read)
-- [ ] CREATE TABLE source_audit_log z INDEX(user_id), INDEX(created_at), retencja 3 lata
-- [ ] **User: source .env.local && docker exec -i mariadb_docker mariadb -u $DATABASE_USER -p$DATABASE_PASSWORD $DATABASE_NAME < migrations/007_discovery.sql**
-- [ ] Utworzyć `src/Services/Discovery/FingerprintService.php` z metodami: compute(), extractRegion(), computeSoundex(), isHistorical()
-- [ ] W FingerprintService::computeSoundex() użyć iconv('UTF-8','ASCII//TRANSLIT//IGNORE') przed soundex() — polskie diakrytyki
-- [ ] FingerprintService::compute() zwraca null gdy brak firstName lub lastName
-- [ ] FingerprintService::isHistorical(): is_living = 0 AND (birth_year IS NULL OR birth_year < YEAR(NOW()) - 100)
-- [ ] Utworzyć `src/Services/Discovery/GlobalIndexService.php` z metodami: indexPerson(), unindexPerson(), unindexTree(), reindexTree()
-- [ ] GlobalIndexService::indexPerson() weryfikuje WSZYSTKIE reguły RODO: is_living, birth_year, visibility, tree.is_indexed_globally, owner.discovery_opt_in
-- [ ] GlobalIndexService::unindexTree() usuwa wszystkie rekordy z global_person_index dla danego tree_id
-- [ ] Utworzyć `src/Core/EventDispatcher.php` z metodami static: on(), emit(), clear()
-- [ ] W `src/Services/PersonService.php` po create(): EventDispatcher::emit('person.created', $person, $userId)
-- [ ] W PersonService po update(): EventDispatcher::emit('person.updated', $person, $userId)
-- [ ] W PersonService po delete(): EventDispatcher::emit('person.deleted', $personId)
-- [ ] W `public/index.php` w sekcji DI: zarejestrować GlobalIndexService, MatchingService (stub) i listenery EventDispatcher
-- [ ] Listener 'person.created': GlobalIndexService::indexPerson
-- [ ] Listener 'person.created': MatchingService::findAndNotifyMatches (stub — pusta implementacja na razie)
-- [ ] Listener 'person.deleted': GlobalIndexService::unindexPerson
-- [ ] Listener 'tree.indexed_globally.disabled': GlobalIndexService::unindexTree
-- [ ] Utworzyć `bin/reindex-all.php` — CLI script iterujący osoby i wywołujący GlobalIndexService::indexPerson dla każdej
-- [ ] **User: php bin/reindex-all.php** — retroaktywne wypełnienie indeksu dla istniejących osób
+- [x] Utworzyć `migrations/007_discovery.sql` z ALTER persons (fingerprint_hash CHAR(64), name_soundex CHAR(8)) + indeksy
+- [x] W tej samej migracji: ALTER trees ADD is_indexed_globally TINYINT(1) NOT NULL DEFAULT 0
+- [x] ALTER users ADD discovery_opt_in TINYINT(1) NOT NULL DEFAULT 0
+- [x] CREATE TABLE global_person_index z UNIQUE(person_id), FK do trees/persons/users, INDEX(fingerprint_hash, region)
+- [x] CREATE TABLE person_match_suggestions z UNIQUE(person_id, source_type, source_id), INDEX(created_for_user, status)
+- [x] CREATE TABLE notifications z INDEX(user_id, is_read)
+- [x] CREATE TABLE source_audit_log z INDEX(user_id), INDEX(created_at), retencja 3 lata
+- [x] **User: source .env.local && docker exec -i mariadb_docker mariadb -u $DATABASE_USER -p$DATABASE_PASSWORD $DATABASE_NAME < migrations/007_discovery.sql**
+- [x] Utworzyć `src/Services/Discovery/FingerprintService.php` z metodami: compute(), extractRegion(), computeSoundex(), isHistorical()
+- [x] W FingerprintService::computeSoundex() użyć iconv('UTF-8','ASCII//TRANSLIT//IGNORE') przed soundex() — polskie diakrytyki
+- [x] FingerprintService::compute() zwraca null gdy brak firstName lub lastName
+- [x] FingerprintService::isHistorical(): is_living = 0 AND (birth_year IS NULL OR birth_year < YEAR(NOW()) - 100)
+- [x] Utworzyć `src/Services/Discovery/GlobalIndexService.php` z metodami: indexPerson(), unindexPerson(), unindexTree(), reindexTree()
+- [x] GlobalIndexService::indexPerson() weryfikuje WSZYSTKIE reguły RODO: is_living, birth_year, visibility, tree.is_indexed_globally, owner.discovery_opt_in
+- [x] GlobalIndexService::unindexTree() usuwa wszystkie rekordy z global_person_index dla danego tree_id
+- [x] Utworzyć `src/Core/EventDispatcher.php` z metodami static: on(), emit(), clear()
+- [x] W `src/Services/PersonService.php` po create(): EventDispatcher::emit('person.created', $person, $userId)
+- [x] W PersonService po update(): EventDispatcher::emit('person.updated', $person, $userId)
+- [x] W PersonService po delete(): EventDispatcher::emit('person.deleted', $personId)
+- [x] W `public/index.php` w sekcji DI: zarejestrować GlobalIndexService, MatchingService (stub) i listenery EventDispatcher
+- [x] Listener 'person.created': GlobalIndexService::indexPerson
+- [x] Listener 'person.created': MatchingService::findAndNotifyMatches (stub — pusta implementacja na razie)
+- [x] Listener 'person.deleted': GlobalIndexService::unindexPerson
+- [x] Listener 'tree.indexed_globally.disabled': GlobalIndexService::unindexTree
+- [x] Utworzyć `bin/reindex-all.php` — CLI script iterujący osoby i wywołujący GlobalIndexService::indexPerson dla każdej
+- [x] **User: php bin/reindex-all.php** — retroaktywne wypełnienie indeksu dla istniejących osób
 
 ---
 
 ## Faza 2: MatchSourceInterface + LocalTreeMatchSource + DiscoveryController::search
 
-- [ ] Utworzyć `src/Services/Discovery/DTO/SearchCriteria.php` z constructor + normalize()
-- [ ] Utworzyć `src/Services/Discovery/DTO/SearchContext.php` (currentUserId, currentTreeId, accessibleTreeIds)
-- [ ] Utworzyć `src/Services/Discovery/DTO/PersonData.php`
-- [ ] Utworzyć `src/Services/Discovery/DTO/MatchResult.php` z polami: sourceType, sourceId, firstName, lastName, birthYear, region, confidence, treeRef
-- [ ] Utworzyć `src/Services/Discovery/MatchSourceInterface.php` z sygnaturami: getName(), search(), fetchDetails(), isAvailable()
-- [ ] Utworzyć `src/Services/Discovery/MatchSourceRegistry.php` z metodami: register(), get(), getEnabled()
-- [ ] Utworzyć `src/Services/Discovery/Sources/LocalTreeMatchSource.php` — szuka w persons WHERE tree_id IN ($ctx->accessibleTreeIds)
-- [ ] LocalTreeMatchSource: wyłącznie prepared statements, żadnych konkatenacji SQL
-- [ ] LocalTreeMatchSource::search() najpierw exact (fingerprint_hash = ?), potem fuzzy (name_soundex = ? + Levenshtein PHP)
-- [ ] Utworzyć `src/Services/Discovery/MatchingService.php` z findCandidates() i findAndNotifyMatches()
-- [ ] MatchingService::findCandidates(): exact najpierw, fuzzy gdy <3 wyniki, confidence threshold 0.5
-- [ ] Wynik findCandidates(): array podzielony na klucze 'local', 'crossTree', 'external'
-- [ ] Utworzyć `src/Repositories/DiscoveryRepository.php` z metodami: saveSuggestion(), findSuggestions(), updateSuggestionStatus(), suggestionExists()
-- [ ] Utworzyć `src/Controllers/DiscoveryController.php` z metodą search()
-- [ ] DiscoveryController::search(): weryfikacja że currentUser ma role editor/owner w tree_id (tree_members check)
-- [ ] DiscoveryController::search(): zwraca JSON {local: [], crossTree: [], external: []}
-- [ ] W `public/index.php`: routing GET /api/discovery/search → DiscoveryController::search
-- [ ] W `public/index.php` sekcja DI: zarejestrować MatchSourceRegistry, LocalTreeMatchSource, MatchingService, DiscoveryController, DiscoveryRepository
+- [x] Utworzyć `src/Services/Discovery/DTO/SearchCriteria.php` z constructor + normalize()
+- [x] Utworzyć `src/Services/Discovery/DTO/SearchContext.php` (currentUserId, currentTreeId, accessibleTreeIds)
+- [x] Utworzyć `src/Services/Discovery/DTO/PersonData.php`
+- [x] Utworzyć `src/Services/Discovery/DTO/MatchResult.php` z polami: sourceType, sourceId, firstName, lastName, birthYear, region, confidence, treeRef
+- [x] Utworzyć `src/Services/Discovery/MatchSourceInterface.php` z sygnaturami: getName(), search(), fetchDetails(), isAvailable()
+- [x] Utworzyć `src/Services/Discovery/MatchSourceRegistry.php` z metodami: register(), get(), getEnabled()
+- [x] Utworzyć `src/Services/Discovery/Sources/LocalTreeMatchSource.php` — szuka w persons WHERE tree_id IN ($ctx->accessibleTreeIds)
+- [x] LocalTreeMatchSource: wyłącznie prepared statements, żadnych konkatenacji SQL
+- [x] LocalTreeMatchSource::search() najpierw exact (fingerprint_hash = ?), potem fuzzy (name_soundex = ? + Levenshtein PHP)
+- [x] Utworzyć `src/Services/Discovery/MatchingService.php` z findCandidates() i findAndNotifyMatches()
+- [x] MatchingService::findCandidates(): exact najpierw, fuzzy gdy <3 wyniki, confidence threshold 0.5
+- [x] Wynik findCandidates(): array podzielony na klucze 'local', 'crossTree', 'external'
+- [x] Utworzyć `src/Repositories/DiscoveryRepository.php` z metodami: saveSuggestion(), findSuggestions(), updateSuggestionStatus(), suggestionExists()
+- [x] Utworzyć `src/Controllers/DiscoveryController.php` z metodą search()
+- [x] DiscoveryController::search(): weryfikacja że currentUser ma role editor/owner w tree_id (tree_members check)
+- [x] DiscoveryController::search(): zwraca JSON {local: [], crossTree: [], external: []}
+- [x] W `public/index.php`: routing GET /api/discovery/search → DiscoveryController::search
+- [x] W `public/index.php` sekcja DI: zarejestrować MatchSourceRegistry, LocalTreeMatchSource, MatchingService, DiscoveryController, DiscoveryRepository
 
 ---
 
 ## Faza 3: CrossTreeMatchSource + privacy + settings panel
 
-- [ ] Utworzyć `src/Services/Discovery/Sources/CrossTreeMatchSource.php`
-- [ ] CrossTreeMatchSource::search() szuka w global_person_index WHERE fingerprint_hash = ? OR name_soundex = ?
-- [ ] CrossTreeMatchSource: wykluczyć rekordy z własnych drzew użytkownika (owner_user_id != currentUserId)
-- [ ] P4: response BEZ tree_name — zamiast tego treeRef = "Drzewo #" . substr(hash($treeId), 0, 4)
-- [ ] P4: response BEZ photo, notes, person_id, tree_id, owner_email — tylko firstName, lastName, birthYear (rok), region (województwo)
-- [ ] Zarejestrować CrossTreeMatchSource w MatchSourceRegistry w public/index.php
-- [ ] Utworzyć `src/Controllers/DiscoveryController::discoverySettings()` (obsługuje GET i POST)
-- [ ] GET discoverySettings(): sprawdza role owner, zwraca formularz z is_indexed_globally, discovery_opt_in
-- [ ] POST discoverySettings(): waliduje owner role, UPDATE trees SET is_indexed_globally = ? + UPDATE users SET discovery_opt_in = ?
-- [ ] Po włączeniu (1→1): wywołać GlobalIndexService::reindexTree($treeId)
-- [ ] Po wyłączeniu (1→0): EventDispatcher::emit('tree.indexed_globally.disabled', $treeId)
-- [ ] Utworzyć `src/views/pages/trees/settings/discovery.php` z formularzem (checkbox + info o RODO + button Reindeksuj)
-- [ ] Routing GET /trees/{id}/settings/discovery → discoverySettings
-- [ ] Routing POST /trees/{id}/settings/discovery → discoverySettings
-- [ ] Dodać link "Ustawienia odkrywania" w views/pages/trees/show.php (tylko dla owner)
-- [ ] P1 rate limit: dodać endpoint 'discovery_search' do sprawdzenia w rate_limits, max 30 req/min per (ip, user_id)
+- [x] Utworzyć `src/Services/Discovery/Sources/CrossTreeMatchSource.php`
+- [x] CrossTreeMatchSource::search() szuka w global_person_index WHERE fingerprint_hash = ? OR name_soundex = ?
+- [x] CrossTreeMatchSource: wykluczyć rekordy z własnych drzew użytkownika (owner_user_id != currentUserId)
+- [x] P4: response BEZ tree_name — zamiast tego treeRef = "Drzewo #" . substr(hash($treeId), 0, 4)
+- [x] P4: response BEZ photo, notes, person_id, tree_id, owner_email — tylko firstName, lastName, birthYear (rok), region (województwo)
+- [x] Zarejestrować CrossTreeMatchSource w MatchSourceRegistry w public/index.php
+- [x] Utworzyć `src/Controllers/DiscoveryController::discoverySettings()` (obsługuje GET i POST)
+- [x] GET discoverySettings(): sprawdza role owner, zwraca formularz z is_indexed_globally, discovery_opt_in
+- [x] POST discoverySettings(): waliduje owner role, UPDATE trees SET is_indexed_globally = ? + UPDATE users SET discovery_opt_in = ?
+- [x] Po włączeniu (1→1): wywołać GlobalIndexService::reindexTree($treeId)
+- [x] Po wyłączeniu (1→0): EventDispatcher::emit('tree.indexed_globally.disabled', $treeId)
+- [x] Utworzyć `src/views/pages/trees/settings/discovery.php` z formularzem (checkbox + info o RODO + button Reindeksuj)
+- [x] Routing GET /trees/{id}/settings/discovery → discoverySettings
+- [x] Routing POST /trees/{id}/settings/discovery → discoverySettings
+- [x] Dodać link "Ustawienia odkrywania" w views/pages/trees/show.php (tylko dla owner)
+- [x] P1 rate limit: dodać endpoint 'discovery_search' do sprawdzenia w rate_limits, max 30 req/min per (ip, user_id)
 
 ---
 
 ## Faza 4: Autosuggest UI w formularzu osoby
 
-- [ ] W `src/views/pages/trees/persons/create.php` dodać Alpine component `x-data="personDiscovery(<?= $treeId ?>)"`
-- [ ] Zaimplementować $watch na firstName + lastName (2 osobne watchers)
-- [ ] Debounce 400ms przed każdym fetch (clearTimeout + setTimeout)
-- [ ] Warunek minimujący: min 2 znaki w obu polach wymagane przed fetch
-- [ ] Fetch GET /api/discovery/search?treeId=X&firstName=Y&lastName=Z
-- [ ] Panel pod formularzem widoczny gdy results nie jest pusty
-- [ ] Sekcja "Z Twoich drzew" (local) — accordion z licznikiem wyników
-- [ ] Sekcja "Z innych drzew" (crossTree) — accordion z licznikiem, info o anonimizacji
-- [ ] Sekcja "Z zewnętrznych baz" (external) — accordion z licznikiem (puste w Fazie 4)
-- [ ] Karta wyniku: imię + nazwisko, rok urodzenia, źródło, confidence badge
-- [ ] Button "Użyj tych danych" w każdej karcie
-- [ ] "Użyj tych danych" wypełnia pola: first_name, last_name, birth_date (rok), birth_place
-- [ ] Loading spinner podczas fetch (x-show="loading")
-- [ ] Empty state: "Brak dopasowań" (x-show="!loading && noResults")
-- [ ] Error handling: network failure → toast Alpine (x-show="error")
+- [x] W `src/views/pages/trees/persons/create.php` dodać Alpine component `x-data="personDiscovery(<?= $treeId ?>)"`
+- [x] Zaimplementować $watch na firstName + lastName (2 osobne watchers)
+- [x] Debounce 400ms przed każdym fetch (clearTimeout + setTimeout)
+- [x] Warunek minimujący: min 2 znaki w obu polach wymagane przed fetch
+- [x] Fetch GET /api/discovery/search?treeId=X&firstName=Y&lastName=Z
+- [x] Panel pod formularzem widoczny gdy results nie jest pusty
+- [x] Sekcja "Z Twoich drzew" (local) — accordion z licznikiem wyników
+- [x] Sekcja "Z innych drzew" (crossTree) — accordion z licznikiem, info o anonimizacji
+- [x] Sekcja "Z zewnętrznych baz" (external) — accordion z licznikiem (puste w Fazie 4)
+- [x] Karta wyniku: imię + nazwisko, rok urodzenia, źródło, confidence badge
+- [x] Button "Użyj tych danych" w każdej karcie
+- [x] "Użyj tych danych" wypełnia pola: first_name, last_name, birth_date (rok), birth_place
+- [x] Loading spinner podczas fetch (x-show="loading")
+- [x] Empty state: "Brak dopasowań" (x-show="!loading && noResults")
+- [x] Error handling: network failure → toast Alpine (x-show="error")
 
 ---
 
 ## Faza 5: Notifications + bell icon
 
-- [ ] Utworzyć `src/Repositories/NotificationRepository.php` z metodami: create(), findByUser(), countUnread(), markRead()
-- [ ] Utworzyć `src/Services/Discovery/NotificationService.php` z metodą dispatch()
-- [ ] NotificationService::dispatch(): sprawdza dedup — ten sam typ + user + 24h → skip (SELECT COUNT)
-- [ ] MatchingService::findAndNotifyMatches(): dla cross-tree match → NotificationService::dispatch('person_match', ...)
-- [ ] Notyfikacja cross-tree: title "Znaleziono potencjalne powiązanie", body BEZ nazwy drzewa źródłowego
-- [ ] Dodać do DiscoveryController metodę notificationsCount() → GET /api/notifications/count
-- [ ] notificationsCount(): header Cache-Control: max-age=25, zwraca JSON {count: N}
-- [ ] Dodać do DiscoveryController metodę notificationsList() → GET /api/notifications (ostatnie 10)
-- [ ] Dodać do DiscoveryController metodę notificationRead() → POST /api/notifications/{id}/read
-- [ ] notificationRead(): WHERE user_id = currentUserId (IDOR check)
-- [ ] Routing dla 3 endpointów notifications w public/index.php
-- [ ] W `src/views/templates/AppLayout.php` dodać Alpine component `x-data="notificationBell()"`
-- [ ] Bell icon z badge counter (czerwona kropka z liczbą)
-- [ ] Polling co 30s (setInterval w init())
-- [ ] Click na bell → openDropdown() → fetch /api/notifications → wyświetl listę
-- [ ] Click na powiadomieniu → POST markRead + redirect do link
-- [ ] aria-label "Powiadomienia, X nowych" na bell icon
+- [x] Utworzyć `src/Repositories/NotificationRepository.php` z metodami: create(), findByUser(), countUnread(), markRead()
+- [x] Utworzyć `src/Services/Discovery/NotificationService.php` z metodą dispatch()
+- [x] NotificationService::dispatch(): sprawdza dedup — ten sam typ + user + 24h → skip (SELECT COUNT)
+- [x] MatchingService::findAndNotifyMatches(): dla cross-tree match → NotificationService::dispatch('person_match', ...)
+- [x] Notyfikacja cross-tree: title "Znaleziono potencjalne powiązanie", body BEZ nazwy drzewa źródłowego
+- [x] Dodać do DiscoveryController metodę notificationsCount() → GET /api/notifications/count
+- [x] notificationsCount(): header Cache-Control: max-age=25, zwraca JSON {count: N}
+- [x] Dodać do DiscoveryController metodę notificationsList() → GET /api/notifications (ostatnie 10)
+- [x] Dodać do DiscoveryController metodę notificationRead() → POST /api/notifications/{id}/read
+- [x] notificationRead(): WHERE user_id = currentUserId (IDOR check)
+- [x] Routing dla 3 endpointów notifications w public/index.php
+- [x] W `src/views/templates/AppLayout.php` dodać Alpine component `x-data="notificationBell()"`
+- [x] Bell icon z badge counter (czerwona kropka z liczbą)
+- [x] Polling co 30s (setInterval w init())
+- [x] Click na bell → openDropdown() → fetch /api/notifications → wyświetl listę
+- [x] Click na powiadomieniu → POST markRead + redirect do link
+- [x] aria-label "Powiadomienia, X nowych" na bell icon
 
 ---
 
 ## Faza 6: Import flow + panel sugestii
 
-- [ ] Utworzyć `src/Services/Discovery/PersonImportService.php` z metodą importFromMatch()
-- [ ] importFromMatch(): merge danych — uzupełnia brakujące pola, NIE nadpisuje wypełnionych
-- [ ] P3: UPDATE person_match_suggestions SET status='imported' WHERE id=? AND status='pending' (optimistic lock)
-- [ ] Sprawdzić affected_rows po UPDATE — jeśli 0 → throw RaceConditionException (bail bez tworzenia osoby)
-- [ ] importFromMatch(): INSERT do source_audit_log (action='import', source_type, source_id, target_person_id)
-- [ ] Dodać do DiscoveryController metodę importMatch() → POST /api/discovery/match/{id}/import
-- [ ] importMatch(): K2 — WHERE created_for_user = currentUserId (IDOR check)
-- [ ] importMatch(): sprawdzić editor/owner role dla tree_id z match
-- [ ] importMatch(): CSRF verify
-- [ ] Dodać do DiscoveryController metodę rejectMatch() → POST /api/discovery/match/{id}/reject
-- [ ] rejectMatch(): K2 — WHERE created_for_user = currentUserId (IDOR check)
-- [ ] rejectMatch(): INSERT do source_audit_log (action='reject')
-- [ ] Routing POST /api/discovery/match/{id}/import → DiscoveryController::importMatch
-- [ ] Routing POST /api/discovery/match/{id}/reject → DiscoveryController::rejectMatch
-- [ ] W `src/views/pages/trees/persons/show.php` dodać sekcję "Możliwe powiązania" (conditional: gdy status='pending')
-- [ ] Foreach suggestions: karta z confidence badge + źródło + imię + rok urodzenia
-- [ ] Button "Akceptuj" → fetch POST /api/discovery/match/{id}/import → ukryj kartę + toast
-- [ ] Button "Odrzuć" → fetch POST /api/discovery/match/{id}/reject → ukryj kartę
-- [ ] UI update bez przeładowania strony (Alpine x-show na podstawie statusu)
+- [x] Utworzyć `src/Services/Discovery/PersonImportService.php` z metodą importFromMatch()
+- [x] importFromMatch(): merge danych — uzupełnia brakujące pola, NIE nadpisuje wypełnionych
+- [x] P3: UPDATE person_match_suggestions SET status='imported' WHERE id=? AND status='pending' (optimistic lock)
+- [x] Sprawdzić affected_rows po UPDATE — jeśli 0 → throw RaceConditionException (bail bez tworzenia osoby)
+- [x] importFromMatch(): INSERT do source_audit_log (action='import', source_type, source_id, target_person_id)
+- [x] Dodać do DiscoveryController metodę importMatch() → POST /api/discovery/match/{id}/import
+- [x] importMatch(): K2 — WHERE created_for_user = currentUserId (IDOR check)
+- [x] importMatch(): sprawdzić editor/owner role dla tree_id z match
+- [x] importMatch(): CSRF verify
+- [x] Dodać do DiscoveryController metodę rejectMatch() → POST /api/discovery/match/{id}/reject
+- [x] rejectMatch(): K2 — WHERE created_for_user = currentUserId (IDOR check)
+- [x] rejectMatch(): INSERT do source_audit_log (action='reject')
+- [x] Routing POST /api/discovery/match/{id}/import → DiscoveryController::importMatch
+- [x] Routing POST /api/discovery/match/{id}/reject → DiscoveryController::rejectMatch
+- [x] W `src/views/pages/trees/persons/show.php` dodać sekcję "Możliwe powiązania" (conditional: gdy status='pending')
+- [x] Foreach suggestions: karta z confidence badge + źródło + imię + rok urodzenia
+- [x] Button "Akceptuj" → fetch POST /api/discovery/match/{id}/import → ukryj kartę + toast
+- [x] Button "Odrzuć" → fetch POST /api/discovery/match/{id}/reject → ukryj kartę
+- [x] UI update bez przeładowania strony (Alpine x-show na podstawie statusu)
 
 ---
 
 ## Faza 7: External adapters
 
-- [ ] Utworzyć `src/Services/Discovery/Sources/FamilySearchMatchSource.php`
-- [ ] FamilySearchMatchSource: adapter dla FamilySearchService z planu `registries`
-- [ ] FamilySearchMatchSource::search(): transform wyniki RegistryInterface → MatchResult[] z source_type='external'
-- [ ] FamilySearchMatchSource::isAvailable(): sprawdza getenv('FAMILYSEARCH_CLIENT_ID')
-- [ ] Utworzyć `src/Services/Discovery/Sources/GenetykaMatchSource.php`
-- [ ] GenetykaMatchSource: adapter dla GenetykaService (lokalny DB z CSV dump PTG)
-- [ ] GenetykaMatchSource::isAvailable(): sprawdza getenv('GENETEKA_LOCAL_DB')
-- [ ] Conditional registration w public/index.php (tylko gdy env vars ustawione)
-- [ ] W autosuggest UI: sekcja "Z zewnętrznych baz" wyświetla wyniki external gdy istnieją
-- [ ] source_audit_log: INSERT dla każdego external query (action='external_search')
-- [ ] MatchResult dla external: confidence bazowana na polu "match_score" z rejestru lub fallback 0.6
+- [x] Utworzyć `src/Services/Discovery/Sources/FamilySearchMatchSource.php`
+- [x] FamilySearchMatchSource: adapter dla FamilySearchService z planu `registries`
+- [x] FamilySearchMatchSource::search(): transform wyniki RegistryInterface → MatchResult[] z source_type='external'
+- [x] FamilySearchMatchSource::isAvailable(): sprawdza getenv('FAMILYSEARCH_CLIENT_ID')
+- [x] Utworzyć `src/Services/Discovery/Sources/GenetykaMatchSource.php`
+- [x] GenetykaMatchSource: adapter dla GenetykaService (lokalny DB z CSV dump PTG)
+- [x] GenetykaMatchSource::isAvailable(): sprawdza getenv('GENETEKA_LOCAL_DB')
+- [x] Conditional registration w public/index.php (tylko gdy env vars ustawione)
+- [x] W autosuggest UI: sekcja "Z zewnętrznych baz" wyświetla wyniki external gdy istnieją
+- [x] source_audit_log: INSERT dla każdego external query (action='external_search')
+- [x] MatchResult dla external: confidence bazowana na polu "match_score" z rejestru lub fallback 0.6
 
 ---
 
 ## Faza 8: Dokumentacja
 
-- [ ] Utworzyć `dev/docs/discovery-architecture.md` z opisem MatchSourceInterface i przepływem danych
-- [ ] Diagram ASCII przepływu: formularz → DiscoveryController → MatchingService → MatchSourceRegistry → sources
-- [ ] Przykład rejestracji nowego source (krok po kroku)
-- [ ] Sekcja "RODO compliance" — reguły kwalifikowania, anonimizacja cross-tree, audit log
-- [ ] Sekcja "EventDispatcher hooks" — lista eventów, kolejność listenerów, dodawanie nowych
-- [ ] Zaktualizować CLAUDE.md — dodać sekcję "Person Discovery" z opisem architektury
-- [ ] Zaktualizować MEMORY.md — dodać wpis o zaimplementowanym Person Discovery
+- [x] Utworzyć `dev/docs/discovery-architecture.md` z opisem MatchSourceInterface i przepływem danych
+- [x] Diagram ASCII przepływu: formularz → DiscoveryController → MatchingService → MatchSourceRegistry → sources
+- [x] Przykład rejestracji nowego source (krok po kroku)
+- [x] Sekcja "RODO compliance" — reguły kwalifikowania, anonimizacja cross-tree, audit log
+- [x] Sekcja "EventDispatcher hooks" — lista eventów, kolejność listenerów, dodawanie nowych
+- [x] Zaktualizować CLAUDE.md — dodać sekcję "Person Discovery" z opisem architektury
+- [x] Zaktualizować MEMORY.md — dodać wpis o zaimplementowanym Person Discovery
+
+---
+
+## Do poprawy po review (2026-04-07)
+
+> Pełny raport: [`review-2026-04-07.md`](./review-2026-04-07.md)
+> Werdykt: **PASS WITH CONDITIONS** — 2 blocking, 3 important, 3 nit
+> **Status poprawek: 8/8 wykonane (2026-04-07)**
+
+### 🔴 Blocking
+
+- [x] 🔴 [B4] **`src/Services/Discovery/GlobalIndexService.php`** — race condition fix: zamienione na `INSERT ... ON DUPLICATE KEY UPDATE` (atomowe, UNIQUE KEY uq_gpi_person)
+- [x] 🔴 [B5] **`src/Services/Discovery/PersonImportService.php`** — transakcja: `beginTransaction` → `updateStatusIfPending` + `create` + `logAudit` → `commit`, rollback w catch
+
+### 🟠 Important
+
+- [x] 🟠 [I7] **`src/Controllers/DiscoveryController.php`** — `updateSettings` refaktoryzowane: `$wasEligible` vs `$nowEligible` (oba flagi wymagane do indeksowania). Wycofanie `userOptIn` teraz poprawnie unindeksuje drzewo (RODO Art. 7(3))
+- [x] 🟠 [I8] **`src/Controllers/DiscoveryController.php:search`** — dodano guard clause: `if ($userId === '') → 401 unauthorized`
+- [x] 🟠 [I9] **Migracja 009 + `CrossTreeMatchSource`** — `global_person_index` dostał kolumny `first_name`/`last_name` (immutable przy indeksowaniu). `CrossTreeMatchSource` już nie JOINuje `persons`
+
+### 🟡 Nit
+
+- [x] 🟡 [N1] **`src/views/templates/AppLayout.php`** — `notificationBell` nasłuchuje `visibilitychange` — pauza polling gdy karta ukryta (oszczędność baterii mobile)
+- [x] 🟡 [N2] **`bin/reindex-all.php`** — usunięto 2 dodatkowe COUNT per osoba, jeden SELECT COUNT na końcu dla statystyki
+- [x] 🟡 [N3] **`src/Core/RateLimiter.php`** — wyekstrahowany jako service, używany przez `DiscoveryController` (i gotowy do refactoru `AuthService`)

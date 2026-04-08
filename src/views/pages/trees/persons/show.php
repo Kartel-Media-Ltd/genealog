@@ -161,6 +161,168 @@ $suggestions ??= [];
     <!-- Right: Relationships + Suggestions -->
     <div class="lg:col-span-2 space-y-6">
 
+        <?php
+        /** @var array $matchSuggestions */
+        $matchSuggestions = $matchSuggestions ?? [];
+        ?>
+
+        <?php if (!empty($matchSuggestions) && $canEdit): ?>
+        <!-- Discovery match suggestions — cross-tree / external / local fingerprint matches -->
+        <div x-data="matchSuggestionsPanel(<?= htmlspecialchars(json_encode($matchSuggestions), ENT_QUOTES) ?>)"
+             class="rounded-lg border border-amber-300 bg-amber-50/60 shadow-sm">
+            <div class="border-b border-amber-200 px-6 py-4 flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+                     fill="none" stroke="currentColor" stroke-width="2" class="text-amber-600" aria-hidden="true">
+                    <path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 1 1 7.072 0l-.548.547A3.374 3.374 0 0 0 14 18.469V19a2 2 0 1 1-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+                </svg>
+                <h2 class="text-base font-semibold text-amber-900">
+                    Możliwe powiązania
+                    <span class="ml-1 text-xs font-normal text-amber-700" x-text="'(' + items.length + ')'"></span>
+                </h2>
+            </div>
+
+            <div class="divide-y divide-amber-200">
+                <template x-for="item in items" :key="item.id">
+                    <div class="px-6 py-4" x-show="!hidden[item.id]" x-transition>
+                        <div class="flex items-start justify-between gap-4">
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-center gap-2">
+                                    <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium"
+                                          :class="badgeClass(item.confidence)"
+                                          x-text="confidenceLabel(item.confidence)"></span>
+                                    <span class="text-xs text-amber-700" x-text="sourceLabel(item.source_type)"></span>
+                                </div>
+                                <p class="mt-1 font-medium text-amber-950">
+                                    <span x-text="(item.data.firstName || '?') + ' ' + (item.data.lastName || '?')"></span>
+                                    <template x-if="item.data.birthYear">
+                                        <span class="text-amber-700 text-sm">
+                                            (<span x-text="'ur. ' + item.data.birthYear"></span>)
+                                        </span>
+                                    </template>
+                                </p>
+                                <template x-if="item.data.region || item.data.treeRef">
+                                    <p class="mt-0.5 text-xs text-amber-700">
+                                        <span x-show="item.data.region" x-text="item.data.region"></span>
+                                        <span x-show="item.data.region && item.data.treeRef"> · </span>
+                                        <span x-show="item.data.treeRef" x-text="item.data.treeRef"></span>
+                                    </p>
+                                </template>
+                            </div>
+                            <div class="flex flex-col gap-1 shrink-0">
+                                <button type="button"
+                                        @click="acceptMatch(item)"
+                                        :disabled="processing[item.id]"
+                                        class="inline-flex items-center gap-1 rounded-md bg-amber-600 px-3 py-1 text-xs font-medium text-white hover:bg-amber-700 disabled:opacity-50">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+                                        <polyline points="20 6 9 17 4 12"/>
+                                    </svg>
+                                    Akceptuj
+                                </button>
+                                <button type="button"
+                                        @click="rejectMatch(item)"
+                                        :disabled="processing[item.id]"
+                                        class="inline-flex items-center gap-1 rounded-md border border-amber-300 bg-white px-3 py-1 text-xs font-medium text-amber-700 hover:bg-amber-50 disabled:opacity-50">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+                                        <line x1="18" y1="6" x2="6" y2="18"/>
+                                        <line x1="6" y1="6" x2="18" y2="18"/>
+                                    </svg>
+                                    Odrzuć
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+
+                <div x-show="items.every(i => hidden[i.id])"
+                     class="px-6 py-4 text-center text-sm text-amber-700">
+                    Wszystkie sugestie zostały rozpatrzone.
+                </div>
+            </div>
+        </div>
+
+        <script>
+        function matchSuggestionsPanel(initialItems) {
+            return {
+                items: initialItems.map(item => ({
+                    ...item,
+                    data: typeof item.source_data === 'string'
+                        ? JSON.parse(item.source_data)
+                        : (item.source_data || {})
+                })),
+                hidden: {},
+                processing: {},
+
+                badgeClass(confidence) {
+                    if (confidence >= 0.85) return 'bg-green-100 text-green-800';
+                    if (confidence >= 0.65) return 'bg-amber-100 text-amber-800';
+                    return 'bg-slate-100 text-slate-700';
+                },
+
+                confidenceLabel(confidence) {
+                    const pct = Math.round(confidence * 100);
+                    if (confidence >= 0.85) return pct + '% — wysokie';
+                    if (confidence >= 0.65) return pct + '% — średnie';
+                    return pct + '% — niskie';
+                },
+
+                sourceLabel(sourceType) {
+                    return {
+                        'local':         'Twoje drzewo',
+                        'cross_tree':    'Inne drzewo (anonimizowane)',
+                        'familysearch':  'FamilySearch',
+                        'genetyka':      'Geneteka (PTG)',
+                        'external':      'Zewnętrzna baza',
+                    }[sourceType] || sourceType;
+                },
+
+                async acceptMatch(item) {
+                    if (this.processing[item.id]) return;
+                    this.processing[item.id] = true;
+                    try {
+                        const csrf = document.querySelector('meta[name="csrf-token"]')?.content || '';
+                        const r = await fetch('/api/discovery/match/' + item.id + '/import', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/x-www-form-urlencoded',
+                                'X-CSRF-TOKEN': csrf,
+                            },
+                            body: '_csrf_token=' + encodeURIComponent(csrf),
+                        });
+                        if (!r.ok) throw new Error('HTTP ' + r.status);
+                        this.hidden[item.id] = true;
+                    } catch (e) {
+                        alert('Nie udało się zaakceptować dopasowania: ' + e.message);
+                    } finally {
+                        this.processing[item.id] = false;
+                    }
+                },
+
+                async rejectMatch(item) {
+                    if (this.processing[item.id]) return;
+                    this.processing[item.id] = true;
+                    try {
+                        const csrf = document.querySelector('meta[name="csrf-token"]')?.content || '';
+                        const r = await fetch('/api/discovery/match/' + item.id + '/reject', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/x-www-form-urlencoded',
+                                'X-CSRF-TOKEN': csrf,
+                            },
+                            body: '_csrf_token=' + encodeURIComponent(csrf),
+                        });
+                        if (!r.ok) throw new Error('HTTP ' + r.status);
+                        this.hidden[item.id] = true;
+                    } catch (e) {
+                        alert('Nie udało się odrzucić dopasowania: ' + e.message);
+                    } finally {
+                        this.processing[item.id] = false;
+                    }
+                },
+            };
+        }
+        </script>
+        <?php endif; ?>
+
         <?php if (!empty($suggestions) && $canEdit): ?>
         <!-- Suggestions panel -->
         <div class="rounded-lg border border-primary/40 bg-primary/5 shadow-sm">
